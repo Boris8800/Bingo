@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
+    <title>Bingo con Escaneo y Chequeo Manual</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
     <style>
         body {
@@ -79,10 +79,15 @@
             margin-top: 20px;
             color: green;
         }
+        #numerosDetectados {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
-    <button id="activarSonidoBtn" onclick="activarSonido()">Activar Sonido</button>
+    <button onclick="activarSonido()">Activar Sonido</button>
     
     <div id="numeroContainer">--</div>
     
@@ -92,8 +97,16 @@
 
     <div id="numerosContainer"></div>
 
-    <video id="video" autoplay></video>
+    <h2>Chequeo Manual</h2>
+    <input type="text" id="inputNumeros" placeholder="Ingrese números separados por comas">
+    <button onclick="chequearManual()">Chequear</button>
+
+    <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
+
+    <h2>Números Detectados:</h2>
+    <p id="numerosDetectados">--</p>
+
     <p id="mensajeBingo"></p>
 
     <script>
@@ -162,6 +175,7 @@
             clearInterval(intervalo);
             enEjecucion = false;
             document.getElementById("mensajeBingo").textContent = "";
+            document.getElementById("numerosDetectados").textContent = "--";
         }
 
         function activarSonido() {
@@ -172,12 +186,8 @@
 
         function iniciarEscaneo() {
             const video = document.getElementById("video");
-            const canvas = document.getElementById("canvas");
-            const mensajeBingo = document.getElementById("mensajeBingo");
 
-            mensajeBingo.textContent = "";
-
-            navigator.mediaDevices.getUserMedia({ video: true })
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
                 .then(stream => {
                     video.srcObject = stream;
                     video.style.display = "block";
@@ -205,27 +215,17 @@
 
         function reconocerNumeros() {
             const canvas = document.getElementById("canvas");
-            const mensajeBingo = document.getElementById("mensajeBingo");
 
-            Tesseract.recognize(
-                canvas,
-                'eng',
-                { logger: m => console.log(m) }
-            ).then(({ data: { text } }) => {
-                const numerosDetectados = text.match(/\b\d{1,2}\b/g);
-                if (numerosDetectados) {
-                    const cartonesNumeros = [...new Set(numerosDetectados.map(n => parseInt(n)))];
-                    console.log("Números detectados en el cartón:", cartonesNumeros);
-
-                    if (cartonesNumeros.every(num => numerosSalidos.includes(num))) {
-                        mensajeBingo.textContent = "¡BINGO!";
+            Tesseract.recognize(canvas, 'eng', { logger: m => console.log(m) })
+                .then(({ data: { text } }) => {
+                    const numerosDetectados = text.match(/\b\d{1,2}\b/g);
+                    if (numerosDetectados) {
+                        const cartonesNumeros = [...new Set(numerosDetectados.map(n => parseInt(n)))].sort((a, b) => a - b);
+                        document.getElementById("numerosDetectados").textContent = cartonesNumeros.join(", ");
                     } else {
-                        mensajeBingo.textContent = "Aún no tienes Bingo.";
+                        document.getElementById("numerosDetectados").textContent = "No se detectaron números.";
                     }
-                } else {
-                    mensajeBingo.textContent = "No se detectaron números en el cartón.";
-                }
-            });
+                });
         }
     </script>
 </body>
