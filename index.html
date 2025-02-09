@@ -219,7 +219,7 @@
         <video id="video" autoplay></video>
         <canvas id="canvas"></canvas>
     </div>
-    <button onclick="capturarYEscaneo()">Escanear Cartón</button>
+    <button id="escanearBtn" onclick="toggleCamara()">Escanear Cartón</button>
     <div id="resultadoEscaneo"></div>
     <div id="mensajeErrorCamara">
         No se pudo acceder a la cámara. Asegúrate de permitir el acceso.
@@ -366,52 +366,49 @@
         let canvas = document.getElementById('canvas');
         let resultadoEscaneo = document.getElementById('resultadoEscaneo');
         let mensajeErrorCamara = document.getElementById('mensajeErrorCamara');
+        let stream = null;
+        let escaneoActivo = false;
 
         async function iniciarCamara() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" } // Usar la cámara trasera
+                });
                 video.srcObject = stream;
                 mensajeErrorCamara.style.display = 'none'; // Ocultar mensaje de error
             } catch (error) {
                 console.error("Error al acceder a la cámara:", error);
                 mensajeErrorCamara.style.display = 'block'; // Mostrar mensaje de error
-                document.querySelector('button').disabled = true; // Deshabilitar botón de escaneo
+                document.getElementById('escanearBtn').disabled = true; // Deshabilitar botón de escaneo
             }
         }
 
-        async function capturarYEscaneo() {
-            if (!video.srcObject) {
-                resultadoEscaneo.textContent = "La cámara no está disponible.";
-                return;
+        function detenerCamara() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop()); // Detener la cámara
+                video.srcObject = null;
             }
+        }
 
-            // Capturar imagen del video
-            const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // Escanear la imagen con Tesseract.js
-            resultadoEscaneo.textContent = "Escaneando...";
-            const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
-                logger: m => console.log(m) // Opcional: para ver el progreso
-            });
-
-            // Extraer números del texto escaneado
-            const numerosEscaneados = text.match(/\d+/g) || [];
-            resultadoEscaneo.innerHTML = `Números detectados: <strong>${numerosEscaneados.join(', ')}</strong>`;
-
-            // Verificar si los números han salido
-            const numerosNoSalidos = numerosEscaneados.filter(num => !numerosSalidos.includes(Number(num)));
-            if (numerosNoSalidos.length > 0) {
-                resultadoEscaneo.innerHTML += `<br>Números no han salido: <strong>${numerosNoSalidos.join(', ')}</strong>`;
+        async function toggleCamara() {
+            if (escaneoActivo) {
+                detenerCamara();
+                escaneoActivo = false;
+                document.getElementById('escanearBtn').textContent = 'Escanear Cartón';
             } else {
-                resultadoEscaneo.innerHTML += `<br>Todos los números han salido.`;
+                await iniciarCamara();
+                escaneoActivo = true;
+                document.getElementById('escanearBtn').textContent = 'Detener Escaneo';
+                setTimeout(() => {
+                    detenerCamara();
+                    escaneoActivo = false;
+                    document.getElementById('escanearBtn').textContent = 'Escanear Cartón';
+                }, 4000); // Desactivar la cámara después de 4 segundos
             }
         }
 
-        // Iniciar la cámara al cargar la página
-        window.onload = iniciarCamara;
+        // Iniciar la cámara al cargar la página (opcional)
+        // window.onload = iniciarCamara;
     </script>
 </body>
 </html>
