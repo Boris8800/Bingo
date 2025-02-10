@@ -59,7 +59,7 @@
     <canvas id="canvas"></canvas>
 
     <button onclick="iniciarCamara()">Activar Cámara</button>
-    <button onclick="tomarFotoYDetectar()">Tomar Foto y Detectar Números</button>
+    <button onclick="grabarVideo()">Grabar y Analizar</button>
 
     <h2>Números Detectados:</h2>
     <p id="numerosDetectados">--</p>
@@ -69,6 +69,8 @@
     <script>
         let numerosSalidos = [5, 12, 19, 23, 35, 42, 48, 52, 60, 67, 71, 78, 81, 85, 90]; // Simulación de números llamados
         let streamActivo = null;
+        let mediaRecorder;
+        let chunks = [];
 
         function iniciarCamara() {
             const video = document.getElementById("video");
@@ -83,15 +85,56 @@
                 });
         }
 
-        function tomarFotoYDetectar() {
-            const video = document.getElementById("video");
+        function grabarVideo() {
+            if (!streamActivo) {
+                alert("Activa la cámara primero.");
+                return;
+            }
+
+            const options = { mimeType: "video/webm" };
+            mediaRecorder = new MediaRecorder(streamActivo, options);
+            chunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                chunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const videoBlob = new Blob(chunks, { type: "video/webm" });
+                extraerFotogramas(videoBlob);
+            };
+
+            mediaRecorder.start();
+            setTimeout(() => {
+                mediaRecorder.stop();
+            }, 3000); // Graba 3 segundos
+        }
+
+        function extraerFotogramas(videoBlob) {
+            const video = document.createElement("video");
+            video.src = URL.createObjectURL(videoBlob);
+            video.play();
+
             const canvas = document.getElementById("canvas");
             const context = canvas.getContext("2d");
 
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            video.onloadeddata = () => {
+                const intervalo = setInterval(() => {
+                    if (video.ended) {
+                        clearInterval(intervalo);
+                        return;
+                    }
 
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    detectarNumeros(canvas);
+                }, 500); // Extrae fotograma cada 500ms
+            };
+        }
+
+        function detectarNumeros(canvas) {
             Tesseract.recognize(canvas, 'eng', { logger: m => console.log(m) })
                 .then(({ data: { text } }) => {
                     let numerosDetectados = text.match(/\b\d{1,2}\b/g);
@@ -105,8 +148,6 @@
                             detenerCamara();
                             verificarBingo(numerosOrdenados);
                         }
-                    } else {
-                        document.getElementById("numerosDetectados").textContent = "No se detectaron números.";
                     }
                 });
         }
