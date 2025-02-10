@@ -16,18 +16,14 @@
             min-height: 100vh;
             margin: 0;
         }
-        #numeroContainer {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            border: 5px solid #8B0000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 6em;
-            font-weight: bold;
-            color: #2c3e50;
-            margin: 20px;
+        video, canvas {
+            width: 400px;
+            height: 300px;
+            border: 3px solid black;
+            margin-top: 10px;
+        }
+        canvas {
+            display: none;
         }
         button {
             padding: 10px 20px;
@@ -42,36 +38,10 @@
         button:hover {
             background-color: #2980b9;
         }
-        #numerosContainer {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 5px;
-            max-width: 500px;
-            margin-top: 20px;
-        }
-        .numeroCirculo {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #05102e;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1em;
+        #numerosDetectados {
+            font-size: 1.2em;
             font-weight: bold;
-        }
-        .marcado {
-            background-color: #e74c3c;
-        }
-        #video {
-            width: 400px;
-            height: 300px;
-            border: 3px solid black;
             margin-top: 10px;
-        }
-        #canvas {
-            display: none;
         }
         #mensajeBingo {
             font-size: 1.5em;
@@ -79,159 +49,83 @@
             margin-top: 20px;
             color: green;
         }
-        #numerosDetectados {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
-    <button onclick="activarSonido()">Activar Sonido</button>
-    
-    <div id="numeroContainer">--</div>
-    
-    <button onclick="startStop()">Comenzar</button>
-    <button onclick="reiniciarJuego()">Reiniciar</button>
 
+    <h1>Escaneo de Números</h1>
+    
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
 
-    <button onclick="iniciarEscaneo()">Escanear Cartón</button>
+    <button onclick="iniciarCamara()">Activar Cámara</button>
+    <button onclick="tomarFotoYDetectar()">Tomar Foto y Detectar Números</button>
 
     <h2>Números Detectados:</h2>
     <p id="numerosDetectados">--</p>
 
-    <div id="numerosContainer"></div>
-
     <p id="mensajeBingo"></p>
 
     <script>
-        let numerosSalidos = [];
-        let numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
-        let intervalo;
-        let enEjecucion = false;
+        let numerosSalidos = [5, 12, 19, 23, 35, 42, 48, 52, 60, 67, 71, 78, 81, 85, 90]; // Simulación de números llamados
+        let streamActivo = null;
 
-        const numerosContainer = document.getElementById("numerosContainer");
-
-        for (let i = 1; i <= 90; i++) {
-            const circulo = document.createElement("div");
-            circulo.classList.add("numeroCirculo");
-            circulo.textContent = i;
-            circulo.id = `numero${i}`;
-            numerosContainer.appendChild(circulo);
-        }
-
-        function startStop() {
-            if (enEjecucion) {
-                clearInterval(intervalo);
-                enEjecucion = false;
-            } else {
-                intervalo = setInterval(siguienteNumero, 3000);
-                enEjecucion = true;
-            }
-        }
-
-        function siguienteNumero() {
-            if (numerosDisponibles.length === 0) {
-                alert("¡Todos los números han sido llamados!");
-                clearInterval(intervalo);
-                enEjecucion = false;
-                return;
-            }
-
-            const indice = Math.floor(Math.random() * numerosDisponibles.length);
-            const numero = numerosDisponibles.splice(indice, 1)[0];
-            numerosSalidos.push(numero);
-
-            document.getElementById("numeroContainer").textContent = numero;
-            marcarNumero(numero);
-            anunciarNumero(numero);
-        }
-
-        function anunciarNumero(numero) {
-            if (window.speechSynthesis) {
-                const mensaje = new SpeechSynthesisUtterance(numero.toString());
-                mensaje.lang = 'es-ES';
-                window.speechSynthesis.speak(mensaje);
-            }
-        }
-
-        function marcarNumero(numero) {
-            const circulo = document.getElementById(`numero${numero}`);
-            if (circulo) {
-                circulo.classList.add("marcado");
-            }
-        }
-
-        function reiniciarJuego() {
-            numerosSalidos = [];
-            numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
-            document.getElementById("numeroContainer").textContent = "--";
-            document.querySelectorAll(".numeroCirculo").forEach(c => c.classList.remove("marcado"));
-            clearInterval(intervalo);
-            enEjecucion = false;
-            document.getElementById("mensajeBingo").textContent = "";
-            document.getElementById("numerosDetectados").textContent = "--";
-        }
-
-        function activarSonido() {
-            const mensaje = new SpeechSynthesisUtterance("Sonido activado");
-            mensaje.lang = 'es-ES';
-            window.speechSynthesis.speak(mensaje);
-        }
-
-        function iniciarEscaneo() {
+        function iniciarCamara() {
             const video = document.getElementById("video");
 
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
                 .then(stream => {
+                    streamActivo = stream;
                     video.srcObject = stream;
-                    escanearNumerosContinuo();
                 })
                 .catch(err => {
                     console.error("Error al acceder a la cámara: ", err);
                 });
         }
 
-        function escanearNumerosContinuo() {
+        function tomarFotoYDetectar() {
             const video = document.getElementById("video");
             const canvas = document.getElementById("canvas");
             const context = canvas.getContext("2d");
 
-            function tomarFotoYDetectar() {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                Tesseract.recognize(canvas, 'eng', { logger: m => console.log(m) })
-                    .then(({ data: { text } }) => {
-                        let numerosDetectados = text.match(/\b\d{1,2}\b/g);
-                        if (numerosDetectados) {
-                            let cartonesNumeros = [...new Set(numerosDetectados.map(n => parseInt(n)))].sort((a, b) => a - b);
-                            cartonesNumeros = cartonesNumeros.slice(0, 15);
+            Tesseract.recognize(canvas, 'eng', { logger: m => console.log(m) })
+                .then(({ data: { text } }) => {
+                    let numerosDetectados = text.match(/\b\d{1,2}\b/g);
+                    if (numerosDetectados) {
+                        let numerosOrdenados = [...new Set(numerosDetectados.map(n => parseInt(n)))].sort((a, b) => a - b);
+                        numerosOrdenados = numerosOrdenados.slice(0, 15); 
 
-                            document.getElementById("numerosDetectados").textContent = cartonesNumeros.join(", ");
-                            
-                            if (cartonesNumeros.length === 15) {
-                                video.srcObject.getTracks().forEach(track => track.stop());
-                                verificarBingo(cartonesNumeros);
-                            } else {
-                                setTimeout(tomarFotoYDetectar, 3000);
-                            }
+                        document.getElementById("numerosDetectados").textContent = numerosOrdenados.join(", ");
+
+                        if (numerosOrdenados.length === 15) {
+                            detenerCamara();
+                            verificarBingo(numerosOrdenados);
                         }
-                    });
-            }
+                    } else {
+                        document.getElementById("numerosDetectados").textContent = "No se detectaron números.";
+                    }
+                });
+        }
 
-            tomarFotoYDetectar();
+        function detenerCamara() {
+            if (streamActivo) {
+                streamActivo.getTracks().forEach(track => track.stop());
+                streamActivo = null;
+            }
         }
 
         function verificarBingo(numerosCarton) {
             if (numerosCarton.every(num => numerosSalidos.includes(num))) {
                 document.getElementById("mensajeBingo").textContent = "¡Bingo!";
-                anunciarNumero("Bingo");
+            } else {
+                document.getElementById("mensajeBingo").textContent = "No hay bingo aún.";
             }
         }
     </script>
+
 </body>
 </html>
