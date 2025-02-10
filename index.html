@@ -65,8 +65,10 @@
             background-color: #e74c3c;
         }
         #video {
-            width: 300px;
-            height: auto;
+            width: 400px;
+            height: 300px;
+            border: 3px solid black;
+            margin-top: 10px;
         }
         #canvas {
             display: none;
@@ -185,41 +187,50 @@
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
                 .then(stream => {
                     video.srcObject = stream;
-                    setTimeout(() => tomarFoto(), 5000);
+                    escanearNumerosContinuo();
                 })
                 .catch(err => {
                     console.error("Error al acceder a la cámara: ", err);
                 });
         }
 
-        function tomarFoto() {
+        function escanearNumerosContinuo() {
             const video = document.getElementById("video");
             const canvas = document.getElementById("canvas");
             const context = canvas.getContext("2d");
 
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            function tomarFotoYDetectar() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            video.srcObject.getTracks().forEach(track => track.stop());
+                Tesseract.recognize(canvas, 'eng', { logger: m => console.log(m) })
+                    .then(({ data: { text } }) => {
+                        let numerosDetectados = text.match(/\b\d{1,2}\b/g);
+                        if (numerosDetectados) {
+                            let cartonesNumeros = [...new Set(numerosDetectados.map(n => parseInt(n)))].sort((a, b) => a - b);
+                            cartonesNumeros = cartonesNumeros.slice(0, 15);
 
-            reconocerNumeros();
+                            document.getElementById("numerosDetectados").textContent = cartonesNumeros.join(", ");
+                            
+                            if (cartonesNumeros.length === 15) {
+                                video.srcObject.getTracks().forEach(track => track.stop());
+                                verificarBingo(cartonesNumeros);
+                            } else {
+                                setTimeout(tomarFotoYDetectar, 3000);
+                            }
+                        }
+                    });
+            }
+
+            tomarFotoYDetectar();
         }
 
-        function reconocerNumeros() {
-            const canvas = document.getElementById("canvas");
-
-            Tesseract.recognize(canvas, 'eng', { logger: m => console.log(m) })
-                .then(({ data: { text } }) => {
-                    const numerosDetectados = text.match(/\b\d{1,2}\b/g);
-                    if (numerosDetectados) {
-                        let cartonesNumeros = [...new Set(numerosDetectados.map(n => parseInt(n)))].sort((a, b) => a - b);
-                        cartonesNumeros = cartonesNumeros.slice(0, 15); // Asegurar que sean 15 números
-                        document.getElementById("numerosDetectados").textContent = cartonesNumeros.join(", ");
-                    } else {
-                        document.getElementById("numerosDetectados").textContent = "No se detectaron números.";
-                    }
-                });
+        function verificarBingo(numerosCarton) {
+            if (numerosCarton.every(num => numerosSalidos.includes(num))) {
+                document.getElementById("mensajeBingo").textContent = "¡Bingo!";
+                anunciarNumero("Bingo");
+            }
         }
     </script>
 </body>
