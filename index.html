@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo con Escaneo y Chequeo Manual</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
     <style>
         body {
@@ -66,7 +65,6 @@
             background-color: #e74c3c;
         }
         #video {
-            display: none;
             width: 300px;
             height: auto;
         }
@@ -92,20 +90,17 @@
     <div id="numeroContainer">--</div>
     
     <button onclick="startStop()">Comenzar</button>
-    <button onclick="reiniciarJuego()">Reiniciar Juego</button>
-    <button onclick="iniciarEscaneo()">Escanear Cartón</button>
-
-    <div id="numerosContainer"></div>
-
-    <h2>Chequeo Manual</h2>
-    <input type="text" id="inputNumeros" placeholder="Ingrese números separados por comas">
-    <button onclick="chequearManual()">Chequear</button>
+    <button onclick="reiniciarJuego()">Reiniciar</button>
 
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
 
+    <button onclick="iniciarEscaneo()">Escanear Cartón</button>
+
     <h2>Números Detectados:</h2>
     <p id="numerosDetectados">--</p>
+
+    <div id="numerosContainer"></div>
 
     <p id="mensajeBingo"></p>
 
@@ -190,7 +185,6 @@
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
                 .then(stream => {
                     video.srcObject = stream;
-                    video.style.display = "block";
                     setTimeout(() => tomarFoto(), 5000);
                 })
                 .catch(err => {
@@ -207,7 +201,6 @@
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            video.style.display = "none";
             video.srcObject.getTracks().forEach(track => track.stop());
 
             reconocerNumeros();
@@ -220,7 +213,8 @@
                 .then(({ data: { text } }) => {
                     const numerosDetectados = text.match(/\b\d{1,2}\b/g);
                     if (numerosDetectados) {
-                        const cartonesNumeros = [...new Set(numerosDetectados.map(n => parseInt(n)))].sort((a, b) => a - b);
+                        let cartonesNumeros = [...new Set(numerosDetectados.map(n => parseInt(n)))].sort((a, b) => a - b);
+                        cartonesNumeros = cartonesNumeros.slice(0, 15); // Asegurar que sean 15 números
                         document.getElementById("numerosDetectados").textContent = cartonesNumeros.join(", ");
                     } else {
                         document.getElementById("numerosDetectados").textContent = "No se detectaron números.";
