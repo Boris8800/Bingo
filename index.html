@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bingo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/2.1.0/tesseract.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,7 +22,7 @@
             width: 200px;
             height: 200px;
             border-radius: 50%;
-            border: 5px solid #8B0000;
+            border: 5px solid #8B0000; 
             display: flex;
             align-items: center;
             justify-content: center;
@@ -60,14 +61,9 @@
             font-size: 1.0em;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s;
         }
         .numeroCirculo.marcado {
             background-color: #e74c3c;
-        }
-        .ultimoNumeroCirculo {
-            background-color: #e74c3c;
-            font-size: 1.2em;
         }
         button {
             padding: 10px 20px;
@@ -78,28 +74,32 @@
             color: white;
             border: none;
             border-radius: 5px;
-            min-width: 150px;
         }
         button:hover {
             background-color: #2980b9;
         }
-        #verificarCartonContainer, #escanearCartonContainer {
+        #verificarCartonContainer {
             margin-top: 20px;
         }
-        #mensajeVerificacionCarton, #mensajeEscaneo {
+        #mensajeVerificacionCarton {
             margin-top: 30px;
             font-size: 1.0em;
             color: #2c3e50;
         }
-        #video {
+        #cameraContainer {
+            margin-top: 20px;
+        }
+        video, canvas {
+            display: none;
             width: 300px;
-            height: auto;
-            border: 2px solid #000;
+            height: 200px;
+            border: 2px solid black;
             margin-top: 10px;
         }
     </style>
 </head>
 <body>
+
     <div id="numeroContainer">
         <div id="numero">--</div>
     </div>
@@ -116,20 +116,14 @@
     <div id="ultimosNumeros">
         <p>Últimos 5 números:</p>
         <div id="ultimosNumerosContainer"></div>
-        <div id="estadoJuego"></div>
     </div>
 
     <div id="verificarCartonContainer">
-        <input type="number" id="cartonVerificar" placeholder="Cartón" min="1">
-        <button onclick="verificarCarton()">Verificar</button>
+        <button onclick="activarCamara()">Escanear Cartón</button>
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <button onclick="capturarImagen()">Capturar</button>
         <div id="mensajeVerificacionCarton"></div>
-    </div>
-
-    <div id="escanearCartonContainer">
-        <button onclick="abrirCamara()">Escanear Cartón</button>
-        <video id="video" autoplay></video>
-        <canvas id="canvas" style="display:none;"></canvas>
-        <div id="mensajeEscaneo"></div>
     </div>
 
     <script>
@@ -137,83 +131,85 @@
         let numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1);
         let intervalo;
         let enEjecucion = false;
-        let juegoPausado = false;
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
 
-        function abrirCamara() {
-            const video = document.getElementById('video');
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(stream => {
-                    video.srcObject = stream;
-                })
-                .catch(error => {
-                    console.error("Error al acceder a la cámara", error);
-                    document.getElementById('mensajeEscaneo').textContent = "Error al acceder a la cámara.";
-                });
+        function startStop() {
+            if (enEjecucion) {
+                clearInterval(intervalo);
+                document.getElementById('startStopBtn').textContent = 'Comenzar';
+                enEjecucion = false;
+            } else {
+                intervalo = setInterval(siguienteNumero, 3000);
+                document.getElementById('startStopBtn').textContent = 'Detener';
+                enEjecucion = true;
+            }
         }
 
-        function verificarCarton() {
-            const numeroCarton = parseInt(document.getElementById('cartonVerificar').value);
-            const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
-
-            if (isNaN(numeroCarton) || numeroCarton < 1) {
-                mensajeVerificacionCarton.textContent = "❌ Ingrese un número de cartón válido.";
-                mensajeVerificacionCarton.style.color = "red";
+        function siguienteNumero() {
+            if (numerosDisponibles.length === 0) {
+                alert("¡Todos los números han sido llamados!");
+                clearInterval(intervalo);
+                document.getElementById('startStopBtn').textContent = 'Comenzar';
+                enEjecucion = false;
                 return;
             }
+            const indice = Math.floor(Math.random() * numerosDisponibles.length);
+            const numero = numerosDisponibles.splice(indice, 1)[0];
+            numerosSalidos.push(numero);
+            document.getElementById('numero').textContent = numero;
+        }
 
-            const numerosCarton = generarNumerosAleatorios(); 
+        function reiniciarJuego() {
+            numerosSalidos = [];
+            numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1);
+            document.getElementById('numero').textContent = '--';
+            clearInterval(intervalo);
+            document.getElementById('startStopBtn').textContent = 'Comenzar';
+            enEjecucion = false;
+        }
+
+        function activarCamara() {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(stream => {
+                    video.srcObject = stream;
+                    video.style.display = 'block';
+                })
+                .catch(error => console.error("Error al acceder a la cámara:", error));
+        }
+
+        function capturarImagen() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            video.style.display = 'none';
+            analizarImagen();
+        }
+
+        function analizarImagen() {
+            Tesseract.recognize(canvas, 'eng+spa', {
+                logger: m => console.log(m)
+            }).then(({ data: { text } }) => {
+                const numerosDetectados = text.match(/\b\d{1,2}\b/g);
+                if (numerosDetectados) {
+                    verificarCartonEscaneado(numerosDetectados.map(Number));
+                } else {
+                    document.getElementById('mensajeVerificacionCarton').textContent = "No se detectaron números válidos.";
+                }
+            });
+        }
+
+        function verificarCartonEscaneado(numerosCarton) {
             const numerosFaltantes = numerosCarton.filter(num => !numerosSalidos.includes(num));
 
             if (numerosFaltantes.length === 0) {
-                mensajeVerificacionCarton.textContent = `✅ ¡Bingo! Todos los números del cartón ${numeroCarton} han salido.`;
-                mensajeVerificacionCarton.style.color = "green";
-
-                if (window.speechSynthesis) {
-                    const mensaje = new SpeechSynthesisUtterance(`Bingo. El cartón número ${numeroCarton} tiene bingo`);
-                    mensaje.lang = 'es-ES';
-                    window.speechSynthesis.speak(mensaje);
-                }
+                document.getElementById('mensajeVerificacionCarton').textContent = "✅ ¡Bingo!";
             } else {
-                mensajeVerificacionCarton.textContent = `❌ En el cartón ${numeroCarton} faltan los números: ${numerosFaltantes.join(', ')}.`;
-                mensajeVerificacionCarton.style.color = "red";
+                document.getElementById('mensajeVerificacionCarton').textContent = `❌ Faltan: ${numerosFaltantes.join(', ')}`;
             }
-
-            document.getElementById('cartonVerificar').value = "";
-        }
-
-        function generarNumerosAleatorios() {
-            let numeros = new Set();
-            while (numeros.size < 15) {
-                let num = Math.floor(Math.random() * 90) + 1;
-                numeros.add(num);
-            }
-            return Array.from(numeros);
-        }
-
-        function escanearCarton() {
-            const video = document.getElementById('video');
-            const canvas = document.getElementById('canvas');
-            const context = canvas.getContext('2d');
-
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            document.getElementById('mensajeEscaneo').textContent = "Escaneando...";
-
-            setTimeout(() => {
-                const numerosDetectados = generarNumerosAleatorios();
-                const numerosFaltantes = numerosDetectados.filter(num => !numerosSalidos.includes(num));
-
-                if (numerosFaltantes.length === 0) {
-                    document.getElementById('mensajeEscaneo').textContent = "✅ ¡Bingo detectado!";
-                    document.getElementById('mensajeEscaneo').style.color = "green";
-                } else {
-                    document.getElementById('mensajeEscaneo').textContent = `❌ Números faltantes: ${numerosFaltantes.join(', ')}`;
-                    document.getElementById('mensajeEscaneo').style.color = "red";
-                }
-            }, 2000);
         }
     </script>
+
 </body>
 </html>
