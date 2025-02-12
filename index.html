@@ -395,18 +395,7 @@
             actualizarEstadoJuego("pausado");
         }
 
-        // Función para verificar automáticamente el cartón 44
-        function verificarCarton44() {
-            const carton44 = document.getElementById('carton44');
-            const numerosCarton44 = carton44.getAttribute('data-numeros').split(',').map(Number);
-            const numerosFaltantes = numerosCarton44.filter(num => !numerosSalidos.includes(num));
-
-            if (numerosFaltantes.length === 0) {
-                const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
-                mensajeVerificacionCarton.textContent = `✅ ¡Bingo! El cartón 44 ha completado todos sus números.`;
-                mensajeVerificacionCarton.style.color = "green";
-            
-                
+       
         // Función para actualizar los últimos 5 números
         function actualizarUltimosNumeros() {
             const ultimos5 = numerosSalidos.slice(-5);
@@ -541,6 +530,18 @@ function verificarCarton() {
                 document.getElementById('startStopBtn').textContent = 'Detener';
                 actualizarEstadoJuego("enMarcha");
             }
+             // Función para verificar automáticamente el cartón 44
+        function verificarCarton44() {
+            const carton44 = document.getElementById('carton44');
+            const numerosCarton44 = carton44.getAttribute('data-numeros').split(',').map(Number);
+            const numerosFaltantes = numerosCarton44.filter(num => !numerosSalidos.includes(num));
+
+            if (numerosFaltantes.length === 0) {
+                const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
+                mensajeVerificacionCarton.textContent = `✅ ¡Bingo! El cartón 44 ha completado todos sus números.`;
+                mensajeVerificacionCarton.style.color = "green";
+            
+                
         });
     </script>
 </body>
