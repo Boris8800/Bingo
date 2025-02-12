@@ -3,33 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo</title>
+    <title>Bingo Automático</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="numeroContainer">
-        <div id="numero">--</div>
+    <div class="contenedor-principal">
+        <!-- Sección de juego -->
+        <div class="seccion-juego">
+            <div id="numeroContainer">
+                <div id="numero">--</div>
+            </div>
+            
+            <div id="botonesContainer">
+                <button id="reiniciarBtn">Reiniciar Juego</button>
+                <button id="startStopBtn">Comenzar</button>
+            </div>
+
+            <div id="historial">
+                <div id="numerosContainer"></div>
+            </div>
+
+            <div id="ultimosNumeros">
+                <p>Últimos 5 números:</p>
+                <div id="ultimosNumerosContainer"></div>
+                <div id="estadoJuego"></div>
+            </div>
+
+            <div id="controlesVerificacion">
+                <div id="verificarNumeroContainer">
+                    <input type="number" id="numeroVerificar" placeholder="Número (1-90)" min="1" max="90">
+                    <button id="btnVerificarNumero">Verificar</button>
+                    <div id="mensajeVerificacion"></div>
+                </div>
+
+                <div id="verificarCartonContainer">
+                    <input type="number" id="cartonVerificar" placeholder="Número de cartón">
+                    <button id="btnVerificarCarton">Verificar Cartón</button>
+                    <div id="mensajeVerificacionCarton"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de cartones ganadores -->
+        <div class="seccion-ganadores">
+            <h2>Cartones Ganadores</h2>
+            <div id="listaGanadores"></div>
+        </div>
     </div>
 
-    <div id="botonesContainer">
-        <button id="reiniciarBtn" onclick="reiniciarJuego()">Reiniciar Juego</button>
-        <button id="startStopBtn" onclick="startStop()">Comenzar</button>
-    </div>
-
-    <div id="historial">
-        <div id="numerosContainer"></div>
-    </div>
-
-    <div id="ultimosNumeros">
-        <p>Últimos 5 números:</p>
-        <div id="ultimosNumerosContainer"></div>
-        <div id="estadoJuego"></div>
-    </div>
-
-    <div id="verificarNumeroContainer">
-        <input type="number" id="numeroVerificar" placeholder="Número" min="1" max="90">
-        <button onclick="verificarNumero()">Verificar</button>
-        <div id="mensajeVerificacion"></div>
+    <!-- Banco de datos de cartones (oculto) -->
+    <div id="cartonesContainer" style="display: none;">
+        <div id="carton44" data-numeros="5,12,23,34,45,56,67,78,89,1,11,22,33,44,55"></div>
     </div>
 
     <script src="script.js"></script>
