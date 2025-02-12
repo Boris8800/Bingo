@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="numeroContainer">
+        <div id="numero">--</div>
+    </div>
+
+    <div id="botonesContainer">
+        <button id="reiniciarBtn" onclick="reiniciarJuego()">Reiniciar Juego</button>
+        <button id="startStopBtn" onclick="startStop()">Comenzar</button>
+    </div>
+
+    <div id="historial">
+        <div id="numerosContainer"></div>
+    </div>
+
+    <div id="ultimosNumeros">
+        <p>Últimos 5 números:</p>
+        <div id="ultimosNumerosContainer"></div>
+        <div id="estadoJuego"></div>
+    </div>
+
+    <div id="verificarNumeroContainer">
+        <input type="number" id="numeroVerificar" placeholder="Número" min="1" max="90">
+        <button onclick="verificarNumero()">Verificar</button>
+        <div id="mensajeVerificacion"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
