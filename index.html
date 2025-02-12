@@ -455,4 +455,81 @@ function verificarCarton() {
 
     if (!carton) {
         mensajeVerificacionCarton.textContent = "❌ Cartón no encontrado.";
-        mensajeVerificacionCarton.style.color = 
+        mensajeVerificacionCarton.style.color = "red";
+        document.getElementById('cartonVerificar').focus(); // Mantener el foco
+        return;
+    }
+
+    const numerosCarton = carton.getAttribute('data-numeros').split(',').map(Number);
+    const numerosFaltantes = numerosCarton.filter(num => !numerosSalidos.includes(num));
+
+    if (numerosFaltantes.length === 0) {
+        mensajeVerificacionCarton.textContent = `✅ ¡Bingo! Todos los números del cartón ${numeroCarton} han salido.`;
+        mensajeVerificacionCarton.style.color = "green";
+
+        // Anunciar "Bingo. El cartón (número) tiene bingo"
+        if (window.speechSynthesis) {
+            const mensaje = new SpeechSynthesisUtterance(`Bingo. El cartón número ${numeroCarton} tiene bingo`);
+            mensaje.lang = 'es-ES';
+            window.speechSynthesis.speak(mensaje);
+        }
+    } else {
+        mensajeVerificacionCarton.textContent = `❌ En el cartón ${numeroCarton} faltan los números: ${numerosFaltantes.join(', ')}.`;
+        mensajeVerificacionCarton.style.color = "red";
+    }
+
+    document.getElementById('cartonVerificar').value = "";
+    document.getElementById('cartonVerificar').focus(); // Mantener el foco
+
+        }
+
+        // Añadir evento blur al campo de verificación de cartón
+        document.getElementById('cartonVerificar').addEventListener('blur', () => {
+            document.getElementById('mensajeVerificacionCarton').textContent = ""; // Limpiar mensaje
+        });
+
+        // Añadir eventos para pausar/reanudar con inputs
+        document.getElementById('numeroVerificar').addEventListener('focus', () => {
+            if (enEjecucion) {
+                clearInterval(intervalo);
+                juegoPausado = true;
+                document.getElementById('startStopBtn').textContent = 'Comenzar';
+                enEjecucion = false;
+                actualizarEstadoJuego("pausado");
+            }
+        });
+
+        document.getElementById('cartonVerificar').addEventListener('focus', () => {
+            if (enEjecucion) {
+                clearInterval(intervalo);
+                juegoPausado = true;
+                document.getElementById('startStopBtn').textContent = 'Comenzar';
+                enEjecucion = false;
+                actualizarEstadoJuego("pausado");
+            }
+        });
+
+        document.getElementById('numeroVerificar').addEventListener('blur', () => {
+            if (juegoPausado) {
+                intervalo = setInterval(siguienteNumero, 3000);
+                enEjecucion = true;
+                juegoPausado = false;
+                document.getElementById('startStopBtn').textContent = 'Detener';
+                actualizarEstadoJuego("enMarcha");
+            }
+            // Limpiar el mensaje de verificación al perder el foco
+            document.getElementById('mensajeVerificacion').textContent = "";
+        });
+
+        document.getElementById('cartonVerificar').addEventListener('blur', () => {
+            if (juegoPausado) {
+                intervalo = setInterval(siguienteNumero, 3000);
+                enEjecucion = true;
+                juegoPausado = false;
+                document.getElementById('startStopBtn').textContent = 'Detener';
+                actualizarEstadoJuego("enMarcha");
+            }
+        });
+    </script>
+</body>
+</html>
