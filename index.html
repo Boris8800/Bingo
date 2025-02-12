@@ -3,170 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
+    <title>Bingo</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
+            margin: 0;
+            padding: 0;
             background-color: #f4f4f4;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            margin: 0;
         }
-        video, canvas {
-            width: 400px;
-            height: 300px;
-            border: 3px solid black;
+        #numeroContainer {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 5px solid #8B0000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px;
+        }
+        #numero {
+            font-size: 6em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        #historial {
+            margin-top: 10px;
+            font-size: 1.2em;
+        }
+        #numerosContainer, #ultimosNumerosContainer {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        #ultimosNumerosContainer {
+            grid-template-columns: repeat(5, 1fr);
             margin-top: 10px;
         }
-        canvas {
-            display: none;
+        .numeroCirculo {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #05102e;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.0em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .numeroCirculo.marcado {
+            background-color: #e74c3c;
+        }
+        .ultimoNumeroCirculo {
+            background-color: #e74c3c;
+            font-size: 1.2em;
         }
         button {
             padding: 10px 20px;
             font-size: 1em;
-            margin: 10px;
+            margin-top: 10px;
             cursor: pointer;
             background-color: #3498db;
             color: white;
             border: none;
             border-radius: 5px;
+            min-width: 150px;
         }
         button:hover {
             background-color: #2980b9;
         }
-        #numerosDetectados {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        #mensajeBingo {
-            font-size: 1.5em;
-            font-weight: bold;
+        #verificarCartonContainer, #escanearCartonContainer {
             margin-top: 20px;
-            color: green;
+        }
+        #mensajeVerificacionCarton, #mensajeEscaneo {
+            margin-top: 30px;
+            font-size: 1.0em;
+            color: #2c3e50;
+        }
+        #video {
+            width: 300px;
+            height: auto;
+            border: 2px solid #000;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
+    <div id="numeroContainer">
+        <div id="numero">--</div>
+    </div>
 
-    <h1>Escaneo de Números</h1>
-    
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas"></canvas>
+    <div id="botonesContainer">
+        <button id="reiniciarBtn" onclick="reiniciarJuego()">Reiniciar Juego</button>
+        <button id="startStopBtn" onclick="startStop()">Comenzar</button>
+    </div>
 
-    <button onclick="iniciarCamara()">Activar Cámara</button>
-    <button onclick="grabarVideo()">Grabar y Analizar</button>
+    <div id="historial">
+        <div id="numerosContainer"></div>
+    </div>
 
-    <h2>Números Detectados:</h2>
-    <p id="numerosDetectados">--</p>
+    <div id="ultimosNumeros">
+        <p>Últimos 5 números:</p>
+        <div id="ultimosNumerosContainer"></div>
+        <div id="estadoJuego"></div>
+    </div>
 
-    <p id="mensajeBingo"></p>
+    <div id="verificarCartonContainer">
+        <input type="number" id="cartonVerificar" placeholder="Cartón" min="1">
+        <button onclick="verificarCarton()">Verificar</button>
+        <div id="mensajeVerificacionCarton"></div>
+    </div>
+
+    <div id="escanearCartonContainer">
+        <button onclick="abrirCamara()">Escanear Cartón</button>
+        <video id="video" autoplay></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div id="mensajeEscaneo"></div>
+    </div>
 
     <script>
-        let numerosSalidos = [5, 12, 19, 23, 35, 42, 48, 52, 60, 67, 71, 78, 81, 85, 90]; // Simulación de números llamados
-        let streamActivo = null;
-        let mediaRecorder;
-        let chunks = [];
+        let numerosSalidos = [];
+        let numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1);
+        let intervalo;
+        let enEjecucion = false;
+        let juegoPausado = false;
 
-        function iniciarCamara() {
-            const video = document.getElementById("video");
-
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        function abrirCamara() {
+            const video = document.getElementById('video');
+            navigator.mediaDevices.getUserMedia({ video: true })
                 .then(stream => {
-                    streamActivo = stream;
                     video.srcObject = stream;
                 })
-                .catch(err => {
-                    console.error("Error al acceder a la cámara: ", err);
+                .catch(error => {
+                    console.error("Error al acceder a la cámara", error);
+                    document.getElementById('mensajeEscaneo').textContent = "Error al acceder a la cámara.";
                 });
         }
 
-        function grabarVideo() {
-            if (!streamActivo) {
-                alert("Activa la cámara primero.");
+        function verificarCarton() {
+            const numeroCarton = parseInt(document.getElementById('cartonVerificar').value);
+            const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
+
+            if (isNaN(numeroCarton) || numeroCarton < 1) {
+                mensajeVerificacionCarton.textContent = "❌ Ingrese un número de cartón válido.";
+                mensajeVerificacionCarton.style.color = "red";
                 return;
             }
 
-            const options = { mimeType: "video/webm" };
-            mediaRecorder = new MediaRecorder(streamActivo, options);
-            chunks = [];
+            const numerosCarton = generarNumerosAleatorios(); 
+            const numerosFaltantes = numerosCarton.filter(num => !numerosSalidos.includes(num));
 
-            mediaRecorder.ondataavailable = event => {
-                chunks.push(event.data);
-            };
+            if (numerosFaltantes.length === 0) {
+                mensajeVerificacionCarton.textContent = `✅ ¡Bingo! Todos los números del cartón ${numeroCarton} han salido.`;
+                mensajeVerificacionCarton.style.color = "green";
 
-            mediaRecorder.onstop = () => {
-                const videoBlob = new Blob(chunks, { type: "video/webm" });
-                extraerFotogramas(videoBlob);
-            };
-
-            mediaRecorder.start();
-            setTimeout(() => {
-                mediaRecorder.stop();
-            }, 3000); // Graba 3 segundos
-        }
-
-        function extraerFotogramas(videoBlob) {
-            const video = document.createElement("video");
-            video.src = URL.createObjectURL(videoBlob);
-            video.play();
-
-            const canvas = document.getElementById("canvas");
-            const context = canvas.getContext("2d");
-
-            video.onloadeddata = () => {
-                const intervalo = setInterval(() => {
-                    if (video.ended) {
-                        clearInterval(intervalo);
-                        return;
-                    }
-
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                    detectarNumeros(canvas);
-                }, 500); // Extrae fotograma cada 500ms
-            };
-        }
-
-        function detectarNumeros(canvas) {
-            Tesseract.recognize(canvas, 'eng', { logger: m => console.log(m) })
-                .then(({ data: { text } }) => {
-                    let numerosDetectados = text.match(/\b\d{1,2}\b/g);
-                    if (numerosDetectados) {
-                        let numerosOrdenados = [...new Set(numerosDetectados.map(n => parseInt(n)))].sort((a, b) => a - b);
-                        numerosOrdenados = numerosOrdenados.slice(0, 15); 
-
-                        document.getElementById("numerosDetectados").textContent = numerosOrdenados.join(", ");
-
-                        if (numerosOrdenados.length === 15) {
-                            detenerCamara();
-                            verificarBingo(numerosOrdenados);
-                        }
-                    }
-                });
-        }
-
-        function detenerCamara() {
-            if (streamActivo) {
-                streamActivo.getTracks().forEach(track => track.stop());
-                streamActivo = null;
-            }
-        }
-
-        function verificarBingo(numerosCarton) {
-            if (numerosCarton.every(num => numerosSalidos.includes(num))) {
-                document.getElementById("mensajeBingo").textContent = "¡Bingo!";
+                if (window.speechSynthesis) {
+                    const mensaje = new SpeechSynthesisUtterance(`Bingo. El cartón número ${numeroCarton} tiene bingo`);
+                    mensaje.lang = 'es-ES';
+                    window.speechSynthesis.speak(mensaje);
+                }
             } else {
-                document.getElementById("mensajeBingo").textContent = "No hay bingo aún.";
+                mensajeVerificacionCarton.textContent = `❌ En el cartón ${numeroCarton} faltan los números: ${numerosFaltantes.join(', ')}.`;
+                mensajeVerificacionCarton.style.color = "red";
             }
+
+            document.getElementById('cartonVerificar').value = "";
+        }
+
+        function generarNumerosAleatorios() {
+            let numeros = new Set();
+            while (numeros.size < 15) {
+                let num = Math.floor(Math.random() * 90) + 1;
+                numeros.add(num);
+            }
+            return Array.from(numeros);
+        }
+
+        function escanearCarton() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            document.getElementById('mensajeEscaneo').textContent = "Escaneando...";
+
+            setTimeout(() => {
+                const numerosDetectados = generarNumerosAleatorios();
+                const numerosFaltantes = numerosDetectados.filter(num => !numerosSalidos.includes(num));
+
+                if (numerosFaltantes.length === 0) {
+                    document.getElementById('mensajeEscaneo').textContent = "✅ ¡Bingo detectado!";
+                    document.getElementById('mensajeEscaneo').style.color = "green";
+                } else {
+                    document.getElementById('mensajeEscaneo').textContent = `❌ Números faltantes: ${numerosFaltantes.join(', ')}`;
+                    document.getElementById('mensajeEscaneo').style.color = "red";
+                }
+            }, 2000);
         }
     </script>
-
 </body>
 </html>
