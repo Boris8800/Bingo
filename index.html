@@ -3,8 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo</title>
+    <title>
+🅑🅘🅝🅖🅞</title>
     <style>
+        /* Añade estos estilos en la sección <style> */
+        .numeroVerificado {
+            background-color: #e74c3c;
+            font-size: 1.2em;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2px;
+            font-weight: bold;
+        }
+        
+        .numeroFaltante {
+            background-color: #05102e;
+            font-size: 1.2em;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2px;
+            font-weight: bold;
+        }
         body {
             font-family: Arial, sans-serif;
             text-align: center;
@@ -45,7 +74,7 @@
             padding: 10px;
         }
         #ultimosNumerosContainer {
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(10, 1fr);
             margin-top: 10px;
         }
         .numeroCirculo {
@@ -192,7 +221,7 @@
 
     <!-- Últimos 5 números -->
     <div id="ultimosNumeros">
-        <p>Últimos 5 números:</p>
+        <p>Últimos 10 números:</p>
         <div id="ultimosNumerosContainer"></div>
         <div id="estadoJuego"></div>
     </div>
@@ -409,11 +438,11 @@
 
         // Función para actualizar los últimos 5 números
         function actualizarUltimosNumeros() {
-            const ultimos5 = numerosSalidos.slice(-5);
+            const ultimos10 = numerosSalidos.slice(-10);
             const ultimosNumerosContainer = document.getElementById('ultimosNumerosContainer');
             ultimosNumerosContainer.innerHTML = '';
 
-            ultimos5.forEach(numero => {
+            ultimos10.forEach(numero => {
                 const circulo = document.createElement('div');
                 circulo.classList.add('numeroCirculo', 'ultimoNumeroCirculo');
                 circulo.textContent = numero;
@@ -421,25 +450,25 @@
             });
         }
 
-        // Función para verificar un número
+         // Función para verificar un número
         function verificarNumero() {
             const numero = parseInt(document.getElementById('numeroVerificar').value);
             const mensajeVerificacion = document.getElementById('mensajeVerificacion');
 
-          if (isNaN(numero) || numero < 1 || numero > 90) {
-        mensajeVerificacion.textContent = "Por favor, ingresa un número válido (1-90).";
-        mensajeVerificacion.style.color = "red";
-        document.getElementById('numeroVerificar').value = ""; // Limpiar el input
-        document.getElementById('numeroVerificar').focus(); // Mantener el foco
-        return;
-    }
+            if (isNaN(numero) || numero < 1 || numero > 90) {
+                mensajeVerificacion.innerHTML = "Por favor, ingresa un número válido (1-90).";
+                mensajeVerificacion.style.color = "red";
+                document.getElementById('numeroVerificar').value = "";
+                document.getElementById('numeroVerificar').focus();
+                return;
+            }
 
             if (numerosSalidos.includes(numero)) {
-                mensajeVerificacion.textContent = `✅ El número ${numero} ha salido.`;
+                mensajeVerificacion.innerHTML = `✅ El número <span class="numeroVerificado">${numero}</span> ha salido.`;
                 mensajeVerificacion.style.color = "green";
                 marcarNumero(numero);
             } else {
-                mensajeVerificacion.textContent = `❌ El número ${numero} no ha salido.`;
+                mensajeVerificacion.innerHTML = `❌ El número <span class="numeroFaltante">${numero}</span> no ha salido.`;
                 mensajeVerificacion.style.color = "red";
             }
 
@@ -447,61 +476,57 @@
             document.getElementById('numeroVerificar').focus();
         }
 
-        // Función para limpiar el mensaje de verificación
-        function limpiarMensajeVerificacion() {
-            const mensajeVerificacion = document.getElementById('mensajeVerificacion');
-            mensajeVerificacion.textContent = '';
-        }
-
-        // Función para actualizar el estado del juego
-        function actualizarEstadoJuego(estado) {
-            const estadoJuego = document.getElementById('estadoJuego');
-            estadoJuego.style.display = 'block';
-            estadoJuego.textContent = estado === "enMarcha" ? "✅Juego en marcha✅" : "❌Juego pausado❌";
-            estadoJuego.className = estado === "enMarcha" ? "enMarcha" : "pausado";
-        }
-
         // Función para verificar un cartón
-function verificarCarton() {
-    const numeroCarton = parseInt(document.getElementById('cartonVerificar').value);
-    const carton = document.getElementById(`carton${numeroCarton}`);
-    const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
+        function verificarCarton() {
+            const numeroCarton = parseInt(document.getElementById('cartonVerificar').value);
+            const carton = document.getElementById(`carton${numeroCarton}`);
+            const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
 
-    if (!carton) {
-        mensajeVerificacionCarton.textContent = "❌ Cartón no encontrado.";
-        mensajeVerificacionCarton.style.color = "red";
-        document.getElementById('cartonVerificar').value = ""; // Limpiar el input
-        document.getElementById('cartonVerificar').focus(); // Mantener el foco
-        return;
+            if (!carton) {
+                mensajeVerificacionCarton.innerHTML = "❌ Cartón no encontrado.";
+                mensajeVerificacionCarton.style.color = "red";
+                document.getElementById('cartonVerificar').value = "";
+                document.getElementById('cartonVerificar').focus();
+                return;
+            }
 
-    }
+            const numerosCarton = carton.getAttribute('data-numeros').split(',').map(Number);
+            const numerosFaltantes = numerosCarton.filter(num => !numerosSalidos.includes(num));
+            const numerosSalidosCarton = numerosCarton.filter(num => numerosSalidos.includes(num));
 
-    const numerosCarton = carton.getAttribute('data-numeros').split(',').map(Number);
-    const numerosFaltantes = numerosCarton.filter(num => !numerosSalidos.includes(num));
+            if (numerosFaltantes.length === 0) {
+                mensajeVerificacionCarton.innerHTML = `✅ ¡Bingo! Todos los números del cartón ${numeroCarton} han salido: ` + 
+                    numerosSalidosCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
+                mensajeVerificacionCarton.style.color = "green";
 
-    if (numerosFaltantes.length === 0) {
-        mensajeVerificacionCarton.textContent = `✅ ¡Bingo! Todos los números del cartón ${numeroCarton} han salido.✅`;
-        mensajeVerificacionCarton.style.color = "green";
+                if (window.speechSynthesis) {
+                    const mensaje = new SpeechSynthesisUtterance(`Bingo. El cartón número ${numeroCarton} tiene bingo`);
+                    mensaje.lang = 'es-ES';
+                    window.speechSynthesis.speak(mensaje);
+                }
+            } else {
+                mensajeVerificacionCarton.innerHTML = `❌ En el cartón ${numeroCarton}:<br>
+                    Faltan: ` + numerosFaltantes.map(num => `<span class="numeroFaltante">${num}</span>`).join(' ') + `<br>
+                    Salieron: ` + numerosSalidosCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
+                mensajeVerificacionCarton.style.color = "red";
+            }
 
-        // Anunciar "Bingo. El cartón (número) tiene bingo"
-        if (window.speechSynthesis) {
-            const mensaje = new SpeechSynthesisUtterance(`Bingo. El cartón número ${numeroCarton} tiene bingo`);
-            mensaje.lang = 'es-ES';
-            window.speechSynthesis.speak(mensaje);
-        }
-    } else {
-        mensajeVerificacionCarton.textContent = `❌ En el cartón ${numeroCarton} faltan los números: ${numerosFaltantes.join(', ')}.`;
-        mensajeVerificacionCarton.style.color = "red";
-    }
-
-    document.getElementById('cartonVerificar').value = "";
-    document.getElementById('cartonVerificar').focus(); // Mantener el foco
+            document.getElementById('cartonVerificar').value = "";
+            document.getElementById('cartonVerificar').focus();
 
         }
 
         // Añadir evento blur al campo de verificación de cartón
         document.getElementById('cartonVerificar').addEventListener('blur', () => {
-            document.getElementById('mensajeVerificacionCarton').textContent = ""; // Limpiar mensaje
+            if (juegoPausado) {
+                intervalo = setInterval(siguienteNumero, 3000);
+                enEjecucion = true;
+                juegoPausado = false;
+                document.getElementById('startStopBtn').textContent = 'Detener';
+                actualizarEstadoJuego("enMarcha");
+            }
+            // Limpiar el mensaje de verificación al perder el foco
+            document.getElementById('mensajeVerificacionCarton').textContent = "";
         });
 
         // Añadir eventos para pausar/reanudar con inputs
@@ -525,19 +550,11 @@ function verificarCarton() {
             }
         });
 
-        document.getElementById('numeroVerificar').addEventListener('blur', () => {
-            if (juegoPausado) {
-                intervalo = setInterval(siguienteNumero, 3000);
-                enEjecucion = true;
-                juegoPausado = false;
-                document.getElementById('startStopBtn').textContent = 'Detener';
-                actualizarEstadoJuego("enMarcha");
-            }
-            // Limpiar el mensaje de verificación al perder el foco
-            document.getElementById('mensajeVerificacion').textContent = "";
-        });
-
-        document.getElementById('cartonVerificar').addEventListener('blur', () => {
+        document.getElementById('numeroVerificar').addEventListener('blur', function() {
+            // Limpiar el mensaje inmediatamente al perder el foco
+            limpiarMensajeVerificacion();
+            
+            // Reanudar el juego si estaba pausado
             if (juegoPausado) {
                 intervalo = setInterval(siguienteNumero, 3000);
                 enEjecucion = true;
@@ -547,7 +564,112 @@ function verificarCarton() {
             }
         });
 
+        document.getElementById('cartonVerificar').addEventListener('blur', function() {
+            // Limpiar el mensaje inmediatamente al perder el foco
+            document.getElementById('mensajeVerificacionCarton').textContent = "";
+            
+            // Reanudar el juego si estaba pausado
+            if (juegoPausado) {
+                intervalo = setInterval(siguienteNumero, 3000);
+                enEjecucion = true;
+                juegoPausado = false;
+                document.getElementById('startStopBtn').textContent = 'Detener';
+                actualizarEstadoJuego("enMarcha");
+            }
+        });
 
+        // Limpiar mensajes al hacer clic en cualquier parte del documento
+        document.addEventListener('click', function(event) {
+            // Si el clic NO fue en el campo de verificación número ni en su botón
+            if (!event.target.closest('#verificarNumeroContainer')) {
+                limpiarMensajeVerificacion();
+            }
+            
+            // Si el clic NO fue en el campo de verificación cartón ni en su botón
+            if (!event.target.closest('#verificarCartonContainer')) {
+                document.getElementById('mensajeVerificacionCarton').textContent = "";
+            }
+        });
+
+        // Función para actualizar el estado del juego (MANTENIDA)
+        function actualizarEstadoJuego(estado) {
+            const estadoJuego = document.getElementById('estadoJuego');
+            estadoJuego.style.display = 'block';
+            estadoJuego.textContent = estado === "enMarcha" ? "✅Juego en marcha✅" : "❌Juego pausado❌";
+            estadoJuego.className = estado === "enMarcha" ? "enMarcha" : "pausado";
+        }
+
+        // Función mejorada para limpiar el mensaje de verificación
+        function limpiarMensajeVerificacion() {
+            const mensajeVerificacion = document.getElementById('mensajeVerificacion');
+            mensajeVerificacion.innerHTML = '';
+            mensajeVerificacion.style.color = '';
+        }
+
+        // Función verificarNumero (actualizada para mantener estilos)
+        function verificarNumero() {
+            const numero = parseInt(document.getElementById('numeroVerificar').value);
+            const mensajeVerificacion = document.getElementById('mensajeVerificacion');
+
+            if (isNaN(numero) || numero < 1 || numero > 90) {
+                mensajeVerificacion.innerHTML = "Por favor, ingresa un número válido (1-90).";
+                mensajeVerificacion.style.color = "red";
+                document.getElementById('numeroVerificar').value = "";
+                document.getElementById('numeroVerificar').focus();
+                return;
+            }
+
+            if (numerosSalidos.includes(numero)) {
+                mensajeVerificacion.innerHTML = `✅ El número <span class="numeroVerificado">${numero}</span> ha salido.`;
+                mensajeVerificacion.style.color = "green";
+                marcarNumero(numero);
+            } else {
+                mensajeVerificacion.innerHTML = `❌ El número <span class="numeroFaltante">${numero}</span> no ha salido.`;
+                mensajeVerificacion.style.color = "red";
+            }
+
+            document.getElementById('numeroVerificar').value = "";
+            document.getElementById('numeroVerificar').focus();
+        }
+
+        // Función verificarCarton (actualizada para mantener estilos)
+        function verificarCarton() {
+            const numeroCarton = parseInt(document.getElementById('cartonVerificar').value);
+            const carton = document.getElementById(`carton${numeroCarton}`);
+            const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
+
+            if (!carton) {
+                mensajeVerificacionCarton.innerHTML = "❌ Cartón no encontrado.";
+                mensajeVerificacionCarton.style.color = "red";
+                document.getElementById('cartonVerificar').value = "";
+                document.getElementById('cartonVerificar').focus();
+                return;
+            }
+
+            const numerosCarton = carton.getAttribute('data-numeros').split(',').map(Number);
+            const numerosFaltantes = numerosCarton.filter(num => !numerosSalidos.includes(num));
+            const numerosSalidosCarton = numerosCarton.filter(num => numerosSalidos.includes(num));
+
+            if (numerosFaltantes.length === 0) {
+                mensajeVerificacionCarton.innerHTML = `✅ ¡Bingo! Todos los números del cartón ${numeroCarton} han salido: ` + 
+                    numerosSalidosCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
+                mensajeVerificacionCarton.style.color = "green";
+
+                if (window.speechSynthesis) {
+                    const mensaje = new SpeechSynthesisUtterance(`Bingo. El cartón número ${numeroCarton} tiene bingo`);
+                    mensaje.lang = 'es-ES';
+                    window.speechSynthesis.speak(mensaje);
+                }
+            } else {
+                mensajeVerificacionCarton.innerHTML = ` En el cartón ${numeroCarton}:<br>
+                    ❌Faltan: ` + numerosFaltantes.map(num => `<span class="numeroFaltante">${num}</span>`).join(' ') + `<br>
+                    ✅Salieron: ` + numerosSalidosCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
+                mensajeVerificacionCarton.style.color = "red";
+            }
+
+            document.getElementById('cartonVerificar').value = "";
+            document.getElementById('cartonVerificar').focus();
+        }
     </script>
 </body>
 </html>
