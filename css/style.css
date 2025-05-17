@@ -241,11 +241,11 @@
             margin-top: 20px;
         }
         #verificarCartonContainer input {
-           padding: 12px;
-            font-size: 1.2em;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            width: 120px;
+               padding: 12px;
+    font-size: 1.2em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 120px;
         }
         #verificarCartonContainer button {
             padding: 12px 24px;
