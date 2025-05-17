@@ -7,7 +7,7 @@
     <title>
 🅑🅘🅝🅖🅞</title>
     <style>
-   /* Añadir estos estilos */
+  /* Añadir estos estilos */
 #cartonesBingoContainer {
     margin-top: 20px;
     padding: 15px;
@@ -705,34 +705,30 @@
             document.getElementById('cartonVerificar').focus();
         }
 
-// --- Variables globales (añadir al inicio con las otras variables) ---
+// Variable global para almacenar cartones con bingo
 let cartonesConBingo = [];
 
-// --- Función nueva para verificar TODOS los cartones automáticamente ---
+// Función para verificar todos los cartones automáticamente
 function verificarTodosLosCartones() {
-    cartonesConBingo = []; // Reiniciar lista
+    cartonesConBingo = []; // Reiniciamos la lista
     
-    // Obtener todos los cartones del banco
-    const todosLosCartones = document.querySelectorAll('#cartonesContainer > div[id^="carton"]');
+    // Obtenemos todos los elementos de cartones
+    const elementosCartones = document.querySelectorAll('#cartonesContainer > div[id^="carton"]');
     
-    todosLosCartones.forEach(cartonElement => {
-        const idCarton = cartonElement.id.replace('carton', '');
-        const numerosCarton = cartonElement.getAttribute('data-numeros').split(',').map(Number);
+    elementosCartones.forEach(carton => {
+        const numeroCarton = parseInt(carton.id.replace('carton', ''));
+        const numerosCarton = carton.getAttribute('data-numeros').split(',').map(Number);
         const faltantes = numerosCarton.filter(num => !numerosSalidos.includes(num));
         
         if (faltantes.length === 0) {
-            cartonesConBingo.push(parseInt(idCarton));
+            cartonesConBingo.push(numeroCarton);
         }
     });
     
-    actualizarListaBingos(); // Actualizar visualmente
+    actualizarListaBingos();
 }
 
-// --- Modificar la función siguienteNumero() ---
-// Busca la función siguienteNumero() y añade esto al final:
-verificarTodosLosCartones(); // Verificar bingos después de cada número
-
-// --- Función actualizarListaBingos (nueva) ---
+// Función para actualizar la visualización
 function actualizarListaBingos() {
     const lista = document.getElementById('listaCartonesBingo');
     lista.innerHTML = '';
@@ -742,18 +738,22 @@ function actualizarListaBingos() {
         return;
     }
     
-    cartonesConBingo.sort((a, b) => a - b); // Ordenar numéricamente
+    // Ordenamos los cartones numéricamente
+    cartonesConBingo.sort((a, b) => a - b);
     
-    cartonesConBingo.forEach(carton => {
+    // Creamos elementos para cada cartón con bingo
+    cartonesConBingo.forEach(numero => {
         const elemento = document.createElement('div');
-        elemento.classList.add('cartonBingo');
-        elemento.textContent = `Cartón ${carton}`;
+        elemento.className = 'carton-bingo';
+        elemento.textContent = `Cartón ${numero}`;
         lista.appendChild(elemento);
     });
 }
 
-// --- Modificar reiniciarJuego() ---
-// Busca la función reiniciarJuego() y añade esto al inicio:
+// Modificar la función siguienteNumero() - añadir al final:
+verificarTodosLosCartones();
+
+// Modificar reiniciarJuego() - añadir al inicio:
 cartonesConBingo = [];
 actualizarListaBingos();
 
