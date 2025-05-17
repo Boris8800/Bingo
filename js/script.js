@@ -334,6 +334,10 @@
             document.getElementById('cartonVerificar').focus();
         }
 
+console.log(cartonesConBingo);
+
+
+
 // Variable global para almacenar cartones con bingo
 let cartonesConBingo = [];
 
