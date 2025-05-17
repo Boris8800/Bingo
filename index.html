@@ -705,38 +705,57 @@
             document.getElementById('cartonVerificar').focus();
         }
 
-/* Añadir estos estilos */
-#cartonesBingoContainer {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
+// --- Variables globales (añadir al inicio con las otras variables) ---
+let cartonesConBingo = [];
+
+// --- Función nueva para verificar TODOS los cartones automáticamente ---
+function verificarTodosLosCartones() {
+    cartonesConBingo = []; // Reiniciar lista
+    
+    // Obtener todos los cartones del banco
+    const todosLosCartones = document.querySelectorAll('#cartonesContainer > div[id^="carton"]');
+    
+    todosLosCartones.forEach(cartonElement => {
+        const idCarton = cartonElement.id.replace('carton', '');
+        const numerosCarton = cartonElement.getAttribute('data-numeros').split(',').map(Number);
+        const faltantes = numerosCarton.filter(num => !numerosSalidos.includes(num));
+        
+        if (faltantes.length === 0) {
+            cartonesConBingo.push(parseInt(idCarton));
+        }
+    });
+    
+    actualizarListaBingos(); // Actualizar visualmente
 }
 
-#cartonesBingoContainer h3 {
-    margin-top: 0;
-    color: #2c3e50;
+// --- Modificar la función siguienteNumero() ---
+// Busca la función siguienteNumero() y añade esto al final:
+verificarTodosLosCartones(); // Verificar bingos después de cada número
+
+// --- Función actualizarListaBingos (nueva) ---
+function actualizarListaBingos() {
+    const lista = document.getElementById('listaCartonesBingo');
+    lista.innerHTML = '';
+    
+    if (cartonesConBingo.length === 0) {
+        lista.textContent = "Ningún cartón tiene bingo todavía";
+        return;
+    }
+    
+    cartonesConBingo.sort((a, b) => a - b); // Ordenar numéricamente
+    
+    cartonesConBingo.forEach(carton => {
+        const elemento = document.createElement('div');
+        elemento.classList.add('cartonBingo');
+        elemento.textContent = `Cartón ${carton}`;
+        lista.appendChild(elemento);
+    });
 }
 
-#listaCartonesBingo {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 10px;
-}
-
-.cartonBingo {
-    background-color: #2ecc71;
-    color: white;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+// --- Modificar reiniciarJuego() ---
+// Busca la función reiniciarJuego() y añade esto al inicio:
+cartonesConBingo = [];
+actualizarListaBingos();
 
    
     </script>
