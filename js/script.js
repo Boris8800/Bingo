@@ -387,4 +387,26 @@ cartonesConBingo = [];
 actualizarListaBingos();
 
    
+function siguienteNumero() {
+    if (numerosDisponibles.length === 0) {
+        alert("¡Todos los números han sido llamados!");
+        clearInterval(intervalo);
+        document.getElementById('startStopBtn').textContent = 'Comenzar';
+        enEjecucion = false;
+        actualizarEstadoJuego("pausado");
+        return;
+    }
+
+    const indice = Math.floor(Math.random() * numerosDisponibles.length);
+    const numero = numerosDisponibles.splice(indice, 1)[0];
+    numerosSalidos.push(numero);
+
+    document.getElementById('numero').textContent = numero;
+    marcarNumero(numero);
+
+    actualizarUltimosNumeros();
+    anunciarNumero(numero);
     
+    // AÑADE ESTA LÍNEA si no está:
+    verificarTodosLosCartones();
+}
