@@ -226,3 +226,16 @@
             color: #2c3e50;
         }
   
+body {
+  margin: 0; /* Elimina márgenes por defecto */
+}
+.fixed-message {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  background: white; /* Fondo para que el texto no se mezcle */
+  padding: 15px;
+  z-index: 9999; /* Para que esté por encima de TODO */
+}
