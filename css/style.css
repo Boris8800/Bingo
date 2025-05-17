@@ -238,7 +238,7 @@
             display: none; /* Ocultar el banco de datos de cartones */
         }
         #verificarCartonContainer {
-            margin-top: 10px;
+            margin-top: 20px;
         }
         #verificarCartonContainer input {
             padding: 12px;
