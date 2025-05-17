@@ -232,20 +232,20 @@
             display: flex;
             gap: 10px;
             justify-content: center;
-            margin-top: 20px;
+            margin-top: 10px;
         }
         #cartonesContainer {
             display: none; /* Ocultar el banco de datos de cartones */
         }
         #verificarCartonContainer {
-            margin-top: 20px;
+            margin-top: 10px;
         }
         #verificarCartonContainer input {
             padding: 12px;
             font-size: 1.2em;
             border: 1px solid #ccc;
             border-radius: 5px;
-            width: 100px;
+            width: 50px;
         }
         #verificarCartonContainer button {
             padding: 12px 24px;
