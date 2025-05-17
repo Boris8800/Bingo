@@ -334,10 +334,6 @@
             document.getElementById('cartonVerificar').focus();
         }
 
-console.log(cartonesConBingo);
-
-}
-
 // Variable global para almacenar cartones con bingo
 let cartonesConBingo = [];
 
@@ -371,13 +367,14 @@ function actualizarListaBingos() {
         return;
     }
     
-
+    // Ordenamos los cartones numéricamente
+    cartonesConBingo.sort((a, b) => a - b);
     
     // Creamos elementos para cada cartón con bingo
     cartonesConBingo.forEach(numero => {
         const elemento = document.createElement('div');
         elemento.className = 'carton-bingo';
-        elemento.textContent = `${numero}`;
+        elemento.textContent = `Cartón ${numero}`;
         lista.appendChild(elemento);
     });
 }
