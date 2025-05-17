@@ -48,15 +48,15 @@
 }
 
 .carton-bingo {
-    background-color: #7d000000;
-    color: #0a0909;
+    background-color: #fd000000;
+    color: black;
     padding: 5px 5px;
-    border-radius: 30px;
+    border-radius: 0px;
     font-weight: bold;
-    box-shadow: -4px 9px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: -7px 6px 7px 0px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s, background-color 0.3s;
     cursor: default;
-
+}
 .carton-bingo:hover {
     background-color: #27ae60;
     transform: scale(1.05);
