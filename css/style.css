@@ -47,16 +47,19 @@
     gap: 10px;
 }
 
+
 .carton-bingo {
-    background-color: #fd000000;
-    color: black;
+    background-color: #8b0000;
+    color: #ffffff;
     padding: 5px 5px;
-    border-radius: 0px;
+    border-radius: 5px;
     font-weight: bold;
     box-shadow: -7px 6px 7px 0px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s, background-color 0.3s;
     cursor: default;
 }
+
+
 
 .carton-bingo:hover {
     background-color: #27ae60;
