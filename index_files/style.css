@@ -1,16 +1,4 @@
-/* Estilo para los cartones con bingo cuando se muestren */
-.carton-bingo {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-weight: bold;
-  font-size: 0.9rem;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
+
   /* Añadir estos estilos */
 #cartonesBingoContainer {
     margin-top: 20px;
