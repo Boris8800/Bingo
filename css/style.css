@@ -57,6 +57,7 @@
     transition: transform 0.2s, background-color 0.3s;
     cursor: default;
 }
+
 .carton-bingo:hover {
     background-color: #27ae60;
     transform: scale(1.05);
