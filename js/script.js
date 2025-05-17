@@ -99,7 +99,7 @@
             actualizarEstadoJuego("pausado");
         }
 
-        // Función para actualizar los últimos 5 números
+        // Función para actualizar los últimos 10 números
         function actualizarUltimosNumeros() {
             const ultimos10 = numerosSalidos.slice(-10);
             const ultimosNumerosContainer = document.getElementById('ultimosNumerosContainer');
@@ -367,8 +367,7 @@ function actualizarListaBingos() {
         return;
     }
     
-    // Ordenamos los cartones numéricamente
-    cartonesConBingo.sort((a, b) => a - b);
+   
     
     // Creamos elementos para cada cartón con bingo
     cartonesConBingo.forEach(numero => {
