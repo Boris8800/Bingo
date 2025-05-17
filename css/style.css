@@ -225,17 +225,13 @@
             font-size: 1.0em;
             color: #2c3e50;
         }
-    #mensajeFijo {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 10px;
-    font-size: 1em;
-    color: #222;
-    font-weight: bold;
-    border-top: 1px solid #ccc;
-    z-index: 1000;
+.mensaje-suerte {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  background-color: white; /* Opcional: fondo para mejor legibilidad */
+  padding: 10px;
+  z-index: 1000; /* Para que esté por encima de otros elementos */
 }
