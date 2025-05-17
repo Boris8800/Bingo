@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🅑🅘🅝🅖🅞</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Versión -->
+    <div id="version">Boris v1.0</div>
+
+    <!-- Contenedor del número actual -->
+    <div id="numeroContainer">
+        <div id="numero">--</div>
+    </div>
+
+    <!-- Botones de control -->
+    <div id="botonesContainer">
+        <button id="reiniciarBtn">Reiniciar Juego</button>
+        <button id="startStopBtn">Comenzar</button>
+    </div>
+
+    <!-- Historial de números -->
+    <div id="historial">
+        <div id="numerosContainer"></div>
+    </div>
+
+    <!-- Últimos 10 números -->
+    <div id="ultimosNumeros">
+        <p>Últimos 10 números:</p>
+        <div id="ultimosNumerosContainer"></div>
+        <div id="estadoJuego"></div>
+    </div>
+
+    <!-- Verificar número -->
+    <div id="verificarNumeroContainer">
+        <input type="number" id="numeroVerificar" placeholder="Número" min="1" max="90">
+        <button id="verificarNumBtn">Verificar</button>
+        <div id="mensajeVerificacion"></div>
+    </div>
+
+    <!-- Verificar cartón -->
+    <div id="verificarCartonContainer">
+        <input type="number" id="cartonVerificar" placeholder="Cartón" min="1">
+        <button id="verificarCartonBtn">Verificar</button>
+        <div id="mensajeVerificacionCarton"></div>
+    </div>
+
+    <!-- Sección de Cartones con Bingo -->
+    <div id="cartonesBingoContainer">
+        <h3>Cartones con Bingo:</h3>
+        <div id="listaCartonesBingo">Ningún cartón tiene bingo todavía</div>
+    </div>
+
+    <!-- Banco de datos de cartones (oculto) -->
+    <div id="cartonesContainer">
+        <!-- Los cartones se mantienen igual que en tu código original -->
+        <div id="carton16" data-numeros="41, 73, 53, 24, 1, 61, 35, 27, 10, 4, 62, 67, 46, 29, 16"></div>
+        <!-- ... resto de cartones ... -->
+    </div>
+
+    <!-- Contador -->
+    <a href="" target="_blank">
+        <img src="https://hitwebcounter.com/counter/counter.php?page=19376703&style=0007&nbdigits=6&type=page&initCount=0" 
+             title="Counter Widget" Alt="Visit counter For Websites" border="0" />
+    </a>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
