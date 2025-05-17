@@ -374,7 +374,7 @@ function actualizarListaBingos() {
     cartonesConBingo.forEach(numero => {
         const elemento = document.createElement('div');
         elemento.className = 'carton-bingo';
-        elemento.textContent = `Cartón ${numero}`;
+        elemento.textContent = `${numero}`;
         lista.appendChild(elemento);
     });
 }
