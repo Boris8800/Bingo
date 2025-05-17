@@ -7,9 +7,9 @@
     <title>
 🅑🅘🅝🅖🅞</title>
     <style>
-      /* Estilos para Cartones con Bingo */
+   /* Añadir estos estilos */
 #cartonesBingoContainer {
-    margin-top: 30px;
+    margin-top: 20px;
     padding: 15px;
     background-color: #f8f9fa;
     border-radius: 8px;
@@ -28,6 +28,7 @@
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
+    margin-top: 10px;
 }
 
 .cartonBingo {
@@ -704,38 +705,38 @@
             document.getElementById('cartonVerificar').focus();
         }
 
-// Array para almacenar cartones con bingo
-let cartonesConBingo = [];
-
-// Función para actualizar la lista visual de bingos
-function actualizarListaBingos() {
-    const lista = document.getElementById('listaCartonesBingo');
-    lista.innerHTML = '';
-    
-    if (cartonesConBingo.length === 0) {
-        lista.textContent = "Ningún cartón tiene bingo todavía";
-        return;
-    }
-    
-    cartonesConBingo.sort((a, b) => a - b); // Ordenar numéricamente
-    
-    cartonesConBingo.forEach(carton => {
-        const elemento = document.createElement('div');
-        elemento.classList.add('cartonBingo');
-        elemento.textContent = `Cartón ${carton}`;
-        lista.appendChild(elemento);
-    });
+/* Añadir estos estilos */
+#cartonesBingoContainer {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-// Modificación en verificarCarton() (busca tu función existente y añade esto dentro del "if (numerosFaltantes.length === 0)")
-if (!cartonesConBingo.includes(numeroCarton)) {
-    cartonesConBingo.push(numeroCarton);
-    actualizarListaBingos();
+#cartonesBingoContainer h3 {
+    margin-top: 0;
+    color: #2c3e50;
 }
 
-// Modificación en reiniciarJuego() (añade esto al inicio de la función)
-cartonesConBingo = [];
-actualizarListaBingos();
+#listaCartonesBingo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.cartonBingo {
+    background-color: #2ecc71;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 
    
     </script>
