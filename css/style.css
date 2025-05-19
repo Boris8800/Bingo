@@ -214,7 +214,7 @@
             display: none;
         }
         #estadoJuego.enMarcha {
-            color: #2ecc71;
+            color: #04160c;
         }
         #estadoJuego.pausado {
             color: #3b100b;
