@@ -1,3 +1,32 @@
+// Añade al inicio del archivo:
+document.addEventListener('DOMContentLoaded', function() {
+  // Fix para el contenedor de números
+  if (!document.getElementById('numerosContainer')) {
+    const div = document.createElement('div');
+    div.id = 'numerosContainer';
+    document.body.prepend(div);
+  }
+  
+  // Función de notificación (pega esto en tu código)
+  window.showBellNotification = function() {
+    const bell = document.getElementById('bellNotification');
+    bell.style.display = 'block';
+    document.getElementById('bellSound').play();
+    
+    // Animación simple
+    let angle = 0;
+    const animate = () => {
+      angle = (angle + 2) % 15;
+      bell.style.transform = `rotate(${angle % 2 === 0 ? angle : -angle}deg)`;
+      if (bell.style.display === 'block') requestAnimationFrame(animate);
+    };
+    animate();
+    
+    setTimeout(() => bell.style.display = 'none', 3000);
+  };
+});
+
+
 // Variables globales
 const bellNotification = document.getElementById('bellNotification');
 const bellSound = document.getElementById('bellSound');
