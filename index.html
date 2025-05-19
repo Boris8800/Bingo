@@ -1,15 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- Icono de campana -->
-<div id="bellNotification">
-  <img src="assets/bell-icon.png" alt="¡Bingo!" class="bell-icon">
-</div>
 
-<!-- Audio oculto -->
-<audio id="bellSound" preload="auto">
-  <source src="assets/bell.mp3" type="audio/mpeg">
-</audio>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>🅑🅘🅝🅖🅞</title>
@@ -33,7 +25,18 @@
         ">
         🅑🅘🅝🅖🅞
     </a>
-  
+
+<!-- Notificación fija -->
+<div id="bellNotification" style="display:none;position:fixed;top:20px;right:20px;z-index:1000;">
+  <img src="https://i.imgur.com/7QZ4J8r.png" alt="¡Bingo!" width="50">
+</div>
+
+<!-- Audio (usaré un enlace externo válido) -->
+<audio id="bellSound" preload="auto">
+  <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" type="audio/mpeg">
+</audio>
+
+    
 <link href="css/style.css" rel="stylesheet"/></head>
 <body>
 <!-- Contenedor del número actual -->
