@@ -1,25 +1,4 @@
-/* Reemplaza el .bell-hidden por esto */
-#bellNotification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  opacity: 0.3; /* Transparencia cuando no hay notificación */
-  transition: opacity 0.3s;
-  width: 50px;
-  height: 50px;
-}
 
-#bellNotification.active {
-  opacity: 1;
-  animation: ring 0.5s infinite alternate;
-}
-
-
-@keyframes ring {
-  0% { transform: rotate(-15deg); }
-  100% { transform: rotate(15deg); }
-}
   /* Añadir estos estilos */
 #cartonesBingoContainer {
     margin-top: 20px;
