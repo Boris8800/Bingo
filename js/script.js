@@ -2,15 +2,14 @@
 const bellNotification = document.getElementById('bellNotification');
 const bellSound = document.getElementById('bellSound');
 
-// Función para mostrar notificación
 function showBellNotification() {
-  bellNotification.classList.remove('bell-hidden');
+  const bell = document.getElementById('bellNotification');
+  bell.classList.add('active');
   bellSound.currentTime = 0;
   bellSound.play();
   
-  // Ocultar después de 3 segundos
   setTimeout(() => {
-    bellNotification.classList.add('bell-hidden');
+    bell.classList.remove('active'); // Solo quita la animación
   }, 3000);
 }
 
