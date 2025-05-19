@@ -103,6 +103,37 @@
             grid-template-columns: repeat(10, 1fr);
             margin-top: 10px;
         }
+       #numeroContainer {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 5px solid #a51818; /* Rojo oscuro */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px;
+        }
+        #numero {
+            font-size: 6em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        #historial {
+            margin-top: 10px;
+            font-size: 1.2em;
+        }
+        #numerosContainer, #ultimosNumerosContainer {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        #ultimosNumerosContainer {
+            grid-template-columns: repeat(10, 1fr);
+            margin-top: 10px;
+        }
         .numeroCirculo {
             width: 30px;
             height: 30px;
@@ -118,10 +149,10 @@
             transition: background-color 0.3s;
         }
         .numeroCirculo.marcado {
-            background-color: #e74c3c;
+            background-color: #af1000;
         }
         .ultimoNumeroCirculo {
-            background-color: #e74c3c;
+            background-color: #b91505;
             font-size: 1.2em;
         }
         button {
@@ -129,7 +160,7 @@
             font-size: 1em;
             margin-top: 10px;
             cursor: pointer;
-            background-color: #3498db;
+            background-color: #0e324b;
             color: white;
             border: none;
             border-radius: 5px;
@@ -153,7 +184,7 @@
         #verificarNumeroContainer input {
             padding: 12px;
             font-size: 1.2em;
-            border: 1px solid #ccc;
+            border: 1px solid #270303;
             border-radius: 5px;
             width: 120px;
         }
@@ -186,7 +217,7 @@
             color: #2ecc71;
         }
         #estadoJuego.pausado {
-            color: #e74c3c;
+            color: #3b100b;
         }
         #botonesContainer {
             display: flex;
@@ -203,7 +234,7 @@
         #verificarCartonContainer input {
             padding: 12px;
             font-size: 1.2em;
-            border: 1px solid #ccc;
+            border: 1px solid #290606;
             border-radius: 5px;
             width: 120px;
         }
