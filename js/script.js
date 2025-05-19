@@ -1,3 +1,29 @@
+// Variables globales
+const bellNotification = document.getElementById('bellNotification');
+const bellSound = document.getElementById('bellSound');
+
+// Función para mostrar notificación
+function showBellNotification() {
+  bellNotification.classList.remove('bell-hidden');
+  bellSound.currentTime = 0;
+  bellSound.play();
+  
+  // Ocultar después de 3 segundos
+  setTimeout(() => {
+    bellNotification.classList.add('bell-hidden');
+  }, 3000);
+}
+
+// Modificar la función verificarCarton()
+function verificarCarton() {
+  // ... (código existente)
+  
+  if (numerosFaltantes.length === 0) {
+    showBellNotification(); // <-- Añadir esta línea
+    // ... (resto del código)
+  }
+}
+
 let numerosSalidos = [];
         let numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1);
         let intervalo;
