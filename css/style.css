@@ -3,7 +3,7 @@
 #cartonesBingoContainer {
     margin-top: 20px;
     padding: 15px;
-    background-color: #daedff;
+    background-color: #f8f9fa;
     border-radius: 8px;
     max-width: 500px;
     margin-left: auto;
@@ -34,7 +34,7 @@
       
         /* Añade estos estilos en la sección <style> */
         .numeroVerificado {
-            background-color: #cc2312;
+            background-color: #e74c3c;
             font-size: 1.2em;
             width: 30px;
             height: 30px;
@@ -65,7 +65,7 @@
             text-align: center;
             margin: 0;
             padding: 0;
-            background-color: #ffffff;
+            background-color: #f4f4f4;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -118,10 +118,10 @@
             transition: background-color 0.3s;
         }
         .numeroCirculo.marcado {
-            background-color: #c61f0e;
+            background-color: #e74c3c;
         }
         .ultimoNumeroCirculo {
-            background-color: #e31500;
+            background-color: #e74c3c;
             font-size: 1.2em;
         }
         button {
@@ -129,7 +129,7 @@
             font-size: 1em;
             margin-top: 10px;
             cursor: pointer;
-            background-color: #061e2f;
+            background-color: #3498db;
             color: white;
             border: none;
             border-radius: 5px;
@@ -153,7 +153,7 @@
         #verificarNumeroContainer input {
             padding: 12px;
             font-size: 1.2em;
-            border: 1px solid #100303;
+            border: 1px solid #ccc;
             border-radius: 5px;
             width: 120px;
         }
@@ -183,10 +183,10 @@
             display: none;
         }
         #estadoJuego.enMarcha {
-            color: #0b331c;
+            color: #2ecc71;
         }
         #estadoJuego.pausado {
-            color: #3f0c07;
+            color: #e74c3c;
         }
         #botonesContainer {
             display: flex;
@@ -203,7 +203,7 @@
         #verificarCartonContainer input {
             padding: 12px;
             font-size: 1.2em;
-            border: 1px solid #210606;
+            border: 1px solid #ccc;
             border-radius: 5px;
             width: 120px;
         }
@@ -225,17 +225,4 @@
             font-size: 1.0em;
             color: #2c3e50;
         }
-  
-body {
-  margin: 0; /* Elimina márgenes por defecto */
-}
-.fixed-message {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  text-align: center;
-  background: white; /* Fondo para que el texto no se mezcle */
-  padding: 15px;
-  z-index: 9999; /* Para que esté por encima de TODO */
-}
+    
