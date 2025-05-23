@@ -18,47 +18,46 @@
     color: #000;
 }
 
-#cartonesBingoContainer {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #d2e0ed;
-    border-radius: 8px; /* Un solo border-radius */
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-#cartonesBingoContainer h3 {
-    margin-top: 0;
-    color: #2c3e50;
-}
-
+/* Contenedor principal de la lista de cartones con bingo */
 #listaCartonesBingo {
-    display: flex;
-    flex-direction: column; /* Los grupos se apilarán verticalmente */
-    gap: 8px; /* Espacio entre grupos de bingo */
+    display: flex;         /* Activa Flexbox para el layout */
+    flex-direction: row;   /* Los elementos se disponen en fila (horizontal) */
+    flex-wrap: wrap;       /* Permite que los elementos pasen a la siguiente línea si no hay espacio */
+    justify-content: center; /* Centra los cartones horizontalmente si hay espacio extra */
+    align-items: center;   /* Centra los cartones verticalmente (útil si tienen alturas diferentes) */
+    gap: 8px;              /* Espacio entre cada cartón con bingo */
+    padding: 10px;         /* Un poco de espacio interno en el contenedor */
     margin-top: 10px;
-    min-height: 30px; 
-}
-
-.bingo-group {
-    display: flex; /* Los cartones dentro del grupo se alinean horizontalmente */
-    flex-wrap: wrap;
-    gap: 6px; /* Espacio entre los números de cartón dentro del grupo */
-    padding: 8px;
+    min-height: 30px;      /* Altura mínima para que el contenedor sea visible incluso vacío */
+    border: 1px solid #e0e0e0; /* Un borde sutil para el área de la lista */
     border-radius: 6px;
-    border: 1px solid rgba(0,0,0,0.1); /* Borde sutil para el grupo */
+    background-color: #f9f9f9; /* Un fondo claro para el área de la lista */
 }
 
-.cartonBingo { 
-    background-color: #2ecc71; /* Verde para el cartón individual */
+/* Estilo para cada cartón individual en la lista de bingo */
+/* Asegúrate de que el nombre de la clase coincida con el que usas en tu script.js */
+/* Tu script original usaba 'carton-bingo' */
+.carton-bingo {
+    background-color: #2ecc71; /* Color verde que tenías */
     color: white;
-    padding: 6px 12px; /* Un poco más pequeño */
-    border-radius: 15px; /* Más redondeado */
+    padding: 8px 15px;      /* Espaciado interno del número de cartón */
+    border-radius: 20px;    /* Bordes redondeados */
     font-weight: bold;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    font-size: 0.9em; /* Ajustar tamaño si es necesario */
+    font-size: 0.9em;       /* Tamaño de fuente para el número del cartón */
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12); /* Sombra sutil */
+    /* display: inline-block; ya no es necesario si el padre es flex, pero no hace daño */
+    margin: 0; /* El 'gap' en el contenedor flex se encarga del espaciado */
 }
+
+/* Estilo para cuando la lista está vacía (el texto que pone JavaScript) */
+#listaCartonesBingo:empty {
+    padding: 15px;
+    text-align: center;
+    color: #757575;
+    font-style: italic;
+}
+
       
 .numeroVerificado { /* Bola que ha salido (en la verificación manual) */
     background-color: #e74c3c; 
@@ -180,7 +179,7 @@ button {
 }
 
 button:hover {
-    background-color: #1c5a80; 
+    background-color: #081b27; 
 }
 
 #botonesContainer {
