@@ -56,6 +56,17 @@
 <div id="mensajeVerificacionCarton"></div>
 </div>
 
+<div id="myCardsTrackerContainer" class="control-box">
+    <h3>Seguir Mis Cartones</h3>
+    <label for="myCardNumbersInput">Mis números de cartón (ej: 7, 15, 23):</label>
+    <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
+    <button onclick="trackMyCards()">Actualizar Mis Cartones</button>
+    <h4>Mis Cartones con Bingo:</h4>
+    <div id="myTrackedBingosList" class="bingo-list-display">---</div>
+</div>
+
+
+    
 <div id="cartonesBingoContainer" style="
     margin-top: 20px;
     padding: 20px;
@@ -81,18 +92,7 @@
 
 
     
-<h3>Cartones con Bingo:</h3>
-<div id="listaCartonesBingo" style="
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-">Ningún cartón tiene bingo todavía</div>
-    
+
 
 <div id="cartonesContainer">
 <div data-numeros="41, 73, 53, 24, 1, 61, 35, 27, 10, 4, 62, 67, 46, 29, 16" id="carton16"></div>
