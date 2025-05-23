@@ -238,8 +238,8 @@ body {
 }
 
 .numeroCirculo { /* Las 90 bolas del historial */
-    width: 28px; /* Ligeramente más pequeño */
-    height: 28px;
+    width: 29px; /* Ligeramente más pequeño */
+    height: 29px;
     border-radius: 50%;
     background-color: #05102e; 
     color: white;
