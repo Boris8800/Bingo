@@ -55,9 +55,116 @@
 <button onclick="verificarCarton()">Verificar</button>
 <div id="mensajeVerificacionCarton"></div>
 </div>
-<div id="cartonesBingoContainer">
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>🅑🅘🅝🅖🅞</title>
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+   <a href="https://boris8800.github.io/Bingo/" style="
+        position: fixed;
+        top: 1%;
+        left: 1%;
+        font-size: 2vw;
+        color: #000000;
+        background: rgb(229 241 249);
+        padding: 0.6% 1%;
+        border-radius: 1vw;
+        border: 1px solid #d10d0d;
+        z-index: 1000;
+        text-decoration: none;
+        font-weight: bold;
+        display: inline-block;
+        ">
+        🅑🅘🅝🅖🅞
+    </a>
+  
+<div id="voiceSettingsContainer">
+    <label for="voiceSelect">Seleccionar Voz:</label>
+    <select id="voiceSelect"></select>
+</div>
+
+<div id="numeroContainer">
+<div id="numero">--</div>
+</div>
+<div id="botonesContainer">
+<button id="reiniciarBtn" onclick="reiniciarJuego()">Reiniciar Juego</button>
+<button id="startStopBtn" onclick="startStop()">Comenzar</button>
+</div>
+<div id="historial">
+<div id="numerosContainer"></div>
+</div>
+<div id="ultimosNumeros">
+<p>Últimos 10 números:</p>
+<div id="ultimosNumerosContainer"></div>
+<div id="estadoJuego"></div>
+</div>
+
+<div id="verificarNumeroContainer" class="control-box">
+    <h3>Verificar Número</h3>
+    <input id="numeroVerificar" max="90" min="1" placeholder="Número" type="number"/>
+    <button onclick="verificarNumero()">Verificar</button>
+    <div id="mensajeVerificacion"></div>
+</div>
+
+<div id="verificarCartonContainer" class="control-box">
+    <h3>Verificar Cartón</h3>
+    <input id="cartonVerificar" min="1" placeholder="Cartón" type="number"/>
+    <button onclick="verificarCarton()">Verificar</button>
+    <div id="mensajeVerificacionCarton"></div>
+</div>
+
+<div id="myCardsTrackerContainer" class="control-box">
+    <h3>Seguir Mis Cartones</h3>
+    <label for="myCardNumbersInput">Mis números de cartón (ej: 7, 15, 23):</label>
+    <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
+    <button onclick="trackMyCards()">Actualizar Mis Cartones</button>
+    <h4>Mis Cartones con Bingo:</h4>
+    <div id="myTrackedBingosList" class="bingo-list-display">---</div>
+</div>
+<div id="cartonesBingoContainer" class="control-box"> <h3>Todos los Cartones con Bingo:</h3>
+    <div id="cartonesBingoContainer" style="
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #e9f1f9;
+    border-radius: 8px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+">
 <h3>Cartones con Bingo:</h3>
-<div id="listaCartonesBingo">Ningún cartón tiene bingo todavía</div>
+<div id="listaCartonesBingo" style="
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+">Ningún cartón tiene bingo todavía</div>
+</div>
+
+<div id="cartonesContainer">
+    <div data-numeros="41,73,53,24,1,61,35,27,10,4,62,67,46,29,16" id="carton16"></div>
+    <div data-numeros="9,18,36,61,77,13,24,46,65,90,28,32,50,75,89" id="carton42"></div>
+    <div data-numeros="10,11,12,13,14,20,21,22,23,24,30,31,32,33,34" id="carton30"></div> <div data-numeros="15,16,17,18,19,25,26,27,28,29,35,36,37,38,39" id="carton30_2"></div> <div data-numeros="6,27,56,43,69,15,32,58,75,82,2,29,47,64,90" id="carton22"></div> <div data-numeros="80,81,82,83,84,85,86,87,88,89,70,71,72,73,74" id="carton120"></div>
+    </div>
+
+<p></p><br/><div style="height: 100px;"></div><p></p>
+<br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+<br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+<br/><br/><br/>
+<a href="https://hitwebcounter.com" target="_blank">
+<img src="https://hitwebcounter.com/counter/counter.php?page=19376703&style=0007&nbdigits=6&type=page&initCount=0" title="Counter Widget" Alt="Visit counter For Websites"   border="0"></a>
+<script src="script.js"></script> 
+</body>
+</html>
 </div>
 <div id="cartonesContainer">
 <div data-numeros="41, 73, 53, 24, 1, 61, 35, 27, 10, 4, 62, 67, 46, 29, 16" id="carton16"></div>
