@@ -6,6 +6,23 @@ let enEjecucion = false;
 let juegoPausado = false; // Tu variable original
 let cartonesConBingo = []; // Tu variable original para la lista de bingos
 
+// ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
+function trackMyCards() {
+    const inputEl = document.getElementById('myCardNumbersInput');
+    if (!inputEl) {
+        console.error("Elemento 'myCardNumbersInput' no encontrado.");
+        return;
+    }
+    const inputText = inputEl.value;
+    myTrackedCardNumbers = inputText.split(',')
+        .map(numStr => parseInt(numStr.trim()))
+        .filter(num => !isNaN(num) && num > 0);
+    
+    actualizarMisCartonesBingoDisplay(); 
+    inputEl.value = myTrackedCardNumbers.join(', '); 
+}
+
+
 
 // Al principio de tu script.js, junto con otras variables globales:
 let myTrackedCardNumbers = []; // Almacena los números de los cartones que el usuario está siguiendo
