@@ -6,6 +6,106 @@ let enEjecucion = false;
 let juegoPausado = false; // Tu variable original
 let cartonesConBingo = []; // Tu variable original para la lista de bingos
 
+
+// Al principio de tu script.js, junto con otras variables globales:
+let myTrackedCardNumbers = []; // Almacena los números de los cartones que el usuario está siguiendo
+
+// --- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ---
+function trackMyCards() {
+    const inputEl = document.getElementById('myCardNumbersInput');
+    if (!inputEl) {
+        console.error("Elemento 'myCardNumbersInput' no encontrado.");
+        return;
+    }
+    const inputText = inputEl.value;
+    // Convertir el string de entrada en un array de números, filtrando no válidos
+    myTrackedCardNumbers = inputText.split(',')
+        .map(numStr => parseInt(numStr.trim()))
+        .filter(num => !isNaN(num) && num > 0);
+    
+    // console.log("Siguiendo cartones:", myTrackedCardNumbers); // Para depuración
+    actualizarMisCartonesBingoDisplay(); // Actualizar la lista inmediatamente
+    
+    // Opcional: reformatear el input para mostrar los números limpios
+    inputEl.value = myTrackedCardNumbers.join(', '); 
+}
+
+function actualizarMisCartonesBingoDisplay() {
+    const myTrackedListDiv = document.getElementById('myTrackedBingosList');
+    if (!myTrackedListDiv) {
+        // console.error("Elemento 'myTrackedBingosList' no encontrado.");
+        return;
+    }
+    myTrackedListDiv.innerHTML = ''; // Limpiar la lista anterior
+
+    // 'cartonesConBingo' es tu array global que ya contiene los IDs de los cartones con bingo
+    const misBingosEnJuego = cartonesConBingo.filter(cartonId => myTrackedCardNumbers.includes(cartonId));
+
+    if (misBingosEnJuego.length === 0) {
+        myTrackedListDiv.textContent = "---"; // Mensaje si ninguno de tus cartones tiene bingo
+        return;
+    }
+    
+    // Ordenar los IDs de tus cartones con bingo (opcional, pero bueno para consistencia)
+    misBingosEnJuego.sort((a,b) => a - b); 
+
+    misBingosEnJuego.forEach(cartonId => {
+        const elemento = document.createElement('span'); 
+        elemento.className = 'carton-bingo mis-cartones-bingo-item'; // Clase para estilo
+        elemento.textContent = `${cartonId}`; // Muestra solo el ID del cartón
+        myTrackedListDiv.appendChild(elemento);
+        // Añadir un espacio o un separador visual si se desea para mejor lectura
+        const separador = document.createTextNode(' '); 
+        myTrackedListDiv.appendChild(separador);
+    });
+}
+// --- FIN FUNCIONES "MIS CARTONES" ---
+
+// --- MODIFICACIONES A FUNCIONES EXISTENTES ---
+
+// Modifica tu función reiniciarJuego() para que también limpie la lista de "Mis Cartones con Bingo":
+// Busca tu función reiniciarJuego y añade la llamada a actualizarMisCartonesBingoDisplay()
+/* function reiniciarJuego() {
+       // ... tu código existente para reiniciar ...
+       numerosSalidos = [];
+       numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1);
+       cartonesConBingo = []; // Esto ya lo tienes y es correcto
+       // ... más código de reinicio ...
+       
+       actualizarListaBingos(); // Tu llamada existente
+       actualizarMisCartonesBingoDisplay(); // <--- AÑADE ESTA LÍNEA
+       actualizarEstadoJuego("listo"); 
+   }
+*/
+
+// Modifica tu función verificarTodosLosCartones() para que actualice la lista de "Mis Cartones con Bingo"
+// después de que se actualice la lista general de bingos.
+/*
+   function verificarTodosLosCartones() {
+       // ... tu lógica existente para llenar 'cartonesConBingo' ...
+       // (Asegúrate de que la línea "cartonesConBingo = [];" NO esté aquí, sino en reiniciarJuego)
+
+       elementosCartones.forEach(carton => {
+           // ... tu lógica para detectar un bingo y añadirlo a cartonesConBingo ...
+           if (faltantes.length === 0) {
+               if (!cartonesConBingo.includes(numeroCarton)) { 
+                   cartonesConBingo.push(numeroCarton);
+                   // algunBingoNuevo = true; // Si usas una bandera para actualizar solo si hay cambios
+               }
+           }
+       });
+
+       actualizarListaBingos(); // Tu llamada existente
+       actualizarMisCartonesBingoDisplay(); // <--- AÑADE ESTA LÍNEA
+   }
+*/
+
+
+
+
+
+
+
 // ---- Variables y Funciones para Selección de Voz ----
 let voices = [];
 let selectedVoice = null;
