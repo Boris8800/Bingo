@@ -1,15 +1,31 @@
+/* ... (Estilos existentes de antes) ... */
 
-  /* Añadir estos estilos */
+#seedDisplayContainer {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 0.9em;
+    color: #333;
+    border: 1px solid #ddd;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+#seedDisplayContainer strong {
+    font-family: 'Courier New', Courier, monospace;
+    color: #000;
+}
+
 #cartonesBingoContainer {
     margin-top: 20px;
     padding: 15px;
     background-color: #d2e0ed;
-    border-radius: 8px;
+    border-radius: 8px; /* Un solo border-radius */
     max-width: 500px;
     margin-left: auto;
     margin-right: auto;
-    border-radius: 20px;
-    
 }
 
 #cartonesBingoContainer h3 {
@@ -19,243 +35,245 @@
 
 #listaCartonesBingo {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
+    flex-direction: column; /* Los grupos se apilarán verticalmente */
+    gap: 8px; /* Espacio entre grupos de bingo */
     margin-top: 10px;
+    min-height: 30px; 
 }
 
-.cartonBingo {
-    background-color: #2ecc71;
+.bingo-group {
+    display: flex; /* Los cartones dentro del grupo se alinean horizontalmente */
+    flex-wrap: wrap;
+    gap: 6px; /* Espacio entre los números de cartón dentro del grupo */
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(0,0,0,0.1); /* Borde sutil para el grupo */
+}
+
+.cartonBingo { 
+    background-color: #2ecc71; /* Verde para el cartón individual */
     color: white;
-    padding: 8px 15px;
-    border-radius: 20px;
+    padding: 6px 12px; /* Un poco más pequeño */
+    border-radius: 15px; /* Más redondeado */
     font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    font-size: 0.9em; /* Ajustar tamaño si es necesario */
 }
       
-        /* Añade estos estilos en la sección <style> */
-        .numeroVerificado {
-            background-color: #e74c3c;
-            font-size: 1.2em;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            color: white;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin: 2px;
-            font-weight: bold;
-        }
+.numeroVerificado { /* Bola que ha salido (en la verificación manual) */
+    background-color: #e74c3c; 
+    font-size: 1.2em;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2px;
+    font-weight: bold;
+}
         
-        .numeroFaltante {
-            background-color: #05102e;
-            font-size: 1.2em;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            color: white;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin: 2px;
-            font-weight: bold;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        #numeroContainer {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            border: 5px solid #8B0000; /* Rojo oscuro */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 20px;
-        }
-        #numero {
-            font-size: 6em;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        #historial {
-            margin-top: 10px;
-            font-size: 1.2em;
-        }
-        #numerosContainer, #ultimosNumerosContainer {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 5px;
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 10px;
-        }
-        #ultimosNumerosContainer {
-            grid-template-columns: repeat(10, 1fr);
-            margin-top: 10px;
-        }
-       #numeroContainer {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            border: 5px solid #a51818; /* Rojo oscuro */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 20px;
-        }
-        #numero {
-            font-size: 6em;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        #historial {
-            margin-top: 10px;
-            font-size: 1.2em;
-        }
-        #numerosContainer, #ultimosNumerosContainer {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 5px;
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 10px;
-        }
-        #ultimosNumerosContainer {
-            grid-template-columns: repeat(10, 1fr);
-            margin-top: 10px;
-        }
-        .numeroCirculo {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background-color: #05102e;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.0em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .numeroCirculo.marcado {
-            background-color: #af1000;
-        }
-        .ultimoNumeroCirculo {
-            background-color: #8d1307;
-            font-size: 1.2em;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 1em;
-            margin-top: 10px;
-            cursor: pointer;
-            background-color: #0e324b;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            min-width: 150px;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        #ultimosNumeros {
-            margin-top: 35px;
-            font-size: 1.0em;
-            color: #2c3e50;
-        }
-        #ultimosNumeros p {
-            font-size: 1.0em;
-            margin: 5px 0;
-        }
-        #verificarNumeroContainer {
-            margin-top: 20px;
-        }
-        #verificarNumeroContainer input {
-            padding: 12px;
-            font-size: 1.2em;
-            border: 1px solid #270303;
-            border-radius: 5px;
-            width: 120px;
-        }
-        #verificarNumeroContainer button {
-            padding: 12px 24px;
-            font-size: 1.2em;
-            margin-left: 10px;
-            background-color: #170202;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #verificarNumeroContainer button:hover {
-            background-color: #114007;
-        }
-        #mensajeVerificacion {
-            margin-top: 30px;
-            font-size: 1.0em;
-            color: #2c3e50;
-        }
-        #estadoJuego {
-            margin-top: 15px;
-            font-size: 1.0em;
-            font-weight: bold;
-            color: #8B0000;
-            display: none;
-        }
-        #estadoJuego.enMarcha {
-            color: #04160c;
-        }
-        #estadoJuego.pausado {
-            color: #3b100b;
-        }
-        #botonesContainer {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        #cartonesContainer {
-            display: none; /* Ocultar el banco de datos de cartones */
-        }
-        #verificarCartonContainer {
-            margin-top: 20px;
-        }
-        #verificarCartonContainer input {
-            padding: 12px;
-            font-size: 1.2em;
-            border: 1px solid #290606;
-            border-radius: 5px;
-            width: 120px;
-        }
-        #verificarCartonContainer button {
-            padding: 12px 24px;
-            font-size: 1.2em;
-            margin-left: 10px;
-            background-color: #170202;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #verificarCartonContainer button:hover {
-            background-color: #114007;
-        }
-        #mensajeVerificacionCarton {
-            margin-top: 30px;
-            font-size: 1.0em;
-            color: #2c3e50;
-        }
-    
+.numeroFaltante { /* Bola que falta (en la verificación manual) */
+    background-color: #05102e; 
+    font-size: 1.2em;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2px;
+    font-weight: bold;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 20px; 
+    background-color: #f4f4f4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; 
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+#numeroContainer {
+    width: 180px; /* Un poco más pequeño */
+    height: 180px;
+    border-radius: 50%;
+    border: 5px solid #a51818; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 15px auto; 
+}
+
+#numero {
+    font-size: 5em; /* Un poco más pequeño */
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+#historial {
+    margin-top: 10px;
+    font-size: 1.2em; /* Este selector no parece usarse directamente */
+}
+
+#numerosContainer, #ultimosNumerosContainer { /* Contenedor de todas las bolas y de las últimas 10 */
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 5px;
+    max-width: 480px; 
+    margin: 10px auto; 
+    padding: 10px;
+    background-color: #e9ecef; 
+    border-radius: 8px;
+}
+
+#ultimosNumerosContainer {
+    margin-top: 10px;
+    background-color: #ddebf7; 
+}
+
+.numeroCirculo { /* Las 90 bolas del historial */
+    width: 28px; /* Ligeramente más pequeño */
+    height: 28px;
+    border-radius: 50%;
+    background-color: #05102e; 
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9em; /* Ligeramente más pequeño */
+    font-weight: bold;
+    cursor: default; 
+    transition: background-color 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.numeroCirculo.marcado {
+    background-color: #af1000; 
+}
+
+.ultimoNumeroCirculo { /* Las últimas 10 bolas */
+    background-color: #8d1307; 
+    font-size: 1.1em; 
+    border: 1px solid #fff; 
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 1em;
+    margin-top: 10px;
+    cursor: pointer;
+    background-color: #0e324b; 
+    color: white;
+    border: none;
+    border-radius: 5px;
+    min-width: 150px; 
+    transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+    background-color: #1c5a80; 
+}
+
+#botonesContainer {
+    display: flex;
+    gap: 10px; 
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap; 
+}
+
+
+#ultimosNumeros {
+    margin-top: 30px; /* Un poco menos de margen */
+    font-size: 1.0em;
+    color: #2c3e50;
+}
+
+#ultimosNumeros p {
+    font-size: 1.0em;
+    margin: 5px 0;
+    font-weight: bold;
+}
+
+#verificarNumeroContainer, #verificarCartonContainer {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa; 
+    border-radius: 8px;
+    max-width: 400px; 
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#verificarNumeroContainer input, #verificarCartonContainer input {
+    padding: 10px; /* Un poco menos de padding */
+    font-size: 1.1em; /* Un poco más pequeño */
+    border: 1px solid #ced4da; 
+    border-radius: 5px;
+    width: 100px; 
+    margin-bottom: 10px; 
+}
+
+#verificarNumeroContainer button, #verificarCartonContainer button {
+    padding: 10px 20px; /* Un poco menos de padding */
+    font-size: 1.1em; /* Un poco más pequeño */
+    margin-left: 8px; /* Un poco menos de margen */
+}
+
+#verificarNumeroContainer button:hover, #verificarCartonContainer button:hover {
+    background-color: #28a745; 
+}
+
+#mensajeVerificacion, #mensajeVerificacionCarton {
+    margin-top: 12px; 
+    font-size: 0.95em; /* Un poco más pequeño */
+    color: #2c3e50; 
+    min-height: 18px; 
+    line-height: 1.4; 
+}
+
+#estadoJuego {
+    margin-top: 15px;
+    padding: 10px;
+    font-size: 1.0em;
+    font-weight: bold;
+    color: #fff; 
+    border-radius: 5px;
+    display: none; 
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#estadoJuego.enMarcha { background-color: #28a745; color: white; }
+#estadoJuego.pausado { background-color: #dc3545; color: white; }
+#estadoJuego.listo { background-color: #ffc107; color: #212529; }
+#estadoJuego.finalizado { background-color: #6c757d; color: white; }
+#estadoJuego.pausadoInput { background-color: #6c757d; color: white; }
+
+
+#cartonesContainer { display: none; } /* Banco de datos de cartones oculto */
+
+@media (max-width: 600px) {
+    #seedDisplayContainer { max-width: 90%; font-size: 0.8em; }
+    #numeroContainer { width: 140px; height: 140px; }
+    #numero { font-size: 3.5em; }
+    #numerosContainer, #ultimosNumerosContainer { grid-template-columns: repeat(5, 1fr); max-width: 95%; gap: 3px; }
+    .numeroCirculo { width: 24px; height: 24px; font-size: 0.75em; }
+    button { font-size: 0.9em; padding: 8px 15px; min-width: 120px; }
+    #verificarNumeroContainer input, #verificarCartonContainer input { font-size: 1em; width: 80px; padding: 8px; }
+    #verificarNumeroContainer button, #verificarCartonContainer button { font-size: 1em; padding: 8px 15px; }
+    #listaCartonesBingo { gap: 5px; }
+    .bingo-group { padding: 5px; gap: 4px; }
+    .cartonBingo { padding: 5px 10px; font-size: 0.8em; }
+}
