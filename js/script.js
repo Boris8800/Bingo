@@ -1,375 +1,502 @@
-/* ... (Estilos existentes de antes) ... */
+// ---- Variables Globales del Juego ----
+let numerosSalidos = [];
+let numerosDisponibles = []; // Se inicializa en reiniciarJuego
+let intervalo;
+let enEjecucion = false;
+let juegoPausado = false; 
+let cartonesConBingo = []; 
 
-#seedDisplayContainer {
-    margin-bottom: 15px;
-    padding: 10px;
-    background-color: #f0f0f0;
-    border-radius: 5px;
-    text-align: center;
-    font-size: 0.9em;
-    color: #333;
-    border: 1px solid #ddd;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-}
-#seedDisplayContainer strong {
-    font-family: 'Courier New', Courier, monospace;
-    color: #000;
-}
+// ---- Variables para Selección de Voz ----
+let voices = [];
+let selectedVoice = null;
 
+// ---- Variables para Nuevas Funcionalidades ----
+let myTrackedCardNumbers = []; 
+const bingoAudio = new Audio('bingo-sound.mp3'); // !!! CAMBIA 'bingo-sound.mp3' !!!
+                                                // por la ruta a tu archivo de sonido.
+bingoAudio.preload = 'auto';
 
+// ---- Funciones para Selección de Voz ----
+function populateVoiceList() {
+    if (typeof speechSynthesis === 'undefined') {
+        console.warn("API de Voz no soportada.");
+        const voiceSelectContainer = document.getElementById('voiceSettingsContainer');
+        if (voiceSelectContainer) voiceSelectContainer.style.display = 'none';
+        return;
+    }
+    
+    voices = speechSynthesis.getVoices();
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (!voiceSelect) {
+        // console.error("Elemento 'voiceSelect' no encontrado."); 
+        return;
+    }
+    
+    const previouslySelectedURI = selectedVoice ? selectedVoice.voiceURI : (voiceSelect.value || '');
+    voiceSelect.innerHTML = ''; 
 
-/* Contenedor para "Seguir Mis Cartones" */
-#myCardsTrackerContainer {
-    /* Heredará el estilo de .control-box si le aplicas esa clase en el HTML */
-    /* Si no, puedes copiar los estilos de .control-box aquí */
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #fff;
-    border-radius: 8px;
-    min-width: 340px;
-    max-width: 480px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-    border: 1px solid #e0e0e0;
-}
+    const defaultOption = document.createElement('option');
+    defaultOption.textContent = 'Voz por defecto del navegador';
+    defaultOption.value = ''; 
+    voiceSelect.appendChild(defaultOption);
 
-#myCardsTrackerContainer h3 {
-    margin-top: 0; 
-    margin-bottom: 15px; 
-    color: #2c3e50; /* O un color temático para esta sección */
-    text-align: center; 
-    font-size: 1.2em;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-}
-
-#myCardsTrackerContainer label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 500;
-    font-size: 0.9em;
-    color: #555;
-    text-align: left;
-}
-
-#myCardsTrackerContainer input[type="text"] {
-    width: calc(100% - 22px); /* Ocupar ancho disponible menos padding del input */
-    padding: 9px; 
-    margin-bottom: 10px;
-    border: 1px solid #ccc; 
-    border-radius: 4px;
-    font-size: 0.95em;
-    box-sizing: border-box; 
+    voices.forEach((voice) => {
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        option.value = voice.voiceURI; 
+        voiceSelect.appendChild(option);
+    });
+    
+    if (previouslySelectedURI) {
+        const optionToSelect = Array.from(voiceSelect.options).find(opt => opt.value === previouslySelectedURI);
+        if (optionToSelect) {
+            optionToSelect.selected = true;
+        } else if (voiceSelect.options.length > 0) {
+             voiceSelect.options[0].selected = true; 
+             selectedVoice = null; 
+        }
+    } else if (voiceSelect.options.length > 0) {
+         voiceSelect.options[0].selected = true;
+         selectedVoice = null;
+    }
 }
 
-#myCardsTrackerContainer button { 
-    display: block; 
-    width: auto; /* O '100%' si quieres que ocupen todo el ancho */
-    margin: 10px auto 0 auto; /* Centrar botón */
-    padding: 9px 18px;
-    background-color: #FF9800; /* Un color distintivo para este botón */
-    color: white;
-    /* Otros estilos de botón se heredan o se definen en la regla 'button' general */
+function setVoice() {
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (!voiceSelect || !voiceSelect.value) { 
+        selectedVoice = null; 
+        return;
+    }
+    selectedVoice = voices.find(voice => voice.voiceURI === voiceSelect.value);
+    if (!selectedVoice) selectedVoice = null;
 }
-#myCardsTrackerContainer button:hover {
-    background-color: #F57C00;
-}
+// ---- FIN FUNCIONES DE VOZ ----
 
-#myCardsTrackerContainer h4 {
-    margin-top: 15px;
-    margin-bottom: 5px;
-    color: #555; /* O el color del h3 */
-    font-size: 1em;
-    text-align: left;
-}
-
-#myTrackedBingosList { /* La lista de tus cartones con bingo */
-    padding: 10px;
-    background-color: #fff9e6; /* Un fondo amarillo muy pálido */
-    border: 1px dashed #ffcc80; /* Borde naranja discontinuo */
-    border-radius: 4px;
-    min-height: 22px;
-    text-align: left; 
-    font-size: 0.9em;
-    display: flex; /* Para que los spans se pongan en línea */
-    flex-wrap: wrap; /* Para que se ajusten */
-    gap: 5px; /* Espacio entre los cartones */
+// ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
+function trackMyCards() {
+    const inputEl = document.getElementById('myCardNumbersInput');
+    if (!inputEl) {
+        console.error("Elemento 'myCardNumbersInput' no encontrado.");
+        return; // Salir si el input no existe
+    }
+    const inputText = inputEl.value;
+    myTrackedCardNumbers = inputText.split(',')
+        .map(numStr => parseInt(numStr.trim()))
+        .filter(num => !isNaN(num) && num > 0);
+    
+    actualizarMisCartonesBingoDisplay(); 
+    inputEl.value = myTrackedCardNumbers.join(', '); 
 }
 
-/* Estilo para cada uno de tus cartones con bingo en tu lista de seguimiento */
-.mis-cartones-bingo-item { 
-    background-color: #FFB74D !important; /* Naranja claro para tus bingos */
-    color: #424242 !important; /* Texto oscuro para contraste */
-    padding: 4px 8px;
-    border-radius: 12px;
-    /* display: inline-block; /* No es necesario si el padre es flex */
-    font-weight: 500;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+function actualizarMisCartonesBingoDisplay() {
+    const myTrackedListDiv = document.getElementById('myTrackedBingosList');
+    if (!myTrackedListDiv) return;
+    myTrackedListDiv.innerHTML = '';
+
+    const misBingosEnJuego = cartonesConBingo.filter(cartonId => myTrackedCardNumbers.includes(cartonId));
+
+    if (misBingosEnJuego.length === 0) {
+        myTrackedListDiv.textContent = "---";
+        return;
+    }
+    
+    misBingosEnJuego.sort((a,b) => a - b); 
+
+    misBingosEnJuego.forEach(cartonId => {
+        const elemento = document.createElement('span'); 
+        elemento.className = 'carton-bingo mis-cartones-bingo-item'; 
+        elemento.textContent = `${cartonId}`; 
+        myTrackedListDiv.appendChild(elemento);
+        myTrackedListDiv.appendChild(document.createTextNode(' ')); 
+    });
+}
+// ---- FIN FUNCIONES "MIS CARTONES" ----
+
+// ---- FUNCIONES PRINCIPALES DEL JUEGO ----
+function reiniciarJuego() { 
+    numerosSalidos = [];
+    numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1);
+    cartonesConBingo = []; 
+
+    const numeroDisplay = document.getElementById('numero');
+    if(numeroDisplay) numeroDisplay.textContent = '--';
+    
+    const circulos = document.querySelectorAll('#numerosContainer .numeroCirculo');
+    circulos.forEach(circulo => circulo.classList.remove('marcado'));
+    
+    if(intervalo) clearInterval(intervalo);
+    const startStopBtn = document.getElementById('startStopBtn');
+    if(startStopBtn) startStopBtn.textContent = 'Comenzar';
+    
+    enEjecucion = false;
+    juegoPausado = false; 
+    
+    actualizarUltimosNumeros();
+    limpiarMensajeVerificacion(); 
+    const msgCarton = document.getElementById('mensajeVerificacionCarton');
+    if(msgCarton) msgCarton.textContent = "";
+    
+    actualizarListaBingos(); 
+    actualizarMisCartonesBingoDisplay(); 
+    actualizarEstadoJuego("listo"); 
 }
 
+function startStop() {
+    const startStopBtn = document.getElementById('startStopBtn');
+    if (!startStopBtn) return;
 
-
-
-
-
-
-
-/* Contenedor principal de la lista de cartones con bingo */
-#listaCartonesBingo {
-    display: flex;         /* Activa Flexbox para el layout */
-    flex-direction: row;   /* Los elementos se disponen en fila (horizontal) */
-    flex-wrap: wrap;       /* Permite que los elementos pasen a la siguiente línea si no hay espacio */
-    justify-content: center; /* Centra los cartones horizontalmente si hay espacio extra */
-    align-items: center;   /* Centra los cartones verticalmente (útil si tienen alturas diferentes) */
-    gap: 8px;              /* Espacio entre cada cartón con bingo */
-    padding: 10px;         /* Un poco de espacio interno en el contenedor */
-    margin-top: 10px;
-    min-height: 30px;      /* Altura mínima para que el contenedor sea visible incluso vacío */
-    border: 1px solid #e0e0e0; /* Un borde sutil para el área de la lista */
-    border-radius: 6px;
-    background-color: #f9f9f9; /* Un fondo claro para el área de la lista */
-}
-
-/* Estilo para cada cartón individual en la lista de bingo */
-/* Asegúrate de que el nombre de la clase coincida con el que usas en tu script.js */
-/* Tu script original usaba 'carton-bingo' */
-.carton-bingo {
-    background-color: #2ecc71; /* Color verde que tenías */
-    color: white;
-    padding: 8px 15px;      /* Espaciado interno del número de cartón */
-    border-radius: 20px;    /* Bordes redondeados */
-    font-weight: bold;
-    font-size: 0.9em;       /* Tamaño de fuente para el número del cartón */
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12); /* Sombra sutil */
-    /* display: inline-block; ya no es necesario si el padre es flex, pero no hace daño */
-    margin: 0; /* El 'gap' en el contenedor flex se encarga del espaciado */
-}
-
-/* Estilo para cuando la lista está vacía (el texto que pone JavaScript) */
-#listaCartonesBingo:empty {
-    padding: 15px;
-    text-align: center;
-    color: #757575;
-    font-style: italic;
-}
-
-      
-.numeroVerificado { /* Bola que ha salido (en la verificación manual) */
-    background-color: #e74c3c; 
-    font-size: 1.2em;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    color: white;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 2px;
-    font-weight: bold;
-}
+    if (enEjecucion) {
+        clearInterval(intervalo);
+        startStopBtn.textContent = 'Comenzar';
+        enEjecucion = false;
+        actualizarEstadoJuego("pausado");
+    } else {
+        if (numerosDisponibles.length === 0) { 
+            alert("¡Todos los números han sido llamados! Reinicia el juego.");
+            actualizarEstadoJuego("finalizado");
+            return;
+        }
+        if (window.speechSynthesis) {
+            const mensaje = new SpeechSynthesisUtterance("Empezamos");
+            if (selectedVoice) {
+                mensaje.voice = selectedVoice;
+                mensaje.lang = selectedVoice.lang;
+            } else {
+                mensaje.lang = 'es-ES';
+            }
+            window.speechSynthesis.speak(mensaje);
+        }
         
-.numeroFaltante { /* Bola que falta (en la verificación manual) */
-    background-color: #05102e; 
-    font-size: 1.2em;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    color: white;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 2px;
-    font-weight: bold;
+        enEjecucion = true; 
+        startStopBtn.textContent = 'Detener';
+        actualizarEstadoJuego("enMarcha");
+        limpiarMensajeVerificacion(); 
+
+        setTimeout(() => {
+            if (enEjecucion) { 
+                intervalo = setInterval(siguienteNumero, 3000);
+            }
+        }, 100); 
+    }
 }
 
-body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin: 0;
-    padding: 20px;
-    background-color: #ffffff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    min-height: 100vh;
-    box-sizing: border-box;
+function siguienteNumero() {
+    if (numerosDisponibles.length === 0) {
+        alert("¡Todos los números han sido llamados!");
+        clearInterval(intervalo);
+        const startStopBtn = document.getElementById('startStopBtn');
+        if(startStopBtn) startStopBtn.textContent = 'Comenzar';
+        enEjecucion = false;
+        actualizarEstadoJuego("finalizado"); 
+        return;
+    }
+
+    const indice = Math.floor(Math.random() * numerosDisponibles.length);
+    const numero = numerosDisponibles.splice(indice, 1)[0];
+    numerosSalidos.push(numero);
+
+    const numeroDisplay = document.getElementById('numero');
+    if(numeroDisplay) numeroDisplay.textContent = numero;
+    
+    marcarNumero(numero);
+    actualizarUltimosNumeros();
+    anunciarNumero(numero);
+    verificarTodosLosCartones(); 
 }
 
-#numeroContainer {
-    width: 180px; /* Un poco más pequeño */
-    height: 180px;
-    border-radius: 50%;
-    border: 5px solid #a51818; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 15px auto; 
+function anunciarNumero(numero) {
+    if (window.speechSynthesis) {
+        const mensaje = new SpeechSynthesisUtterance(numero.toString());
+        if (selectedVoice) {
+            mensaje.voice = selectedVoice;
+            mensaje.lang = selectedVoice.lang; 
+        } else {
+            mensaje.lang = 'es-ES'; 
+        }
+        window.speechSynthesis.cancel(); 
+        window.speechSynthesis.speak(mensaje);
+    }
 }
 
-#numero {
-    font-size: 5em; /* Un poco más pequeño */
-    font-weight: bold;
-    color: #2c3e50;
+function marcarNumero(numero) {
+    const circulo = document.getElementById(`numero${numero}`);
+    if (circulo) circulo.classList.add('marcado');
 }
 
-#historial {
-    margin-top: 10px;
-    font-size: 1.2em; /* Este selector no parece usarse directamente */
+function actualizarUltimosNumeros() {
+    const ultimosNumerosContainer = document.getElementById('ultimosNumerosContainer');
+    if (!ultimosNumerosContainer) return;
+    const ultimos10 = numerosSalidos.slice(-10);
+    ultimosNumerosContainer.innerHTML = '';
+    ultimos10.forEach(numero => {
+        const circulo = document.createElement('div');
+        circulo.classList.add('numeroCirculo', 'ultimoNumeroCirculo');
+        circulo.textContent = numero;
+        ultimosNumerosContainer.appendChild(circulo);
+    });
 }
 
-#numerosContainer, #ultimosNumerosContainer { /* Contenedor de todas las bolas y de las últimas 10 */
-    display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    gap: 5px;
-    max-width: 980px; 
-    margin: 10px auto; 
-    padding: 10px;
-    background-color: #e9ecef; 
-    border-radius: 1px;
+function verificarNumero() {
+    const numeroVerificar = document.getElementById('numeroVerificar');
+    const mensajeVerificacion = document.getElementById('mensajeVerificacion');
+    if(!numeroVerificar || !mensajeVerificacion) return;
+    const numero = parseInt(numeroVerificar.value);
+    if (isNaN(numero) || numero < 1 || numero > 90) {
+        mensajeVerificacion.innerHTML = "Por favor, ingresa un número válido (1-90).";
+        mensajeVerificacion.style.color = "red";
+    } else if (numerosSalidos.includes(numero)) {
+        mensajeVerificacion.innerHTML = `✅ El número <span class="numeroVerificado">${numero}</span> ha salido.`;
+        mensajeVerificacion.style.color = "green";
+        marcarNumero(numero);
+    } else {
+        mensajeVerificacion.innerHTML = `❌ El número <span class="numeroFaltante">${numero}</span> no ha salido.`;
+        mensajeVerificacion.style.color = "red";
+    }
+    if(numeroVerificar) numeroVerificar.value = "";
+    if(numeroVerificar) numeroVerificar.focus();
 }
 
-#ultimosNumerosContainer {
-    margin-top: 10px;
-    background-color: #ddebf7; 
+function verificarCarton() {
+    const cartonVerificar = document.getElementById('cartonVerificar');
+    const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
+    if (!cartonVerificar || !mensajeVerificacionCarton) return;
+    
+    const numeroCartonInput = cartonVerificar.value;
+    const numeroCarton = parseInt(numeroCartonInput.replace(/[^0-9]/g, ''));
+
+    if (isNaN(numeroCarton)) {
+         mensajeVerificacionCarton.innerHTML = "Ingresa un número de cartón válido.";
+         mensajeVerificacionCarton.style.color = "red";
+    } else {
+        const cartonElement = document.getElementById(`carton${numeroCarton}`); 
+        if (!cartonElement || !cartonElement.getAttribute('data-numeros')) {
+            mensajeVerificacionCarton.innerHTML = `❌ Cartón ${numeroCarton} no encontrado o inválido.`;
+            mensajeVerificacionCarton.style.color = "red";
+        } else {
+            const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
+            if (!numerosEnCartonAttr || numerosEnCartonAttr.trim() === "") { 
+                mensajeVerificacionCarton.innerHTML = `❌ Cartón ${numeroCarton} no tiene números definidos.`;
+                mensajeVerificacionCarton.style.color = "red";
+            } else {
+                const numerosEnCarton = numerosEnCartonAttr.split(',').map(Number).filter(n => n > 0 && !isNaN(n));
+                const faltantes = numerosEnCarton.filter(num => !numerosSalidos.includes(num));
+                const numerosSalidosEnCarton = numerosEnCarton.filter(num => numerosSalidos.includes(num));
+
+                if (numerosEnCarton.length > 0 && faltantes.length === 0) {
+                    mensajeVerificacionCarton.innerHTML = `✅ ¡Bingo! Cartón ${numeroCarton} completo: ` + 
+                        numerosSalidosEnCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
+                    mensajeVerificacionCarton.style.color = "green";
+                    if (window.speechSynthesis) {
+                        const msg = new SpeechSynthesisUtterance(`Bingo. El cartón número ${numeroCarton} tiene bingo`);
+                        if (selectedVoice) {
+                            msg.voice = selectedVoice;
+                            msg.lang = selectedVoice.lang;
+                        } else {
+                            msg.lang = 'es-ES';
+                        }
+                        window.speechSynthesis.speak(msg);
+                    }
+                    if (!cartonesConBingo.includes(numeroCarton)) { 
+                        try { bingoAudio.currentTime = 0; bingoAudio.play().catch(e => console.warn("Error al reproducir sonido (verif. manual):", e)); } 
+                        catch (e) { console.warn("Excepción al reproducir sonido (verif. manual):", e); }
+                    }
+                } else if (numerosEnCarton.length === 0) {
+                    mensajeVerificacionCarton.innerHTML = `ℹ️ Cartón ${numeroCarton} sin números válidos.`;
+                    mensajeVerificacionCarton.style.color = "orange";
+                } else {
+                    mensajeVerificacionCarton.innerHTML = `Cartón ${numeroCarton}:<br>
+                        ❌Faltan: ` + faltantes.map(num => `<span class="numeroFaltante">${num}</span>`).join(' ') + `<br>
+                        ✅Salieron: ` + numerosSalidosEnCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
+                    mensajeVerificacionCarton.style.color = "red";
+                }
+            }
+        }
+    }
+    if(cartonVerificar) {
+        cartonVerificar.value = "";
+        cartonVerificar.focus();
+    }
 }
 
-.numeroCirculo { /* Las 90 bolas del historial */
-    width: 28px; /* Ligeramente más pequeño */
-    height: 28px;
-    border-radius: 50%;
-    background-color: #05102e;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9em; /* Ligeramente más pequeño */
-    font-weight: bold;
-    cursor: default;
-    transition: background-color 0.3s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+// Eventos focus/blur
+const numeroVerificarInputEl = document.getElementById('numeroVerificar');
+const cartonVerificarInputEl = document.getElementById('cartonVerificar');
+const startStopBtnEl = document.getElementById('startStopBtn'); 
+
+if (cartonVerificarInputEl) {
+    cartonVerificarInputEl.addEventListener('blur', () => {
+        if (juegoPausado && startStopBtnEl) {
+            intervalo = setInterval(siguienteNumero, 3000);
+            enEjecucion = true;
+            juegoPausado = false;
+            startStopBtnEl.textContent = 'Detener';
+            actualizarEstadoJuego("enMarcha");
+        }
+        const msgCarton = document.getElementById('mensajeVerificacionCarton');
+        if(msgCarton) msgCarton.textContent = "";
+    });
+    cartonVerificarInputEl.addEventListener('focus', () => {
+        if (enEjecucion && startStopBtnEl) {
+            clearInterval(intervalo);
+            juegoPausado = true;
+            startStopBtnEl.textContent = 'Comenzar';
+            enEjecucion = false; 
+            actualizarEstadoJuego("pausadoInput");
+        }
+    });
+}
+if (numeroVerificarInputEl) {
+    numeroVerificarInputEl.addEventListener('focus', () => {
+        if (enEjecucion && startStopBtnEl) {
+            clearInterval(intervalo);
+            juegoPausado = true;
+            startStopBtnEl.textContent = 'Comenzar';
+            enEjecucion = false;
+            actualizarEstadoJuego("pausadoInput");
+        }
+    });
+    numeroVerificarInputEl.addEventListener('blur', function() {
+        limpiarMensajeVerificacion();
+        if (juegoPausado && startStopBtnEl) {
+            intervalo = setInterval(siguienteNumero, 3000);
+            enEjecucion = true;
+            juegoPausado = false;
+            startStopBtnEl.textContent = 'Detener';
+            actualizarEstadoJuego("enMarcha");
+        }
+    });
+}
+document.addEventListener('click', function(event) {
+    const msgVerificacion = document.getElementById('mensajeVerificacion');
+    const msgCarton = document.getElementById('mensajeVerificacionCarton');
+    if (msgVerificacion && !event.target.closest('#verificarNumeroContainer')) {
+        limpiarMensajeVerificacion();
+    }
+    if (msgCarton && !event.target.closest('#verificarCartonContainer')) {
+        msgCarton.textContent = "";
+    }
+});
+
+function actualizarEstadoJuego(estado) {
+    const estadoJuegoDiv = document.getElementById('estadoJuego');
+    if (!estadoJuegoDiv) return;
+    estadoJuegoDiv.style.display = 'block';
+    switch (estado) {
+        case "enMarcha": estadoJuegoDiv.textContent = "✅ Juego en marcha ✅"; estadoJuegoDiv.className = "enMarcha"; break;
+        case "pausado": estadoJuegoDiv.textContent = "❌ Juego pausado ❌"; estadoJuegoDiv.className = "pausado"; break;
+        case "listo": estadoJuegoDiv.textContent = "ℹ️ Juego listo. ¡Presiona Comenzar! ℹ️"; estadoJuegoDiv.className = "listo"; break;
+        case "finalizado": estadoJuegoDiv.textContent = "🏁 ¡Juego finalizado! 🏁"; estadoJuegoDiv.className = "finalizado"; break;
+        case "pausadoInput": estadoJuegoDiv.textContent = "⌨️ Pausa (input activo) ⌨️"; estadoJuegoDiv.className = "pausadoInput"; break;
+        default: estadoJuegoDiv.textContent = estado; estadoJuegoDiv.className = estado; 
+    }
 }
 
-.numeroCirculo.marcado {
-    background-color: #af1000; 
+function limpiarMensajeVerificacion() {
+    const mensajeVerificacion = document.getElementById('mensajeVerificacion');
+    if (mensajeVerificacion) {
+        mensajeVerificacion.innerHTML = ''; 
+        mensajeVerificacion.style.color = ''; 
+    }
 }
 
-.ultimoNumeroCirculo { /* Las últimas 10 bolas */
-    background-color: #8d1307;
-    font-size: 1.2em;
-    border: 1px solid #fff;
+// --- Lógica de Bingo (General - basada en tu script original, corregida y con sonido) ---
+function verificarTodosLosCartones() {
+    const elementosCartones = document.querySelectorAll('#cartonesContainer > div[id^="carton"]');
+    let algunBingoNuevoEsteTurno = false;
+
+    elementosCartones.forEach(cartonElement => {
+        const idCompleto = cartonElement.id;
+        const match = idCompleto.match(/^carton(\d+)$/);
+        if (!match || !match[1]) return; 
+        const numeroCarton = parseInt(match[1]);
+
+        if (cartonesConBingo.includes(numeroCarton)) { 
+            return; 
+        }
+        
+        const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
+        if (numerosEnCartonAttr && numerosEnCartonAttr.trim() !== "") {
+            const numerosEnCarton = numerosEnCartonAttr.split(',').map(Number).filter(n => n > 0 && !isNaN(n));
+            if (numerosEnCarton.length > 0) { 
+                const faltantes = numerosEnCarton.filter(num => !numerosSalidos.includes(num));
+                if (faltantes.length === 0) { 
+                    if (!cartonesConBingo.includes(numeroCarton)) { 
+                        cartonesConBingo.push(numeroCarton);
+                        algunBingoNuevoEsteTurno = true;
+                    }
+                }
+            }
+        }
+    });
+
+    if (algunBingoNuevoEsteTurno) {
+        try {
+            bingoAudio.currentTime = 0; 
+            bingoAudio.play().catch(e => console.warn("Error al reproducir sonido de bingo:", e));
+        } catch (e) {
+            console.warn("Excepción al reproducir sonido de bingo (general):", e);
+        }
+    }
+
+    actualizarListaBingos();
+    actualizarMisCartonesBingoDisplay(); 
 }
 
-button {
-    padding: 10px 20px;
-    font-size: 1em;
-    margin-top: 10px;
-    cursor: pointer;
-    background-color: #0e324b; 
-    color: white;
-    border: none;
-    border-radius: 5px;
-    min-width: 150px; 
-    transition: background-color 0.2s ease-in-out;
+function actualizarListaBingos() { 
+    const lista = document.getElementById('listaCartonesBingo');
+    if(!lista) return;
+    lista.innerHTML = '';
+    
+    if (cartonesConBingo.length === 0) {
+        lista.textContent = "Ningún cartón tiene bingo todavía";
+        return;
+    }
+    
+    cartonesConBingo.sort((a,b) => a - b); 
+    cartonesConBingo.forEach(numero => {
+        const elemento = document.createElement('div');
+        elemento.className = 'carton-bingo'; 
+        elemento.textContent = `${numero}`;
+        lista.appendChild(elemento);
+    });
 }
+// --- FIN Lógica de Bingo ---
 
-button:hover {
-    background-color: #081b27; 
-}
+// --- INICIALIZACIÓN DEL JUEGO ---
+window.onload = () => {
+    const numerosContainer = document.getElementById('numerosContainer');
+    if (numerosContainer) {
+        for (let i = 1; i <= 90; i++) {
+            const circulo = document.createElement('div');
+            circulo.classList.add('numeroCirculo');
+            circulo.textContent = i;
+            circulo.id = `numero${i}`;
+            numerosContainer.appendChild(circulo);
+        }
+    } else {
+        console.error("Elemento 'numerosContainer' no encontrado.");
+    }
 
-#botonesContainer {
-    display: flex;
-    gap: 10px; 
-    justify-content: center;
-    margin-top: 20px;
-    flex-wrap: wrap; 
-}
-
-
-#ultimosNumeros {
-    margin-top: 30px; /* Un poco menos de margen */
-    /* font-size: 1.0em; */
-    color: #2c3e50;
-}
-
-#ultimosNumeros p {
-    font-size: 1.0em;
-    margin: 5px 0;
-    font-weight: bold;
-}
-
-#verificarNumeroContainer, #verificarCartonContainer {
-    margin-top: 10px;
-    background-color: #e9f1f9;
-    border-radius: 9px;
-    min-width: 340px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-#verificarNumeroContainer input, #verificarCartonContainer input {
-    padding: 10px; /* Un poco menos de padding */
-    font-size: 1.1em; /* Un poco más pequeño */
-    border: 1px solid #ced4da; 
-    border-radius: 5px;
-    width: 100px; 
-    margin-bottom: 10px; 
-}
-
-#verificarNumeroContainer button, #verificarCartonContainer button {
-    padding: 10px 20px; /* Un poco menos de padding */
-    font-size: 1.1em; /* Un poco más pequeño */
-    margin-left: 8px; /* Un poco menos de margen */
-}
-
-#verificarNumeroContainer button:hover, #verificarCartonContainer button:hover {
-    background-color: #28a745; 
-}
-
-#mensajeVerificacion, #mensajeVerificacionCarton {
-    font-size: 0.95em; /* Un poco más pequeño */
-    color: #2c3e50;
-    min-height: 11px;
-    line-height: 1.3;
-}
-
-#estadoJuego {
-    margin-top: 15px;
-    padding: 10px;
-    font-size: 1.0em;
-    font-weight: bold;
-    color: #fff; 
-    border-radius: 5px;
-    display: none; 
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-#estadoJuego.enMarcha { background-color: #28a745; color: white; }
-#estadoJuego.pausado { background-color: #dc3545; color: white; }
-#estadoJuego.listo { background-color: #ffc107; color: #212529; }
-#estadoJuego.finalizado { background-color: #6c757d; color: white; }
-#estadoJuego.pausadoInput { background-color: #6c757d; color: white; }
-
-
-#cartonesContainer { display: none; } /* Banco de datos de cartones oculto */
-
-@media (max-width: 600px) {
-    #seedDisplayContainer { max-width: 90%; font-size: 0.8em; }
-    #numeroContainer { width: 140px; height: 140px; }
-    #numero { font-size: 3.5em; }
-    #numerosContainer, #ultimosNumerosContainer { grid-template-columns: repeat(10, 1fr); max-width: 95%; gap: 3px; }
-    .numeroCirculo { width: 24px; height: 24px; font-size: 0.75em; }
-    button { font-size: 0.9em; padding: 8px 15px; min-width: 120px; }
-    #verificarNumeroContainer input, #verificarCartonContainer input { font-size: 1em; width: 80px; padding: 8px; }
-    #verificarNumeroContainer button, #verificarCartonContainer button { font-size: 1em; padding: 8px 15px; }
-    #listaCartonesBingo { gap: 5px; }
-    .bingo-group { padding: 5px; gap: 4px; }
-    .cartonBingo { padding: 5px 10px; font-size: 0.8em; }
-}
+    if (typeof speechSynthesis !== 'undefined') {
+        if (speechSynthesis.getVoices().length === 0) {
+            speechSynthesis.onvoiceschanged = () => {
+                populateVoiceList();
+                const voiceSelectElement = document.getElementById('voiceSelect');
+                 if (voiceSelectElement && !voiceSelectElement.onchange) { 
+                    voiceSelectElement.addEventListener('change', setVoice);
+                }
+            };
+        } else {
+            populateVoiceList(); 
+            const voiceSelectElement = document.getElementById('voiceSelect');
+            if (voiceSelectElement) {
+                voiceSelectElement.addEventListener('change', setVoice);
+            }
+        }
+    } else {
+        const voiceSettingsContainer = document.getElementById('voiceSettingsContainer');
+        if (voiceSettingsContainer) voiceSettingsContainer.style.display = 'none';
+    }
+    
+    reiniciarJuego(); 
+};

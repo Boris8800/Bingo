@@ -28,7 +28,7 @@
     padding: 15px;
     background-color: #fff;
     border-radius: 8px;
-    min-width: 300px;
+    min-width: 340px;
     max-width: 480px;
     margin-left: auto;
     margin-right: auto;
@@ -47,6 +47,7 @@
 }
 
 #myCardsTrackerContainer label {
+    display: block;
     margin-bottom: 6px;
     font-weight: 500;
     font-size: 0.9em;
@@ -305,7 +306,7 @@ button:hover {
     margin-top: 10px;
     background-color: #e9f1f9;
     border-radius: 9px;
-    min-width: 30px;
+    min-width: 340px;
     margin-left: auto;
     margin-right: auto;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
