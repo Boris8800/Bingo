@@ -18,6 +18,104 @@
     color: #000;
 }
 
+
+
+/* Contenedor para "Seguir Mis Cartones" */
+#myCardsTrackerContainer {
+    /* Heredará el estilo de .control-box si le aplicas esa clase en el HTML */
+    /* Si no, puedes copiar los estilos de .control-box aquí */
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #fff; 
+    border-radius: 8px;
+    max-width: 480px; 
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1); 
+    border: 1px solid #e0e0e0;
+}
+
+#myCardsTrackerContainer h3 {
+    margin-top: 0; 
+    margin-bottom: 15px; 
+    color: #2c3e50; /* O un color temático para esta sección */
+    text-align: center; 
+    font-size: 1.2em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+#myCardsTrackerContainer label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    font-size: 0.9em;
+    color: #555;
+    text-align: left;
+}
+
+#myCardsTrackerContainer input[type="text"] {
+    width: calc(100% - 22px); /* Ocupar ancho disponible menos padding del input */
+    padding: 9px; 
+    margin-bottom: 10px;
+    border: 1px solid #ccc; 
+    border-radius: 4px;
+    font-size: 0.95em;
+    box-sizing: border-box; 
+}
+
+#myCardsTrackerContainer button { 
+    display: block; 
+    width: auto; /* O '100%' si quieres que ocupen todo el ancho */
+    margin: 10px auto 0 auto; /* Centrar botón */
+    padding: 9px 18px;
+    background-color: #FF9800; /* Un color distintivo para este botón */
+    color: white;
+    /* Otros estilos de botón se heredan o se definen en la regla 'button' general */
+}
+#myCardsTrackerContainer button:hover {
+    background-color: #F57C00;
+}
+
+#myCardsTrackerContainer h4 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: #555; /* O el color del h3 */
+    font-size: 1em;
+    text-align: left;
+}
+
+#myTrackedBingosList { /* La lista de tus cartones con bingo */
+    padding: 10px;
+    background-color: #fff9e6; /* Un fondo amarillo muy pálido */
+    border: 1px dashed #ffcc80; /* Borde naranja discontinuo */
+    border-radius: 4px;
+    min-height: 22px;
+    text-align: left; 
+    font-size: 0.9em;
+    display: flex; /* Para que los spans se pongan en línea */
+    flex-wrap: wrap; /* Para que se ajusten */
+    gap: 5px; /* Espacio entre los cartones */
+}
+
+/* Estilo para cada uno de tus cartones con bingo en tu lista de seguimiento */
+.mis-cartones-bingo-item { 
+    background-color: #FFB74D !important; /* Naranja claro para tus bingos */
+    color: #424242 !important; /* Texto oscuro para contraste */
+    padding: 4px 8px;
+    border-radius: 12px;
+    /* display: inline-block; /* No es necesario si el padre es flex */
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+
+
+
+
+
+
+
 /* Contenedor principal de la lista de cartones con bingo */
 #listaCartonesBingo {
     display: flex;         /* Activa Flexbox para el layout */
