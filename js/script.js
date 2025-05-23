@@ -12,7 +12,6 @@ function trackMyCards() {
     if (!inputEl) {
         console.error("Elemento 'myCardNumbersInput' no encontrado.");
         return;
-    }
     const inputText = inputEl.value;
     myTrackedCardNumbers = inputText.split(',')
         .map(numStr => parseInt(numStr.trim()))
@@ -28,11 +27,9 @@ function trackMyCards() {
 let myTrackedCardNumbers = []; // Almacena los números de los cartones que el usuario está siguiendo
 
 // ---- Variables para Nuevas Funcionalidades ----
-let myTrackedCardNumbers = []; // Cartones que el usuario sigue
-const bingoAudio = new Audio(/bingo-sound.mp3); // !!! CAMBIA 'bingo-sound.mp3' !!!
+const bingoAudio = new Audio('bingo-sound.mp3'); // !!! CAMBIA 'bingo-sound.mp3' !!!
                                                 // por la ruta a tu archivo de sonido.
 bingoAudio.preload = 'auto';
-    }
     const inputText = inputEl.value;
     // Convertir el string de entrada en un array de números, filtrando no válidos
     myTrackedCardNumbers = inputText.split(',')
