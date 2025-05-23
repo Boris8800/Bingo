@@ -365,7 +365,7 @@ button:hover {
     #seedDisplayContainer { max-width: 90%; font-size: 0.8em; }
     #numeroContainer { width: 140px; height: 140px; }
     #numero { font-size: 3.5em; }
-    #numerosContainer, #ultimosNumerosContainer { grid-template-columns: repeat(10, 1fr); max-width: 95%; gap: 3px; }
+    #numerosContainer, #ultimosNumerosContainer
     .numeroCirculo { width: 24px; height: 24px; font-size: 0.75em; }
     button { font-size: 1.2em; padding: 8px 15px; min-width: 120px; }
     #verificarNumeroContainer input, #verificarCartonContainer input { font-size: 1em; width: 80px; padding: 8px; }
