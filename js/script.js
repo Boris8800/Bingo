@@ -1,3 +1,63 @@
+// --- INICIO FUNCIONES DE VOZ ---
+function populateVoiceList() {
+    if (typeof speechSynthesis === 'undefined') {
+        console.log("API de Voz no soportada por este navegador.");
+        const voiceSelectContainer = document.getElementById('voiceSettingsContainer');
+        if(voiceSelectContainer) voiceSelectContainer.style.display = 'none';
+        return;
+    }
+
+    voices = speechSynthesis.getVoices();
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (!voiceSelect) return;
+    voiceSelect.innerHTML = '';
+
+    const defaultOption = document.createElement('option');
+    defaultOption.textContent = 'Voz por defecto';
+    defaultOption.value = ''; // Para indicar que se use la voz por defecto del navegador
+    voiceSelect.appendChild(defaultOption);
+
+    voices.forEach((voice, index) => {
+        // Opcional: filtrar por idioma, ej. if (voice.lang.startsWith('es'))
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        option.setAttribute('data-voice-uri', voice.voiceURI);
+        option.setAttribute('data-voice-index', index.toString()); // Guardamos el índice por si URI no es único o fiable
+        voiceSelect.appendChild(option);
+    });
+
+    // Intentar reseleccionar la voz previamente guardada (si existe)
+    if (selectedVoice && selectedVoice.voiceURI) {
+        const previousSelectedOption = Array.from(voiceSelect.options).find(opt => opt.getAttribute('data-voice-uri') === selectedVoice.voiceURI);
+        if (previousSelectedOption) {
+            previousSelectedOption.selected = true;
+        }
+    } else if (selectedVoice === null && voiceSelect.options.length > 0) {
+        voiceSelect.options[0].selected = true; // Seleccionar la opción por defecto
+    }
+}
+
+function setVoice() {
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (!voiceSelect || voiceSelect.selectedOptions.length === 0) {
+        selectedVoice = null;
+        return;
+    }
+    const selectedOptionValue = voiceSelect.selectedOptions[0].getAttribute('data-voice-uri');
+    if (!selectedOptionValue) { // Opción "Voz por defecto"
+        selectedVoice = null;
+    } else {
+        selectedVoice = voices.find(voice => voice.voiceURI === selectedOptionValue);
+    }
+}
+// --- FIN FUNCIONES DE VOZ ---
+
+
+
+
+
+
+
 let numerosSalidos = [];
         let numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1);
         let intervalo;
