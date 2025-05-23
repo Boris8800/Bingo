@@ -10,12 +10,11 @@ let cartonesConBingo = []; // Tu variable original para la lista de bingos
 // Al principio de tu script.js, junto con otras variables globales:
 let myTrackedCardNumbers = []; // Almacena los números de los cartones que el usuario está siguiendo
 
-// --- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ---
-function trackMyCards() {
-    const inputEl = document.getElementById('myCardNumbersInput');
-    if (!inputEl) {
-        console.error("Elemento 'myCardNumbersInput' no encontrado.");
-        return;
+// ---- Variables para Nuevas Funcionalidades ----
+let myTrackedCardNumbers = []; // Cartones que el usuario sigue
+const bingoAudio = new Audio(/bingo-sound.mp3); // !!! CAMBIA 'bingo-sound.mp3' !!!
+                                                // por la ruta a tu archivo de sonido.
+bingoAudio.preload = 'auto';
     }
     const inputText = inputEl.value;
     // Convertir el string de entrada en un array de números, filtrando no válidos
