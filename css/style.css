@@ -225,7 +225,7 @@ body {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
     gap: 5px;
-    max-width: 480px; 
+    max-width: 600px; 
     margin: 10px auto; 
     padding: 10px;
     background-color: #e9ecef; 
