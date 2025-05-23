@@ -1,56 +1,63 @@
-// --- INICIO FUNCIONES DE VOZ ---
+// ---- Variables y Funciones para Selección de Voz ----
+let voices = [];
+let selectedVoice = null;
+
 function populateVoiceList() {
     if (typeof speechSynthesis === 'undefined') {
-        console.log("API de Voz no soportada por este navegador.");
+        console.warn("API de Voz no soportada por este navegador.");
         const voiceSelectContainer = document.getElementById('voiceSettingsContainer');
-        if(voiceSelectContainer) voiceSelectContainer.style.display = 'none';
+        if (voiceSelectContainer) voiceSelectContainer.style.display = 'none';
         return;
     }
 
     voices = speechSynthesis.getVoices();
     const voiceSelect = document.getElementById('voiceSelect');
     if (!voiceSelect) return;
-    voiceSelect.innerHTML = '';
+    
+    const previouslySelectedURI = selectedVoice ? selectedVoice.voiceURI : (voiceSelect.value || '');
+    voiceSelect.innerHTML = ''; // Limpiar opciones existentes
 
     const defaultOption = document.createElement('option');
-    defaultOption.textContent = 'Voz por defecto';
-    defaultOption.value = ''; // Para indicar que se use la voz por defecto del navegador
+    defaultOption.textContent = 'Voz por defecto del navegador';
+    defaultOption.value = ''; // Valor para identificar la opción por defecto
     voiceSelect.appendChild(defaultOption);
 
     voices.forEach((voice, index) => {
-        // Opcional: filtrar por idioma, ej. if (voice.lang.startsWith('es'))
         const option = document.createElement('option');
-        option.textContent = `${voice.name} (${voice.lang})`;
-        option.setAttribute('data-voice-uri', voice.voiceURI);
-        option.setAttribute('data-voice-index', index.toString()); // Guardamos el índice por si URI no es único o fiable
+        option.textContent = `<span class="math-inline">\{voice\.name\} \(</span>{voice.lang})`;
+        option.setAttribute('data-voice-uri', voice.voiceURI); 
+        option.value = voice.voiceURI; // Usar voiceURI como valor para fácil recuperación
         voiceSelect.appendChild(option);
     });
-
-    // Intentar reseleccionar la voz previamente guardada (si existe)
-    if (selectedVoice && selectedVoice.voiceURI) {
-        const previousSelectedOption = Array.from(voiceSelect.options).find(opt => opt.getAttribute('data-voice-uri') === selectedVoice.voiceURI);
-        if (previousSelectedOption) {
-            previousSelectedOption.selected = true;
+    
+    // Intentar re-seleccionar la voz si ya había una
+    if (previouslySelectedURI) {
+        const optionToSelect = Array.from(voiceSelect.options).find(opt => opt.value === previouslySelectedURI);
+        if (optionToSelect) {
+            optionToSelect.selected = true;
+        } else if (voiceSelect.options.length > 0) {
+             voiceSelect.options[0].selected = true; // fallback a la primera (por defecto)
+             selectedVoice = null; // si la voz anterior no se encuentra, usar por defecto
         }
-    } else if (selectedVoice === null && voiceSelect.options.length > 0) {
-        voiceSelect.options[0].selected = true; // Seleccionar la opción por defecto
+    } else if (voiceSelect.options.length > 0) {
+         voiceSelect.options[0].selected = true; // seleccionar por defecto si no hay selección previa
     }
 }
 
 function setVoice() {
     const voiceSelect = document.getElementById('voiceSelect');
-    if (!voiceSelect || voiceSelect.selectedOptions.length === 0) {
-        selectedVoice = null;
+    if (!voiceSelect || voiceSelect.selectedOptions.length === 0 || !voiceSelect.value) {
+        selectedVoice = null; // Usar voz por defecto
         return;
     }
-    const selectedOptionValue = voiceSelect.selectedOptions[0].getAttribute('data-voice-uri');
-    if (!selectedOptionValue) { // Opción "Voz por defecto"
+    const selectedVoiceURI = voiceSelect.value;
+    selectedVoice = voices.find(voice => voice.voiceURI === selectedVoiceURI);
+    if (!selectedVoice) { // Si por alguna razón no se encuentra, fallback
         selectedVoice = null;
-    } else {
-        selectedVoice = voices.find(voice => voice.voiceURI === selectedOptionValue);
     }
 }
-// --- FIN FUNCIONES DE VOZ ---
+// ---- FIN FUNCIONES DE VOZ ----
+
 
 
 
