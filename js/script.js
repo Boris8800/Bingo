@@ -1,17 +1,84 @@
 // ---- Variables Globales del Juego ----
 let numerosSalidos = [];
-let numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1); // Se reinicia en reiniciarJuego
+let numerosDisponibles = []; // Se inicializa en reiniciarJuego
 let intervalo;
 let enEjecucion = false;
-let juegoPausado = false; // Tu variable original
-let cartonesConBingo = []; // Tu variable original para la lista de bingos
+let juegoPausado = false; 
+let cartonesConBingo = []; 
+
+// ---- Variables para Selección de Voz ----
+let voices = [];
+let selectedVoice = null;
+
+// ---- Variables para Nuevas Funcionalidades ----
+let myTrackedCardNumbers = []; 
+const bingoAudio = new Audio('bingo-sound.mp3'); // !!! CAMBIA 'bingo-sound.mp3' !!!
+                                                // por la ruta a tu archivo de sonido.
+bingoAudio.preload = 'auto';
+
+// ---- Funciones para Selección de Voz ----
+function populateVoiceList() {
+    if (typeof speechSynthesis === 'undefined') {
+        console.warn("API de Voz no soportada.");
+        const voiceSelectContainer = document.getElementById('voiceSettingsContainer');
+        if (voiceSelectContainer) voiceSelectContainer.style.display = 'none';
+        return;
+    }
+    
+    voices = speechSynthesis.getVoices();
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (!voiceSelect) {
+        // console.error("Elemento 'voiceSelect' no encontrado."); 
+        return;
+    }
+    
+    const previouslySelectedURI = selectedVoice ? selectedVoice.voiceURI : (voiceSelect.value || '');
+    voiceSelect.innerHTML = ''; 
+
+    const defaultOption = document.createElement('option');
+    defaultOption.textContent = 'Voz por defecto del navegador';
+    defaultOption.value = ''; 
+    voiceSelect.appendChild(defaultOption);
+
+    voices.forEach((voice) => {
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        option.value = voice.voiceURI; 
+        voiceSelect.appendChild(option);
+    });
+    
+    if (previouslySelectedURI) {
+        const optionToSelect = Array.from(voiceSelect.options).find(opt => opt.value === previouslySelectedURI);
+        if (optionToSelect) {
+            optionToSelect.selected = true;
+        } else if (voiceSelect.options.length > 0) {
+             voiceSelect.options[0].selected = true; 
+             selectedVoice = null; 
+        }
+    } else if (voiceSelect.options.length > 0) {
+         voiceSelect.options[0].selected = true;
+         selectedVoice = null;
+    }
+}
+
+function setVoice() {
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (!voiceSelect || !voiceSelect.value) { 
+        selectedVoice = null; 
+        return;
+    }
+    selectedVoice = voices.find(voice => voice.voiceURI === voiceSelect.value);
+    if (!selectedVoice) selectedVoice = null;
+}
+// ---- FIN FUNCIONES DE VOZ ----
 
 // ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
 function trackMyCards() {
     const inputEl = document.getElementById('myCardNumbersInput');
     if (!inputEl) {
         console.error("Elemento 'myCardNumbersInput' no encontrado.");
-        return;
+        return; // Salir si el input no existe
+    }
     const inputText = inputEl.value;
     myTrackedCardNumbers = inputText.split(',')
         .map(numStr => parseInt(numStr.trim()))
@@ -21,170 +88,59 @@ function trackMyCards() {
     inputEl.value = myTrackedCardNumbers.join(', '); 
 }
 
-
-
-// Al principio de tu script.js, junto con otras variables globales:
-let myTrackedCardNumbers = []; // Almacena los números de los cartones que el usuario está siguiendo
-
-// ---- Variables para Nuevas Funcionalidades ----
-const bingoAudio = new Audio('bingo-sound.mp3'); // !!! CAMBIA 'bingo-sound.mp3' !!!
-                                                // por la ruta a tu archivo de sonido.
-bingoAudio.preload = 'auto';
-    const inputText = inputEl.value;
-    // Convertir el string de entrada en un array de números, filtrando no válidos
-    myTrackedCardNumbers = inputText.split(',')
-        .map(numStr => parseInt(numStr.trim()))
-        .filter(num => !isNaN(num) && num > 0);
-    
-    // console.log("Siguiendo cartones:", myTrackedCardNumbers); // Para depuración
-    actualizarMisCartonesBingoDisplay(); // Actualizar la lista inmediatamente
-    
-    // Opcional: reformatear el input para mostrar los números limpios
-    inputEl.value = myTrackedCardNumbers.join(', '); 
-}
-
 function actualizarMisCartonesBingoDisplay() {
     const myTrackedListDiv = document.getElementById('myTrackedBingosList');
-    if (!myTrackedListDiv) {
-        // console.error("Elemento 'myTrackedBingosList' no encontrado.");
-        return;
-    }
-    myTrackedListDiv.innerHTML = ''; // Limpiar la lista anterior
+    if (!myTrackedListDiv) return;
+    myTrackedListDiv.innerHTML = '';
 
-    // 'cartonesConBingo' es tu array global que ya contiene los IDs de los cartones con bingo
     const misBingosEnJuego = cartonesConBingo.filter(cartonId => myTrackedCardNumbers.includes(cartonId));
 
     if (misBingosEnJuego.length === 0) {
-        myTrackedListDiv.textContent = "---"; // Mensaje si ninguno de tus cartones tiene bingo
+        myTrackedListDiv.textContent = "---";
         return;
     }
     
-    // Ordenar los IDs de tus cartones con bingo (opcional, pero bueno para consistencia)
     misBingosEnJuego.sort((a,b) => a - b); 
 
     misBingosEnJuego.forEach(cartonId => {
         const elemento = document.createElement('span'); 
-        elemento.className = 'carton-bingo mis-cartones-bingo-item'; // Clase para estilo
-        elemento.textContent = `${cartonId}`; // Muestra solo el ID del cartón
+        elemento.className = 'carton-bingo mis-cartones-bingo-item'; 
+        elemento.textContent = `${cartonId}`; 
         myTrackedListDiv.appendChild(elemento);
-        // Añadir un espacio o un separador visual si se desea para mejor lectura
-        const separador = document.createTextNode(' '); 
-        myTrackedListDiv.appendChild(separador);
+        myTrackedListDiv.appendChild(document.createTextNode(' ')); 
     });
 }
-// --- FIN FUNCIONES "MIS CARTONES" ---
+// ---- FIN FUNCIONES "MIS CARTONES" ----
 
-// --- MODIFICACIONES A FUNCIONES EXISTENTES ---
+// ---- FUNCIONES PRINCIPALES DEL JUEGO ----
+function reiniciarJuego() { 
+    numerosSalidos = [];
+    numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1);
+    cartonesConBingo = []; 
 
-// Modifica tu función reiniciarJuego() para que también limpie la lista de "Mis Cartones con Bingo":
-// Busca tu función reiniciarJuego y añade la llamada a actualizarMisCartonesBingoDisplay()
-/* function reiniciarJuego() {
-       // ... tu código existente para reiniciar ...
-       numerosSalidos = [];
-       numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1);
-       cartonesConBingo = []; // Esto ya lo tienes y es correcto
-       // ... más código de reinicio ...
-       
-       actualizarListaBingos(); // Tu llamada existente
-       actualizarMisCartonesBingoDisplay(); // <--- AÑADE ESTA LÍNEA
-       actualizarEstadoJuego("listo"); 
-   }
-*/
-
-// Modifica tu función verificarTodosLosCartones() para que actualice la lista de "Mis Cartones con Bingo"
-// después de que se actualice la lista general de bingos.
-/*
-   function verificarTodosLosCartones() {
-       // ... tu lógica existente para llenar 'cartonesConBingo' ...
-       // (Asegúrate de que la línea "cartonesConBingo = [];" NO esté aquí, sino en reiniciarJuego)
-
-       elementosCartones.forEach(carton => {
-           // ... tu lógica para detectar un bingo y añadirlo a cartonesConBingo ...
-           if (faltantes.length === 0) {
-               if (!cartonesConBingo.includes(numeroCarton)) { 
-                   cartonesConBingo.push(numeroCarton);
-                   // algunBingoNuevo = true; // Si usas una bandera para actualizar solo si hay cambios
-               }
-           }
-       });
-
-       actualizarListaBingos(); // Tu llamada existente
-       actualizarMisCartonesBingoDisplay(); // <--- AÑADE ESTA LÍNEA
-   }
-*/
-
-
-
-
-
-
-
-// ---- Variables y Funciones para Selección de Voz ----
-let voices = [];
-let selectedVoice = null;
-
-function populateVoiceList() {
-    if (typeof speechSynthesis === 'undefined') {
-        console.warn("API de Voz no soportada por este navegador.");
-        const voiceSelectContainer = document.getElementById('voiceSettingsContainer');
-        if (voiceSelectContainer) voiceSelectContainer.style.display = 'none';
-        return;
-    }
-
-    voices = speechSynthesis.getVoices();
-    const voiceSelect = document.getElementById('voiceSelect');
-    if (!voiceSelect) {
-        console.error("Elemento 'voiceSelect' no encontrado en el DOM.");
-        return;
-    }
+    const numeroDisplay = document.getElementById('numero');
+    if(numeroDisplay) numeroDisplay.textContent = '--';
     
-    const previouslySelectedURI = selectedVoice ? selectedVoice.voiceURI : (voiceSelect.value || '');
-    voiceSelect.innerHTML = ''; // Limpiar opciones existentes
-
-    const defaultOption = document.createElement('option');
-    defaultOption.textContent = 'Voz por defecto del navegador';
-    defaultOption.value = ''; // Valor para identificar la opción por defecto
-    voiceSelect.appendChild(defaultOption);
-
-    voices.forEach((voice, index) => {
-        const option = document.createElement('option');
-        option.textContent = `${voice.name} (${voice.lang})`; // Corregido para mostrar nombre y lang
-        option.setAttribute('data-voice-uri', voice.voiceURI); 
-        option.value = voice.voiceURI; // Usar voiceURI como valor para fácil recuperación
-        voiceSelect.appendChild(option);
-    });
+    const circulos = document.querySelectorAll('#numerosContainer .numeroCirculo');
+    circulos.forEach(circulo => circulo.classList.remove('marcado'));
     
-    // Intentar re-seleccionar la voz si ya había una
-    if (previouslySelectedURI && voiceSelect.options.length > 1) { // Más de una opción (default + voces)
-        const optionToSelect = Array.from(voiceSelect.options).find(opt => opt.value === previouslySelectedURI);
-        if (optionToSelect) {
-            optionToSelect.selected = true;
-        } else { // Si la voz anterior no se encuentra
-             voiceSelect.options[0].selected = true; // fallback a la primera (por defecto)
-             selectedVoice = null; 
-        }
-    } else if (voiceSelect.options.length > 0) {
-         voiceSelect.options[0].selected = true; // seleccionar por defecto si no hay selección previa
-         selectedVoice = null; // Asegurar que selectedVoice sea null si se selecciona la opción por defecto
-    }
+    if(intervalo) clearInterval(intervalo);
+    const startStopBtn = document.getElementById('startStopBtn');
+    if(startStopBtn) startStopBtn.textContent = 'Comenzar';
+    
+    enEjecucion = false;
+    juegoPausado = false; 
+    
+    actualizarUltimosNumeros();
+    limpiarMensajeVerificacion(); 
+    const msgCarton = document.getElementById('mensajeVerificacionCarton');
+    if(msgCarton) msgCarton.textContent = "";
+    
+    actualizarListaBingos(); 
+    actualizarMisCartonesBingoDisplay(); 
+    actualizarEstadoJuego("listo"); 
 }
 
-function setVoice() {
-    const voiceSelect = document.getElementById('voiceSelect');
-    if (!voiceSelect || voiceSelect.selectedOptions.length === 0 || !voiceSelect.value) { // Si value es '', es la opción "por defecto"
-        selectedVoice = null; 
-        return;
-    }
-    const selectedVoiceURI = voiceSelect.value;
-    selectedVoice = voices.find(voice => voice.voiceURI === selectedVoiceURI);
-    if (!selectedVoice) { 
-        selectedVoice = null; 
-    }
-    // console.log("Voz seleccionada:", selectedVoice ? selectedVoice.name : "Por defecto");
-}
-// ---- FIN FUNCIONES DE VOZ ----
-
-// Función para iniciar/detener el juego (tu lógica original)
 function startStop() {
     const startStopBtn = document.getElementById('startStopBtn');
     if (!startStopBtn) return;
@@ -197,7 +153,7 @@ function startStop() {
     } else {
         if (numerosDisponibles.length === 0) { 
             alert("¡Todos los números han sido llamados! Reinicia el juego.");
-            actualizarEstadoJuego("finalizado"); // Usar "finalizado" si todos los números salieron
+            actualizarEstadoJuego("finalizado");
             return;
         }
         if (window.speechSynthesis) {
@@ -224,7 +180,6 @@ function startStop() {
     }
 }
 
-// Función para generar el siguiente número (tu lógica original con Math.random)
 function siguienteNumero() {
     if (numerosDisponibles.length === 0) {
         alert("¡Todos los números han sido llamados!");
@@ -232,8 +187,7 @@ function siguienteNumero() {
         const startStopBtn = document.getElementById('startStopBtn');
         if(startStopBtn) startStopBtn.textContent = 'Comenzar';
         enEjecucion = false;
-        actualizarEstadoJuego("finalizado"); // Estado finalizado
-        // verificarTodosLosCartones(); // Ya se llama abajo
+        actualizarEstadoJuego("finalizado"); 
         return;
     }
 
@@ -250,7 +204,6 @@ function siguienteNumero() {
     verificarTodosLosCartones(); 
 }
 
-// Función para anunciar el número (modificada para usar selectedVoice)
 function anunciarNumero(numero) {
     if (window.speechSynthesis) {
         const mensaje = new SpeechSynthesisUtterance(numero.toString());
@@ -265,52 +218,16 @@ function anunciarNumero(numero) {
     }
 }
 
-// Función para marcar un número como salido (tu lógica original)
 function marcarNumero(numero) {
     const circulo = document.getElementById(`numero${numero}`);
-    if (circulo) {
-        circulo.classList.add('marcado');
-    }
+    if (circulo) circulo.classList.add('marcado');
 }
 
-// Función para reiniciar el juego (tu lógica original, pero actualiza estado a "listo")
-function reiniciarJuego() {
-    numerosSalidos = [];
-    numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1);
-    cartonesConBingo = []; // Reiniciar la lista de bingos aquí
-
-    const numeroDisplay = document.getElementById('numero');
-    if(numeroDisplay) numeroDisplay.textContent = '--';
-    
-    const circulos = document.querySelectorAll('#numerosContainer .numeroCirculo'); // Más específico
-    circulos.forEach(circulo => {
-        circulo.classList.remove('marcado');
-    });
-    
-    if(intervalo) clearInterval(intervalo);
-    const startStopBtn = document.getElementById('startStopBtn');
-    if(startStopBtn) startStopBtn.textContent = 'Comenzar';
-    
-    enEjecucion = false;
-    juegoPausado = false; 
-    
-    actualizarUltimosNumeros();
-    limpiarMensajeVerificacion();
-    const msgCarton = document.getElementById('mensajeVerificacionCarton');
-    if(msgCarton) msgCarton.textContent = "";
-
-    actualizarListaBingos(); 
-    actualizarEstadoJuego("listo"); // CAMBIADO: Estado inicial "listo" en lugar de "pausado"
-}
-
-// Función para actualizar los últimos 10 números (tu lógica original)
 function actualizarUltimosNumeros() {
     const ultimosNumerosContainer = document.getElementById('ultimosNumerosContainer');
     if (!ultimosNumerosContainer) return;
-
     const ultimos10 = numerosSalidos.slice(-10);
     ultimosNumerosContainer.innerHTML = '';
-
     ultimos10.forEach(numero => {
         const circulo = document.createElement('div');
         circulo.classList.add('numeroCirculo', 'ultimoNumeroCirculo');
@@ -319,14 +236,11 @@ function actualizarUltimosNumeros() {
     });
 }
 
-// Función para verificar un número (tu lógica original)
 function verificarNumero() {
     const numeroVerificar = document.getElementById('numeroVerificar');
     const mensajeVerificacion = document.getElementById('mensajeVerificacion');
     if(!numeroVerificar || !mensajeVerificacion) return;
-
     const numero = parseInt(numeroVerificar.value);
-
     if (isNaN(numero) || numero < 1 || numero > 90) {
         mensajeVerificacion.innerHTML = "Por favor, ingresa un número válido (1-90).";
         mensajeVerificacion.style.color = "red";
@@ -338,59 +252,63 @@ function verificarNumero() {
         mensajeVerificacion.innerHTML = `❌ El número <span class="numeroFaltante">${numero}</span> no ha salido.`;
         mensajeVerificacion.style.color = "red";
     }
-    numeroVerificar.value = "";
-    numeroVerificar.focus();
+    if(numeroVerificar) numeroVerificar.value = "";
+    if(numeroVerificar) numeroVerificar.focus();
 }
 
-// Función para verificar un cartón (tu lógica original, modificada para usar selectedVoice)
 function verificarCarton() {
     const cartonVerificar = document.getElementById('cartonVerificar');
     const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
-    if(!cartonVerificar || !mensajeVerificacionCarton) return;
-
-    const numeroCarton = parseInt(cartonVerificar.value);
-    // Asegurar que el ID buscado sea exacto, ej. "carton23"
-    const cartonElement = document.getElementById(`carton${numeroCarton}`); 
+    if (!cartonVerificar || !mensajeVerificacionCarton) return;
+    
+    const numeroCartonInput = cartonVerificar.value;
+    const numeroCarton = parseInt(numeroCartonInput.replace(/[^0-9]/g, ''));
 
     if (isNaN(numeroCarton)) {
          mensajeVerificacionCarton.innerHTML = "Ingresa un número de cartón válido.";
          mensajeVerificacionCarton.style.color = "red";
-    } else if (!cartonElement) {
-        mensajeVerificacionCarton.innerHTML = `❌ Cartón ${numeroCarton} no encontrado.`;
-        mensajeVerificacionCarton.style.color = "red";
     } else {
-        const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
-        if (!numerosEnCartonAttr || numerosEnCartonAttr.trim() === "") { 
-            mensajeVerificacionCarton.innerHTML = `❌ Cartón ${numeroCarton} no tiene números definidos.`;
+        const cartonElement = document.getElementById(`carton${numeroCarton}`); 
+        if (!cartonElement || !cartonElement.getAttribute('data-numeros')) {
+            mensajeVerificacionCarton.innerHTML = `❌ Cartón ${numeroCarton} no encontrado o inválido.`;
             mensajeVerificacionCarton.style.color = "red";
         } else {
-            const numerosEnCarton = numerosEnCartonAttr.split(',').map(Number).filter(n => n > 0 && !isNaN(n));
-            const numerosFaltantes = numerosEnCarton.filter(num => !numerosSalidos.includes(num));
-            const numerosSalidosEnCarton = numerosEnCarton.filter(num => numerosSalidos.includes(num));
-
-            if (numerosEnCarton.length > 0 && numerosFaltantes.length === 0) {
-                mensajeVerificacionCarton.innerHTML = `✅ ¡Bingo! Todos los números del cartón ${numeroCarton} han salido: ` + 
-                    numerosSalidosEnCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
-                mensajeVerificacionCarton.style.color = "green";
-
-                if (window.speechSynthesis) {
-                    const mensaje = new SpeechSynthesisUtterance(`Bingo. El cartón número ${numeroCarton} tiene bingo`);
-                    if (selectedVoice) {
-                        mensaje.voice = selectedVoice;
-                        mensaje.lang = selectedVoice.lang;
-                    } else {
-                        mensaje.lang = 'es-ES';
-                    }
-                    window.speechSynthesis.speak(mensaje);
-                }
-            } else if (numerosEnCarton.length === 0) {
-                mensajeVerificacionCarton.innerHTML = `ℹ️ El cartón ${numeroCarton} no tiene números válidos.`;
-                 mensajeVerificacionCarton.style.color = "orange";
-            } else {
-                mensajeVerificacionCarton.innerHTML = `❌ En el cartón ${numeroCarton}:<br>
-                    Faltan: ` + numerosFaltantes.map(num => `<span class="numeroFaltante">${num}</span>`).join(' ') + `<br>
-                    Salieron: ` + numerosSalidosEnCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
+            const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
+            if (!numerosEnCartonAttr || numerosEnCartonAttr.trim() === "") { 
+                mensajeVerificacionCarton.innerHTML = `❌ Cartón ${numeroCarton} no tiene números definidos.`;
                 mensajeVerificacionCarton.style.color = "red";
+            } else {
+                const numerosEnCarton = numerosEnCartonAttr.split(',').map(Number).filter(n => n > 0 && !isNaN(n));
+                const faltantes = numerosEnCarton.filter(num => !numerosSalidos.includes(num));
+                const numerosSalidosEnCarton = numerosEnCarton.filter(num => numerosSalidos.includes(num));
+
+                if (numerosEnCarton.length > 0 && faltantes.length === 0) {
+                    mensajeVerificacionCarton.innerHTML = `✅ ¡Bingo! Cartón ${numeroCarton} completo: ` + 
+                        numerosSalidosEnCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
+                    mensajeVerificacionCarton.style.color = "green";
+                    if (window.speechSynthesis) {
+                        const msg = new SpeechSynthesisUtterance(`Bingo. El cartón número ${numeroCarton} tiene bingo`);
+                        if (selectedVoice) {
+                            msg.voice = selectedVoice;
+                            msg.lang = selectedVoice.lang;
+                        } else {
+                            msg.lang = 'es-ES';
+                        }
+                        window.speechSynthesis.speak(msg);
+                    }
+                    if (!cartonesConBingo.includes(numeroCarton)) { 
+                        try { bingoAudio.currentTime = 0; bingoAudio.play().catch(e => console.warn("Error al reproducir sonido (verif. manual):", e)); } 
+                        catch (e) { console.warn("Excepción al reproducir sonido (verif. manual):", e); }
+                    }
+                } else if (numerosEnCarton.length === 0) {
+                    mensajeVerificacionCarton.innerHTML = `ℹ️ Cartón ${numeroCarton} sin números válidos.`;
+                    mensajeVerificacionCarton.style.color = "orange";
+                } else {
+                    mensajeVerificacionCarton.innerHTML = `Cartón ${numeroCarton}:<br>
+                        ❌Faltan: ` + faltantes.map(num => `<span class="numeroFaltante">${num}</span>`).join(' ') + `<br>
+                        ✅Salieron: ` + numerosSalidosEnCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
+                    mensajeVerificacionCarton.style.color = "red";
+                }
             }
         }
     }
@@ -400,7 +318,7 @@ function verificarCarton() {
     }
 }
 
-// Eventos focus/blur (tu lógica original)
+// Eventos focus/blur
 const numeroVerificarInputEl = document.getElementById('numeroVerificar');
 const cartonVerificarInputEl = document.getElementById('cartonVerificar');
 const startStopBtnEl = document.getElementById('startStopBtn'); 
@@ -422,12 +340,11 @@ if (cartonVerificarInputEl) {
             clearInterval(intervalo);
             juegoPausado = true;
             startStopBtnEl.textContent = 'Comenzar';
-            enEjecucion = false;
-            actualizarEstadoJuego("pausado"); // Tu estado original aquí
+            enEjecucion = false; 
+            actualizarEstadoJuego("pausadoInput");
         }
     });
 }
-
 if (numeroVerificarInputEl) {
     numeroVerificarInputEl.addEventListener('focus', () => {
         if (enEjecucion && startStopBtnEl) {
@@ -435,7 +352,7 @@ if (numeroVerificarInputEl) {
             juegoPausado = true;
             startStopBtnEl.textContent = 'Comenzar';
             enEjecucion = false;
-            actualizarEstadoJuego("pausado"); // Tu estado original aquí
+            actualizarEstadoJuego("pausadoInput");
         }
     });
     numeroVerificarInputEl.addEventListener('blur', function() {
@@ -449,11 +366,9 @@ if (numeroVerificarInputEl) {
         }
     });
 }
-
 document.addEventListener('click', function(event) {
     const msgVerificacion = document.getElementById('mensajeVerificacion');
     const msgCarton = document.getElementById('mensajeVerificacionCarton');
-
     if (msgVerificacion && !event.target.closest('#verificarNumeroContainer')) {
         limpiarMensajeVerificacion();
     }
@@ -462,68 +377,72 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// Función para actualizar el estado del juego (tu lógica original, con nuevos estados opcionales)
 function actualizarEstadoJuego(estado) {
-    const estadoJuego = document.getElementById('estadoJuego');
-    if (!estadoJuego) return;
-    estadoJuego.style.display = 'block';
+    const estadoJuegoDiv = document.getElementById('estadoJuego');
+    if (!estadoJuegoDiv) return;
+    estadoJuegoDiv.style.display = 'block';
     switch (estado) {
-        case "enMarcha": estadoJuego.textContent = "✅Juego en marcha✅"; estadoJuego.className = "enMarcha"; break;
-        case "pausado": estadoJuego.textContent = "❌Juego pausado❌"; estadoJuego.className = "pausado"; break;
-        case "listo": estadoJuego.textContent = "ℹ️ Juego listo. ¡Presiona Comenzar! ℹ️"; estadoJuego.className = "listo"; break;
-        case "finalizado": estadoJuego.textContent = "🏁 ¡Juego finalizado! 🏁"; estadoJuego.className = "finalizado"; break;
-        case "pausadoInput": estadoJuego.textContent = "⌨️ Pausa (input activo) ⌨️"; estadoJuego.className = "pausadoInput"; break;
-        default: estadoJuego.textContent = estado; estadoJuego.className = estado; // Fallback
+        case "enMarcha": estadoJuegoDiv.textContent = "✅ Juego en marcha ✅"; estadoJuegoDiv.className = "enMarcha"; break;
+        case "pausado": estadoJuegoDiv.textContent = "❌ Juego pausado ❌"; estadoJuegoDiv.className = "pausado"; break;
+        case "listo": estadoJuegoDiv.textContent = "ℹ️ Juego listo. ¡Presiona Comenzar! ℹ️"; estadoJuegoDiv.className = "listo"; break;
+        case "finalizado": estadoJuegoDiv.textContent = "🏁 ¡Juego finalizado! 🏁"; estadoJuegoDiv.className = "finalizado"; break;
+        case "pausadoInput": estadoJuegoDiv.textContent = "⌨️ Pausa (input activo) ⌨️"; estadoJuegoDiv.className = "pausadoInput"; break;
+        default: estadoJuegoDiv.textContent = estado; estadoJuegoDiv.className = estado; 
     }
 }
 
-// Función para limpiar el mensaje de verificación (tu lógica original)
 function limpiarMensajeVerificacion() {
     const mensajeVerificacion = document.getElementById('mensajeVerificacion');
     if (mensajeVerificacion) {
-        mensajeVerificacion.innerHTML = '';
-        mensajeVerificacion.style.color = '';
+        mensajeVerificacion.innerHTML = ''; 
+        mensajeVerificacion.style.color = ''; 
     }
 }
 
-// Función para verificar todos los cartones automáticamente (corregida)
+// --- Lógica de Bingo (General - basada en tu script original, corregida y con sonido) ---
 function verificarTodosLosCartones() {
-    // NO reiniciar cartonesConBingo = []; aquí. Solo en reiniciarJuego().
     const elementosCartones = document.querySelectorAll('#cartonesContainer > div[id^="carton"]');
-    elementosCartones.forEach(carton => {
-        const idCompleto = carton.id;
-        // Extraer número de ID "cartonX" de forma más segura
-        const match = idCompleto.match(/^carton(\d+)$/); // Busca IDs que son exactamente "carton" seguido de números
-        if (!match || !match[1]) {
-            // console.warn(`ID de cartón con formato no esperado: ${idCompleto}`);
-            return; // Saltar si el ID no es "carton" seguido de un número
-        }
+    let algunBingoNuevoEsteTurno = false;
+
+    elementosCartones.forEach(cartonElement => {
+        const idCompleto = cartonElement.id;
+        const match = idCompleto.match(/^carton(\d+)$/);
+        if (!match || !match[1]) return; 
         const numeroCarton = parseInt(match[1]);
 
-        if (cartonesConBingo.includes(numeroCarton)) { // Si ya está en la lista, no hacer nada
-            return;
+        if (cartonesConBingo.includes(numeroCarton)) { 
+            return; 
         }
         
-        const numerosEnCartonAttr = carton.getAttribute('data-numeros');
-        // Verificar que data-numeros exista y no esté vacío
+        const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
         if (numerosEnCartonAttr && numerosEnCartonAttr.trim() !== "") {
             const numerosEnCarton = numerosEnCartonAttr.split(',').map(Number).filter(n => n > 0 && !isNaN(n));
-            // Considerar que un cartón válido debe tener un número específico de números, ej. 15
-            if (numerosEnCarton.length > 0) { // O un chequeo más estricto: numerosEnCarton.length === 15
+            if (numerosEnCarton.length > 0) { 
                 const faltantes = numerosEnCarton.filter(num => !numerosSalidos.includes(num));
-                if (faltantes.length === 0) {
-                    if (!cartonesConBingo.includes(numeroCarton)) { // Doble chequeo por si acaso
+                if (faltantes.length === 0) { 
+                    if (!cartonesConBingo.includes(numeroCarton)) { 
                         cartonesConBingo.push(numeroCarton);
+                        algunBingoNuevoEsteTurno = true;
                     }
                 }
             }
         }
     });
+
+    if (algunBingoNuevoEsteTurno) {
+        try {
+            bingoAudio.currentTime = 0; 
+            bingoAudio.play().catch(e => console.warn("Error al reproducir sonido de bingo:", e));
+        } catch (e) {
+            console.warn("Excepción al reproducir sonido de bingo (general):", e);
+        }
+    }
+
     actualizarListaBingos();
+    actualizarMisCartonesBingoDisplay(); 
 }
 
-// Función para actualizar la visualización de bingos (tu lógica original)
-function actualizarListaBingos() {
+function actualizarListaBingos() { 
     const lista = document.getElementById('listaCartonesBingo');
     if(!lista) return;
     lista.innerHTML = '';
@@ -533,18 +452,18 @@ function actualizarListaBingos() {
         return;
     }
     
-    cartonesConBingo.sort((a,b) => a - b); // Ordenar numéricamente los IDs de cartón
+    cartonesConBingo.sort((a,b) => a - b); 
     cartonesConBingo.forEach(numero => {
         const elemento = document.createElement('div');
-        elemento.className = 'carton-bingo'; // Usa la clase de tu CSS original
+        elemento.className = 'carton-bingo'; 
         elemento.textContent = `${numero}`;
         lista.appendChild(elemento);
     });
 }
+// --- FIN Lógica de Bingo ---
 
 // --- INICIALIZACIÓN DEL JUEGO ---
 window.onload = () => {
-    // Generar los círculos de números del historial (código original del usuario)
     const numerosContainer = document.getElementById('numerosContainer');
     if (numerosContainer) {
         for (let i = 1; i <= 90; i++) {
@@ -558,25 +477,26 @@ window.onload = () => {
         console.error("Elemento 'numerosContainer' no encontrado.");
     }
 
-    // Configuración de la Selección de Voz
     if (typeof speechSynthesis !== 'undefined') {
-        // Es importante llamar a getVoices() una vez antes, y luego de nuevo en onvoiceschanged
-        // porque en algunos navegadores la lista no está disponible inmediatamente.
-        speechSynthesis.getVoices(); 
-        populateVoiceList(); 
-        if (speechSynthesis.onvoiceschanged !== undefined) {
-            speechSynthesis.onvoiceschanged = populateVoiceList; 
-        }
-        const voiceSelectElement = document.getElementById('voiceSelect');
-        if (voiceSelectElement) {
-            voiceSelectElement.addEventListener('change', setVoice);
+        if (speechSynthesis.getVoices().length === 0) {
+            speechSynthesis.onvoiceschanged = () => {
+                populateVoiceList();
+                const voiceSelectElement = document.getElementById('voiceSelect');
+                 if (voiceSelectElement && !voiceSelectElement.onchange) { 
+                    voiceSelectElement.addEventListener('change', setVoice);
+                }
+            };
         } else {
-            console.error("Elemento 'voiceSelect' no encontrado para el listener.");
+            populateVoiceList(); 
+            const voiceSelectElement = document.getElementById('voiceSelect');
+            if (voiceSelectElement) {
+                voiceSelectElement.addEventListener('change', setVoice);
+            }
         }
     } else {
         const voiceSettingsContainer = document.getElementById('voiceSettingsContainer');
         if (voiceSettingsContainer) voiceSettingsContainer.style.display = 'none';
     }
     
-    reiniciarJuego(); // Llama a tu función original de reinicio, que ahora termina con estado "listo".
+    reiniciarJuego(); 
 };
