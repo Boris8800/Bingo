@@ -225,7 +225,7 @@ body {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
     gap: 5px;
-    max-width: 480px; 
+    max-width: 980px; 
     margin: 10px auto; 
     padding: 10px;
     background-color: #e9ecef; 
@@ -241,14 +241,14 @@ body {
     width: 28px; /* Ligeramente más pequeño */
     height: 28px;
     border-radius: 50%;
-    background-color: #05102e; 
+    background-color: #05102e;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.9em; /* Ligeramente más pequeño */
     font-weight: bold;
-    cursor: default; 
+    cursor: default;
     transition: background-color 0.3s;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
@@ -258,9 +258,9 @@ body {
 }
 
 .ultimoNumeroCirculo { /* Las últimas 10 bolas */
-    background-color: #8d1307; 
-    font-size: 1.1em; 
-    border: 1px solid #fff; 
+    background-color: #8d1307;
+    font-size: 1.2em;
+    border: 1px solid #fff;
 }
 
 button {
@@ -291,7 +291,7 @@ button:hover {
 
 #ultimosNumeros {
     margin-top: 30px; /* Un poco menos de margen */
-    font-size: 1.0em;
+    /* font-size: 1.0em; */
     color: #2c3e50;
 }
 
