@@ -1,374 +1,193 @@
-/* ... (Estilos existentes de antes) ... */
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>🅑🅘🅝🅖🅞</title>
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+   <a href="https://boris8800.github.io/Bingo/" style="
+        position: fixed;
+        top: 1%;
+        left: 1%;
+        font-size: 2vw;
+        color: #000000;
+        background: rgb(229 241 249);
+        padding: 0.6% 1%;
+        border-radius: 1vw;
+        border: 1px solid #d10d0d;
+        z-index: 1000;
+        text-decoration: none;
+        font-weight: bold;
+        display: inline-block;
+        ">
+        🅑🅘🅝🅖🅞
+    </a>
+  
+<link href="css/style.css" rel="stylesheet"/> <div id="voiceSettingsContainer">
+    <label for="voiceSelect">Seleccionar Voz:</label>
+    <select id="voiceSelect"></select>
+</div>
 
-#seedDisplayContainer {
-    margin-bottom: 15px;
-    padding: 10px;
-    background-color: #f0f0f0;
-    border-radius: 5px;
-    text-align: center;
-    font-size: 0.9em;
-    color: #333;
-    border: 1px solid #ddd;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-}
-#seedDisplayContainer strong {
-    font-family: 'Courier New', Courier, monospace;
-    color: #000;
-}
+<div id="numeroContainer">
+<div id="numero">--</div>
+</div>
+<div id="botonesContainer">
+<button id="reiniciarBtn" onclick="reiniciarJuego()">Reiniciar Juego</button>
+<button id="startStopBtn" onclick="startStop()">Comenzar</button>
+</div>
+<div id="historial">
+<div id="numerosContainer"></div>
+</div>
+<div id="ultimosNumeros">
+<p>Últimos 10 números:</p>
+<div id="ultimosNumerosContainer"></div>
+<div id="estadoJuego"></div>
+</div>
+<div id="verificarNumeroContainer">
+<input id="numeroVerificar" max="90" min="1" placeholder="Número" type="number"/>
+<button onclick="verificarNumero()">Verificar</button>
+<div id="mensajeVerificacion"></div>
+</div>
+<div id="verificarCartonContainer">
+<input id="cartonVerificar" min="1" placeholder="Cartón" type="number"/>
+<button onclick="verificarCarton()">Verificar</button>
+<div id="mensajeVerificacionCarton"></div>
+</div>
+
+<div id="myCardsTrackerContainer" class="control-box">
+    <h3>Seguir Cartones</h3>
+    <label for="myCardNumbersInput">Números de cartón (ej: 7, 15, 23):</label>
+    <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
+    <button onclick="trackMyCards()">Actualizar Mis Cartones</button>
+    <h4>Cartones con Bingo:</h4>
+    <div id="myTrackedBingosList" class="bingo-list-display">---</div>
+</div>
 
 
-
-/* Contenedor para "Seguir Mis Cartones" */
-#myCardsTrackerContainer {
-    /* Heredará el estilo de .control-box si le aplicas esa clase en el HTML */
-    /* Si no, puedes copiar los estilos de .control-box aquí */
+    
+<div id="cartonesBingoContainer" style="
     margin-top: 20px;
-    padding: 15px;
-    background-color: #fff;
-    border-radius: 8px;
-    min-width: 300px;
-    max-width: 480px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-    border: 1px solid #e0e0e0;
-}
-
-#myCardsTrackerContainer h3 {
-    margin-top: 0; 
-    margin-bottom: 15px; 
-    color: #2c3e50; /* O un color temático para esta sección */
-    text-align: center; 
-    font-size: 1.2em;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-}
-
-#myCardsTrackerContainer label {
-    margin-bottom: 6px;
-    font-weight: 500;
-    font-size: 0.9em;
-    color: #555;
-    text-align: left;
-}
-
-#myCardsTrackerContainer input[type="text"] {
-    width: calc(100% - 22px); /* Ocupar ancho disponible menos padding del input */
-    padding: 9px; 
-    margin-bottom: 10px;
-    border: 1px solid #ccc; 
-    border-radius: 4px;
-    font-size: 0.95em;
-    box-sizing: border-box; 
-}
-
-#myCardsTrackerContainer button { 
-    display: block; 
-    width: auto; /* O '100%' si quieres que ocupen todo el ancho */
-    margin: 10px auto 0 auto; /* Centrar botón */
-    padding: 9px 18px;
-    background-color: #FF9800; /* Un color distintivo para este botón */
-    color: white;
-    /* Otros estilos de botón se heredan o se definen en la regla 'button' general */
-}
-#myCardsTrackerContainer button:hover {
-    background-color: #F57C00;
-}
-
-#myCardsTrackerContainer h4 {
-    margin-top: 15px;
-    margin-bottom: 5px;
-    color: #555; /* O el color del h3 */
-    font-size: 1em;
-    text-align: left;
-}
-
-#myTrackedBingosList { /* La lista de tus cartones con bingo */
-    padding: 10px;
-    background-color: #fff9e6; /* Un fondo amarillo muy pálido */
-    border: 1px dashed #ffcc80; /* Borde naranja discontinuo */
-    border-radius: 4px;
-    min-height: 22px;
-    text-align: left; 
-    font-size: 0.9em;
-    display: flex; /* Para que los spans se pongan en línea */
-    flex-wrap: wrap; /* Para que se ajusten */
-    gap: 5px; /* Espacio entre los cartones */
-}
-
-/* Estilo para cada uno de tus cartones con bingo en tu lista de seguimiento */
-.mis-cartones-bingo-item { 
-    background-color: #FFB74D !important; /* Naranja claro para tus bingos */
-    color: #424242 !important; /* Texto oscuro para contraste */
-    padding: 4px 8px;
-    border-radius: 12px;
-    /* display: inline-block; /* No es necesario si el padre es flex */
-    font-weight: 500;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
-
-
-
-
-
-
-
-
-/* Contenedor principal de la lista de cartones con bingo */
-#listaCartonesBingo {
-    display: flex;         /* Activa Flexbox para el layout */
-    flex-direction: row;   /* Los elementos se disponen en fila (horizontal) */
-    flex-wrap: wrap;       /* Permite que los elementos pasen a la siguiente línea si no hay espacio */
-    justify-content: center; /* Centra los cartones horizontalmente si hay espacio extra */
-    align-items: center;   /* Centra los cartones verticalmente (útil si tienen alturas diferentes) */
-    gap: 8px;              /* Espacio entre cada cartón con bingo */
-    padding: 10px;         /* Un poco de espacio interno en el contenedor */
-    margin-top: 10px;
-    min-height: 30px;      /* Altura mínima para que el contenedor sea visible incluso vacío */
-    border: 1px solid #e0e0e0; /* Un borde sutil para el área de la lista */
-    border-radius: 6px;
-    background-color: #f9f9f9; /* Un fondo claro para el área de la lista */
-}
-
-/* Estilo para cada cartón individual en la lista de bingo */
-/* Asegúrate de que el nombre de la clase coincida con el que usas en tu script.js */
-/* Tu script original usaba 'carton-bingo' */
-.carton-bingo {
-    background-color: #2ecc71; /* Color verde que tenías */
-    color: white;
-    padding: 8px 15px;      /* Espaciado interno del número de cartón */
-    border-radius: 20px;    /* Bordes redondeados */
-    font-weight: bold;
-    font-size: 0.9em;       /* Tamaño de fuente para el número del cartón */
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12); /* Sombra sutil */
-    /* display: inline-block; ya no es necesario si el padre es flex, pero no hace daño */
-    margin: 0; /* El 'gap' en el contenedor flex se encarga del espaciado */
-}
-
-/* Estilo para cuando la lista está vacía (el texto que pone JavaScript) */
-#listaCartonesBingo:empty {
-    padding: 15px;
-    text-align: center;
-    color: #757575;
-    font-style: italic;
-}
-
-      
-.numeroVerificado { /* Bola que ha salido (en la verificación manual) */
-    background-color: #e74c3c; 
-    font-size: 1.2em;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    color: white;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 2px;
-    font-weight: bold;
-}
-        
-.numeroFaltante { /* Bola que falta (en la verificación manual) */
-    background-color: #05102e; 
-    font-size: 1.2em;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    color: white;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 2px;
-    font-weight: bold;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin: 0;
     padding: 20px;
-    background-color: #ffffff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    min-height: 100vh;
-    box-sizing: border-box;
-}
-
-#numeroContainer {
-    width: 180px; /* Un poco más pequeño */
-    height: 180px;
-    border-radius: 50%;
-    border: 5px solid #a51818; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 15px auto; 
-}
-
-#numero {
-    font-size: 5em; /* Un poco más pequeño */
-    font-weight: bold;
-    color: #2c3e50;
-}
-
-#historial {
-    margin-top: 10px;
-    font-size: 1.2em; /* Este selector no parece usarse directamente */
-}
-
-#numerosContainer, #ultimosNumerosContainer { /* Contenedor de todas las bolas y de las últimas 10 */
-    display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    gap: 5px;
-    max-width: 980px; 
-    margin: 10px auto; 
-    padding: 10px;
-    background-color: #e9ecef; 
-    border-radius: 1px;
-}
-
-#ultimosNumerosContainer {
-    margin-top: 10px;
-    background-color: #ddebf7; 
-}
-
-.numeroCirculo { /* Las 90 bolas del historial */
-    width: 28px; /* Ligeramente más pequeño */
-    height: 28px;
-    border-radius: 50%;
-    background-color: #05102e;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9em; /* Ligeramente más pequeño */
-    font-weight: bold;
-    cursor: default;
-    transition: background-color 0.3s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-.numeroCirculo.marcado {
-    background-color: #af1000; 
-}
-
-.ultimoNumeroCirculo { /* Las últimas 10 bolas */
-    background-color: #8d1307;
-    font-size: 1.2em;
-    border: 1px solid #fff;
-}
-
-button {
-    padding: 10px 20px;
-    font-size: 1em;
-    margin-top: 10px;
-    cursor: pointer;
-    background-color: #0e324b; 
-    color: white;
-    border: none;
-    border-radius: 5px;
-    min-width: 150px; 
-    transition: background-color 0.2s ease-in-out;
-}
-
-button:hover {
-    background-color: #081b27; 
-}
-
-#botonesContainer {
-    display: flex;
-    gap: 10px; 
-    justify-content: center;
-    margin-top: 20px;
-    flex-wrap: wrap; 
-}
-
-
-#ultimosNumeros {
-    margin-top: 30px; /* Un poco menos de margen */
-    /* font-size: 1.0em; */
-    color: #2c3e50;
-}
-
-#ultimosNumeros p {
-    font-size: 1.0em;
-    margin: 5px 0;
-    font-weight: bold;
-}
-
-#verificarNumeroContainer, #verificarCartonContainer {
-    margin-top: 10px;
     background-color: #e9f1f9;
-    border-radius: 9px;
-    min-width: 30px;
+    border-radius: 8px;
+    min-width: 350px;
     margin-left: auto;
     margin-right: auto;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-#verificarNumeroContainer input, #verificarCartonContainer input {
-    padding: 10px; /* Un poco menos de padding */
-    font-size: 1.1em; /* Un poco más pequeño */
-    border: 1px solid #ced4da; 
-    border-radius: 5px;
-    width: 100px; 
-    margin-bottom: 10px; 
-}
-
-#verificarNumeroContainer button, #verificarCartonContainer button {
-    padding: 10px 20px; /* Un poco menos de padding */
-    font-size: 1.1em; /* Un poco más pequeño */
-    margin-left: 8px; /* Un poco menos de margen */
-}
-
-#verificarNumeroContainer button:hover, #verificarCartonContainer button:hover {
-    background-color: #28a745; 
-}
-
-#mensajeVerificacion, #mensajeVerificacionCarton {
-    font-size: 0.95em; /* Un poco más pequeño */
-    color: #2c3e50;
-    min-height: 11px;
-    line-height: 1.3;
-}
-
-#estadoJuego {
-    margin-top: 15px;
-    padding: 10px;
-    font-size: 1.0em;
-    font-weight: bold;
-    color: #fff; 
-    border-radius: 5px;
-    display: none; 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+">
+<h3>Cartones con Bingo:</h3>
+<div id="listaCartonesBingo" style="
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 8px;
     max-width: 400px;
     margin-left: auto;
     margin-right: auto;
-}
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+">Ningún cartón tiene bingo todavía</div>
+</div>
+<h3>Cartones con Bingo:</h3>
+<div id="listaCartonesBingo" style="
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+">Ningún cartón tiene bingo todavía</div>
+</div>
 
-#estadoJuego.enMarcha { background-color: #28a745; color: white; }
-#estadoJuego.pausado { background-color: #dc3545; color: white; }
-#estadoJuego.listo { background-color: #ffc107; color: #212529; }
-#estadoJuego.finalizado { background-color: #6c757d; color: white; }
-#estadoJuego.pausadoInput { background-color: #6c757d; color: white; }
+
+    
 
 
-#cartonesContainer { display: none; } /* Banco de datos de cartones oculto */
+<div id="cartonesContainer">
+<div data-numeros="41, 73, 53, 24, 1, 61, 35, 27, 10, 4, 62, 67, 46, 29, 16" id="carton16"></div>
+<div data-numeros="9, 18, 36, 61, 77, 13, 24, 46, 65, 90, 28, 32, 50, 75, 89" id="carton42"></div>
+<div data-numeros="9, 18, 36, 61, 77, 13, 24, 46, 65, 90, 28, 32, 50, 75, 89" id="carton30"></div>
+<div data-numeros="13, 41, 52, 80, 5, 58, 64, 76, 30, 19, 32, 47, 25, 73, 86" id="carton30_2"></div> 
+<div data-numeros="6, 27, 56, 43, 69, 15, 30, 58, 75, 82, 2, 29, 47, 64, 90" id="carton22"></div>
+<div data-numeros="12, 40, 61, 76, 89, 55, 86, 5, 23, 39, 16, 25, 43, 67, 78" id="carton35"></div>
+<div data-numeros="14, 36, 48, 50, 61, 38, 17, 54, 72, 83, 68, 79, 46, 22, 5" id="carton19"></div>
+<div data-numeros="18, 36, 55, 60, 87, 15, 40, 59, 72, 20, 49, 64, 79, 9, 3" id="carton14"></div>
+<div data-numeros="16, 27, 40, 76, 90, 79, 56, 32, 11, 9, 2, 22, 80, 47, 58" id="carton48"></div>
+<div data-numeros="8, 21, 42, 63, 75, 14, 26, 33, 50, 80, 38, 47, 56, 68, 84" id="carton13"></div>
+<div data-numeros="4, 22, 43, 71, 84, 10, 31, 47, 63, 79, 25, 32, 51, 66, 8" id="carton12"></div>
+<div data-numeros="19, 33, 46, 64, 78, 39, 52, 69, 82, 7, 12, 24, 42, 59, 71" id="carton47"></div>
+<div data-numeros="85, 8, 4, 34, 53, 67, 10, 41, 55, 72, 89, 23, 38, 45, 61" id="carton43"></div>
+<div data-numeros="12, 29, 33, 42, 76, 20, 48, 59, 63, 1, 7, 17, 51, 70, 83" id="carton40"></div>
+<div data-numeros="78, 45, 67, 20, 9, 85, 73, 51, 34, 11, 74, 57, 39, 25, 4" id="carton23"></div>
+<div data-numeros="3, 25, 36, 74, 84, 6, 18, 28, 65, 77, 20, 30, 44, 60, 88" id="carton46"></div>
+<div data-numeros="11, 8, 35, 49, 77, 80, 29, 52, 65, 74, 79, 33, 41, 58, 79" id="carton33"></div>
+<div data-numeros="9, 11, 20, 34, 55, 81, 2, 16, 24, 41, 62, 30, 45, 68, 74" id="carton8"></div>
+<div data-numeros="1, 14, 17, 43, 57, 81, 87, 31, 50, 62, 73, 21, 37, 48, 66" id="carton45"></div>
+<div data-numeros="21, 45, 60, 82, 1, 28, 32, 51, 87, 7, 64, 71, 85, 14, 38" id="carton31"></div>
+<div data-numeros="26, 41, 4, 73, 80, 15, 21, 55, 60, 84, 34, 8, 49, 56, 68" id="carton41"></div>
+<div data-numeros="7, 12, 39, 52, 66, 83, 31, 57, 74, 90, 69, 77, 5, 28, 45" id="carton15"></div>
+<div data-numeros="2, 13, 48, 62, 81, 17, 30, 43, 70, 86, 22, 34, 54, 76, 88" id="carton17"></div>
+<div data-numeros="1, 13, 21, 42, 60, 90, 18, 29, 48, 54, 71, 30, 56, 65, 79" id="carton4"></div>
+<div data-numeros="8, 9, 14, 28, 43, 61, 82, 31, 50, 63, 77, 10, 37, 72, 84" id="carton3"></div>
+<div data-numeros="15, 7, 34, 45, 75, 70, 81, 68, 49, 27, 89, 53, 66, 21, 6" id="carton28"></div>
+<div data-numeros="15, 29, 49, 68, 75, 13, 35, 51, 70, 83, 26, 54, 63, 86, 5" id="carton44"></div>
+<div data-numeros="15, 24, 40, 58, 73, 27, 45, 67, 76, 89, 38, 52, 69, 80, 6" id="carton5"></div>
+<div data-numeros="38, 52, 2, 69, 79, 87, 71, 44, 30, 19, 82, 53, 67, 27, 6" id="carton37"></div>
+<div data-numeros="14, 37, 43, 78, 17, 29, 60, 88, 23, 38, 54, 65, 85, 8, 9" id="carton29"></div>
+<div data-numeros="27, 44, 56, 70, 6, 18, 37, 59, 83, 36, 48, 61, 76, 87, 3" id="carton9"></div>
+<div data-numeros="26, 34, 47, 66, 83, 12, 22, 39, 51, 87, 3, 19, 44, 55, 70" id="carton2"></div>
+<div data-numeros="1, 12, 24, 35, 49, 18, 31, 52, 60, 86, 26, 3, 42, 63, 81" id="carton24"></div>
+<div data-numeros="16, 33, 55, 71, 80, 21, 40, 77, 84, 19, 37, 65, 76, 88, 8" id="carton20"></div>
+<div data-numeros="15, 27, 42, 59, 73, 21, 9, 19, 46, 63, 84, 20, 36, 54, 88" id="carton32"></div>
+<div data-numeros="12, 38, 52, 78, 85, 7, 29, 46, 75, 88, 19, 23, 57, 60, 90" id="carton11"></div>
+<div data-numeros="18, 24, 47, 62, 50, 70, 83, 26, 31, 6, 13, 69, 56, 48, 37" id="carton34"></div>
+<div data-numeros="12, 33, 44, 51, 63, 16, 39, 57, 71, 90, 22, 50, 74, 87, 1" id="carton27"></div>
+<div data-numeros="13, 42, 58, 65, 89, 15, 33, 49, 72, 86, 26, 53, 69, 82, 5" id="carton10"></div>
+<div data-numeros="17, 30, 53, 72, 81, 4, 10, 44, 75, 66, 22, 34, 57, 68, 90" id="carton36"></div>
+<div data-numeros="23, 41, 62, 78, 85, 5, 16, 33, 59, 88, 7, 11, 35, 49, 74" id="carton6"></div>
+<div data-numeros="7, 62, 70, 41, 23, 87, 66, 53, 32, 10, 44, 89, 59, 28, 13" id="carton21"></div>
+<div data-numeros="14, 64, 77, 50, 1, 21, 80, 67, 35, 54, 40, 17, 73, 28, 39" id="carton7"></div>
+<div data-numeros="2, 25, 36, 57, 81, 17, 20, 64, 4, 86, 32, 46, 53, 68, 75" id="carton1"></div>
+<div data-numeros="11, 26, 42, 62, 83, 4, 31, 48, 56, 72, 20, 36, 59, 67, 84" id="carton26"></div>
+<div data-numeros="22, 39, 57, 16, 31, 40, 23, 5, 11, 3, 85, 62, 81, 45, 64" id="carton38"></div>
+<div data-numeros="85, 32, 19, 51, 6, 78, 65, 23, 37, 11, 89, 58, 71, 25, 44" id="carton18"></div>
+<div data-numeros="10, 35, 54, 86, 72, 14, 43, 66, 74, 88, 25, 47, 58, 78, 37" id="carton39"></div>
+<div data-numeros="2, 3, 18, 10, 24, 28, 35, 40, 46, 55, 61, 69, 77, 79, 82" id="carton25"></div>
+<div data-numeros="10, 5, 3, 20, 26, 36, 41, 46, 52, 66, 65, 79, 81, 90, 80" id="carton100"></div>
+<div data-numeros="3, 8, 16, 26, 29, 35, 44, 42, 54, 56, 66, 60, 70, 88, 87" id="carton101"></div>
+<div data-numeros="9, 2, 19, 29, 27, 32, 38, 44, 51, 56, 68, 71, 78, 84, 86" id="carton102"></div>
+<div data-numeros="5, 1, 14, 24, 21, 37, 33, 48, 49, 59, 65, 67, 77, 78, 81" id="carton103"></div>
+<div data-numeros="6, 11, 14, 15, 21, 34, 43, 48, 55, 54, 63, 64, 75, 82, 88" id="carton104"></div>
+<div data-numeros="12, 16, 22, 31, 30, 39, 45, 42, 57, 59, 60, 62, 77, 76, 89" id="carton105"></div>
+<div data-numeros="7, 10, 13, 23, 36, 38, 47, 45, 57, 62, 69, 75, 79, 84, 89" id="carton106"></div>
+<div data-numeros="5, 18, 15, 27, 34, 37, 43, 42, 52, 60, 61, 70, 72, 84, 89" id="carton107"></div>
+<div data-numeros="3, 16, 17, 24, 30, 45, 40, 57, 50, 67, 63, 76, 75, 83, 87" id="carton108"></div>
+<div data-numeros="7, 2, 11, 13, 21, 28, 32, 36, 46, 58, 62, 79, 78, 81, 80" id="carton109"></div>
+<div data-numeros="8, 10, 19, 23, 29, 39, 31, 48, 41, 55, 51, 66, 77, 82, 90" id="carton110"></div>
+<div data-numeros="3, 8, 10, 20, 31, 35, 41, 43, 58, 54, 66, 60, 77, 71, 90" id="carton111"></div>
+<div data-numeros="1, 6, 12, 25, 26, 35, 44, 49, 56, 59, 69, 68, 74, 88, 73" id="carton112"></div>
+<div data-numeros="4, 6, 19, 15, 27, 28, 34, 42, 56, 55, 64, 70, 88, 87, 85" id="carton113"></div>
+<div data-numeros="9, 12, 18, 24, 23, 39, 36, 51, 50, 63, 68, 74, 76, 82, 86" id="carton114"></div>
+<div data-numeros="3, 15, 11, 22, 25, 33, 37, 46, 58, 68, 62, 78, 79, 88, 80" id="carton115"></div>
+<div data-numeros="7, 16, 13, 25, 38, 32, 47, 45, 57, 69, 62, 79, 75, 84, 89" id="carton116"></div>
+<div data-numeros="2, 5, 17, 13, 28, 35, 38, 41, 48, 54, 55, 72, 73, 82, 87" id="carton117"></div>
+<div data-numeros="1, 5, 14, 22, 26, 37, 33, 46, 49, 59, 65, 61, 72, 73, 83" id="carton118"></div>
+<div data-numeros="2, 11, 17, 29, 21, 30, 40, 44, 48, 53, 52, 67, 78, 80, 81" id="carton119"></div>
+<div data-numeros="8, 14, 18, 29, 23, 36, 44, 49, 52, 69, 67, 70, 75, 85, 89" id="carton120"></div>
+<div data-numeros="" id="carton00">1</div> </div>
+<p></p>
+<br/>
+<div style="height: 100px;"></div>
+<p></p>
+<br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+<br/><br/><br/>
+<br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+<br/><br/><br/>
+<a href="" target="_blank">
 
-@media (max-width: 600px) {
-    #seedDisplayContainer { max-width: 90%; font-size: 0.8em; }
-    #numeroContainer { width: 140px; height: 140px; }
-    #numero { font-size: 3.5em; }
-    #numerosContainer, #ultimosNumerosContainer { grid-template-columns: repeat(10, 1fr); max-width: 95%; gap: 3px; }
-    .numeroCirculo { width: 24px; height: 24px; font-size: 0.75em; }
-    button { font-size: 0.9em; padding: 8px 15px; min-width: 120px; }
-    #verificarNumeroContainer input, #verificarCartonContainer input { font-size: 1em; width: 80px; padding: 8px; }
-    #verificarNumeroContainer button, #verificarCartonContainer button { font-size: 1em; padding: 8px 15px; }
-    #listaCartonesBingo { gap: 5px; }
-    .bingo-group { padding: 5px; gap: 4px; }
-    .cartonBingo { padding: 5px 10px; font-size: 0.8em; }
-}
+<script src="js/script.js"></script>
+</body>
+</html>
