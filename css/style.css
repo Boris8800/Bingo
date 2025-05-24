@@ -218,16 +218,16 @@ body {
     background-color: #ddebf7;
 }
 
-.numeroCirculo {
-    width: 28px;
-    height: 28px;
+.numeroCirculo { /* Las 90 bolas del historial */
+    width: 28px;  /* Base width */
+    height: 28px; /* Base height */
     border-radius: 50%;
     background-color: #05102e;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9em;
+    font-size: 0.9em; /* Base font size */
     font-weight: bold;
     cursor: default;
     transition: background-color 0.3s;
@@ -238,10 +238,20 @@ body {
     background-color: #af1000;
 }
 
-.ultimoNumeroCirculo {
+/* MODIFIED .ultimoNumeroCirculo */
+.ultimoNumeroCirculo { /* Las últimas 10 bolas */
     background-color: #8d1307;
-    font-size: 1.2em;
+    font-size: 1.2em; /* Kept from your original for larger text */
     border: 1px solid #fff;
+    width: 32px;  /* ADDED: Slightly larger than .numeroCirculo's 28px */
+    height: 32px; /* ADDED: Slightly larger than .numeroCirculo's 28px */
+    /* Assuming it also has .numeroCirculo class for flex, border-radius etc. */
+    /* If not, add these: */
+    /* display: flex; */
+    /* align-items: center; */
+    /* justify-content: center; */
+    /* font-weight: bold; */
+    /* border-radius: 50%; */
 }
 
 button {
@@ -280,25 +290,22 @@ button:hover {
     font-weight: bold;
 }
 
-/* MODIFIED SECTION FOR VERIFICATION CONTAINERS */
 #verificarNumeroContainer, #verificarCartonContainer {
     margin-top: 10px;
     padding: 15px;
     background-color: #e9f1f9;
     border-radius: 9px;
     width: auto;
-    max-width: 450px; /* Slightly increased max-width to accommodate inline items */
+    max-width: 450px;
     margin-left: auto;
     margin-right: auto;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     box-sizing: border-box;
-
-    /* Flex properties to align input and button on the same line */
     display: flex;
-    justify-content: center; /* Center the group of input & button */
-    align-items: center;     /* Align items vertically */
-    gap: 10px;               /* Space between input and button */
-    flex-wrap: wrap;         /* Allow wrapping on very small screens */
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 #verificarNumeroContainer input, #verificarCartonContainer input {
@@ -306,22 +313,18 @@ button:hover {
     font-size: 1.1em;
     border: 1px solid #ced4da;
     border-radius: 5px;
-    width: 120px; /* Fixed width for the input field */
+    width: 120px;
     box-sizing: border-box;
-    /* Remove display:block and auto margins for centering */
-    margin-top: 5px; /* For spacing when wrapped */
-    margin-bottom: 5px; /* For spacing when wrapped */
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 #verificarNumeroContainer button, #verificarCartonContainer button {
     padding: 10px 20px;
     font-size: 1.1em;
-    /* Remove display:block and auto margins for centering */
-    margin-top: 5px; /* For spacing when wrapped */
-    margin-bottom: 5px; /* For spacing when wrapped */
-    /* Button width will be auto based on content and padding */
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
-/* END OF MODIFIED SECTION */
 
 #verificarNumeroContainer button:hover, #verificarCartonContainer button:hover {
     background-color: #28a745;
@@ -361,26 +364,39 @@ button:hover {
     #numeroContainer { width: 140px; height: 140px; }
     #numero { font-size: 3.5em; }
     #numerosContainer, #ultimosNumerosContainer { grid-template-columns: repeat(10, 1fr); max-width: 95%; gap: 3px; }
-    .numeroCirculo { width: 24px; height: 24px; font-size: 0.75em; }
+    
+    .numeroCirculo { 
+        width: 24px; /* Responsive base width */
+        height: 24px; /* Responsive base height */
+        font-size: 0.75em; /* Responsive base font size */
+    }
+
+    /* ADDED/MODIFIED rule for .ultimoNumeroCirculo in media query */
+    .ultimoNumeroCirculo {
+        font-size: 0.95em; /* Slightly larger than .numeroCirculo's 0.75em */
+        width: 28px;     /* Slightly larger than .numeroCirculo's 24px */
+        height: 28px;    /* Slightly larger than .numeroCirculo's 24px */
+        /* Other properties like background-color, border are inherited from main .ultimoNumeroCirculo style */
+    }
+
     button { font-size: 0.9em; padding: 8px 15px; min-width: 120px; }
 
     #myCardsTrackerContainer, #verificarNumeroContainer, #verificarCartonContainer {
         width: 90%;
-        max-width: none; /* Allow it to be 90% of the smaller screen */
+        max-width: none; 
     }
 
     #verificarNumeroContainer input, #verificarCartonContainer input {
         font-size: 1em;
-        width: 100px; /* Slightly smaller input for small screens */
+        width: 100px; 
         padding: 8px;
-        flex-grow: 1; /* Allow input to take available space if you want it to be more flexible */
-        max-width: 150px; /* Cap flexible growth */
-
+        flex-grow: 1; 
+        max-width: 150px; 
     }
     #verificarNumeroContainer button, #verificarCartonContainer button {
         font-size: 1em;
         padding: 8px 15px;
-        flex-shrink: 0; /* Prevent button from shrinking too much */
+        flex-shrink: 0; 
     }
     #listaCartonesBingo { gap: 5px; }
     .bingo-group { padding: 5px; gap: 4px; }
