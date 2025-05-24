@@ -3,18 +3,27 @@ let numerosSalidos = [];
 let numerosDisponibles = []; // Se inicializa en reiniciarJuego
 let intervalo;
 let enEjecucion = false;
-let juegoPausado = false; 
-let cartonesConBingo = []; 
+let juegoPausado = false;
+let cartonesConBingo = [];
 
 // ---- Variables para Selección de Voz ----
 let voices = [];
 let selectedVoice = null;
 
 // ---- Variables para Nuevas Funcionalidades ----
-let myTrackedCardNumbers = []; 
-const bingoAudio = new Audio('bingo-sound.mp3'); // !!! CAMBIA 'bingo-sound.mp3' !!!
-                                                // por la ruta a tu archivo de sonido.
+let myTrackedCardNumbers = [];
+const bingoAudio = new Audio('bingo-sound.mp3');
 bingoAudio.preload = 'auto';
+
+// ---- Helper function to play the bingo sound ----
+function playBingoSoundEffect() {
+    try {
+        bingoAudio.currentTime = 0;
+        bingoAudio.play().catch(e => console.warn("Error al reproducir bingo-sound.mp3:", e));
+    } catch (e) {
+        console.warn("Excepción al reproducir bingo-sound.mp3:", e);
+    }
+}
 
 // ---- Funciones para Selección de Voz ----
 function populateVoiceList() {
@@ -24,47 +33,46 @@ function populateVoiceList() {
         if (voiceSelectContainer) voiceSelectContainer.style.display = 'none';
         return;
     }
-    
+
     voices = speechSynthesis.getVoices();
     const voiceSelect = document.getElementById('voiceSelect');
     if (!voiceSelect) {
-        // console.error("Elemento 'voiceSelect' no encontrado."); 
         return;
     }
-    
+
     const previouslySelectedURI = selectedVoice ? selectedVoice.voiceURI : (voiceSelect.value || '');
-    voiceSelect.innerHTML = ''; 
+    voiceSelect.innerHTML = '';
 
     const defaultOption = document.createElement('option');
     defaultOption.textContent = 'Voz por defecto del navegador';
-    defaultOption.value = ''; 
+    defaultOption.value = '';
     voiceSelect.appendChild(defaultOption);
 
     voices.forEach((voice) => {
         const option = document.createElement('option');
         option.textContent = `${voice.name} (${voice.lang})`;
-        option.value = voice.voiceURI; 
+        option.value = voice.voiceURI;
         voiceSelect.appendChild(option);
     });
-    
+
     if (previouslySelectedURI) {
         const optionToSelect = Array.from(voiceSelect.options).find(opt => opt.value === previouslySelectedURI);
         if (optionToSelect) {
             optionToSelect.selected = true;
         } else if (voiceSelect.options.length > 0) {
-             voiceSelect.options[0].selected = true; 
-             selectedVoice = null; 
+            voiceSelect.options[0].selected = true;
+            selectedVoice = null;
         }
     } else if (voiceSelect.options.length > 0) {
-         voiceSelect.options[0].selected = true;
-         selectedVoice = null;
+        voiceSelect.options[0].selected = true;
+        selectedVoice = null;
     }
 }
 
 function setVoice() {
     const voiceSelect = document.getElementById('voiceSelect');
-    if (!voiceSelect || !voiceSelect.value) { 
-        selectedVoice = null; 
+    if (!voiceSelect || !voiceSelect.value) {
+        selectedVoice = null;
         return;
     }
     selectedVoice = voices.find(voice => voice.voiceURI === voiceSelect.value);
@@ -74,18 +82,19 @@ function setVoice() {
 
 // ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
 function trackMyCards() {
+    playBingoSoundEffect(); // Req 1: Button sound
     const inputEl = document.getElementById('myCardNumbersInput');
     if (!inputEl) {
         console.error("Elemento 'myCardNumbersInput' no encontrado.");
-        return; // Salir si el input no existe
+        return;
     }
     const inputText = inputEl.value;
     myTrackedCardNumbers = inputText.split(',')
         .map(numStr => parseInt(numStr.trim()))
         .filter(num => !isNaN(num) && num > 0);
-    
-    actualizarMisCartonesBingoDisplay(); 
-    inputEl.value = myTrackedCardNumbers.join(', '); 
+
+    actualizarMisCartonesBingoDisplay();
+    inputEl.value = myTrackedCardNumbers.join(', ');
 }
 
 function actualizarMisCartonesBingoDisplay() {
@@ -99,49 +108,51 @@ function actualizarMisCartonesBingoDisplay() {
         myTrackedListDiv.textContent = "---";
         return;
     }
-    
-    misBingosEnJuego.sort((a,b) => a - b); 
+
+    misBingosEnJuego.sort((a, b) => a - b);
 
     misBingosEnJuego.forEach(cartonId => {
-        const elemento = document.createElement('span'); 
-        elemento.className = 'carton-bingo mis-cartones-bingo-item'; 
-        elemento.textContent = `${cartonId}`; 
+        const elemento = document.createElement('span');
+        elemento.className = 'carton-bingo mis-cartones-bingo-item';
+        elemento.textContent = `${cartonId}`;
         myTrackedListDiv.appendChild(elemento);
-        myTrackedListDiv.appendChild(document.createTextNode(' ')); 
+        myTrackedListDiv.appendChild(document.createTextNode(' '));
     });
 }
 // ---- FIN FUNCIONES "MIS CARTONES" ----
 
 // ---- FUNCIONES PRINCIPALES DEL JUEGO ----
-function reiniciarJuego() { 
+function reiniciarJuego() {
+    playBingoSoundEffect(); // Req 1: Button sound
     numerosSalidos = [];
-    numerosDisponibles = Array.from({length: 90}, (_, i) => i + 1);
-    cartonesConBingo = []; 
+    numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
+    cartonesConBingo = [];
 
     const numeroDisplay = document.getElementById('numero');
-    if(numeroDisplay) numeroDisplay.textContent = '--';
-    
+    if (numeroDisplay) numeroDisplay.textContent = '--';
+
     const circulos = document.querySelectorAll('#numerosContainer .numeroCirculo');
     circulos.forEach(circulo => circulo.classList.remove('marcado'));
-    
-    if(intervalo) clearInterval(intervalo);
+
+    if (intervalo) clearInterval(intervalo);
     const startStopBtn = document.getElementById('startStopBtn');
-    if(startStopBtn) startStopBtn.textContent = 'Comenzar';
-    
+    if (startStopBtn) startStopBtn.textContent = 'Comenzar';
+
     enEjecucion = false;
-    juegoPausado = false; 
-    
+    juegoPausado = false;
+
     actualizarUltimosNumeros();
-    limpiarMensajeVerificacion(); 
+    limpiarMensajeVerificacion();
     const msgCarton = document.getElementById('mensajeVerificacionCarton');
-    if(msgCarton) msgCarton.textContent = "";
-    
-    actualizarListaBingos(); 
-    actualizarMisCartonesBingoDisplay(); 
-    actualizarEstadoJuego("listo"); 
+    if (msgCarton) msgCarton.textContent = "";
+
+    actualizarListaBingos();
+    actualizarMisCartonesBingoDisplay();
+    actualizarEstadoJuego("listo");
 }
 
 function startStop() {
+    playBingoSoundEffect(); // Req 1: Button sound
     const startStopBtn = document.getElementById('startStopBtn');
     if (!startStopBtn) return;
 
@@ -151,7 +162,7 @@ function startStop() {
         enEjecucion = false;
         actualizarEstadoJuego("pausado");
     } else {
-        if (numerosDisponibles.length === 0) { 
+        if (numerosDisponibles.length === 0) {
             alert("¡Todos los números han sido llamados! Reinicia el juego.");
             actualizarEstadoJuego("finalizado");
             return;
@@ -166,17 +177,17 @@ function startStop() {
             }
             window.speechSynthesis.speak(mensaje);
         }
-        
-        enEjecucion = true; 
+
+        enEjecucion = true;
         startStopBtn.textContent = 'Detener';
         actualizarEstadoJuego("enMarcha");
-        limpiarMensajeVerificacion(); 
+        limpiarMensajeVerificacion();
 
         setTimeout(() => {
-            if (enEjecucion) { 
+            if (enEjecucion) {
                 intervalo = setInterval(siguienteNumero, 3000);
             }
-        }, 100); 
+        }, 100);
     }
 }
 
@@ -185,9 +196,9 @@ function siguienteNumero() {
         alert("¡Todos los números han sido llamados!");
         clearInterval(intervalo);
         const startStopBtn = document.getElementById('startStopBtn');
-        if(startStopBtn) startStopBtn.textContent = 'Comenzar';
+        if (startStopBtn) startStopBtn.textContent = 'Comenzar';
         enEjecucion = false;
-        actualizarEstadoJuego("finalizado"); 
+        actualizarEstadoJuego("finalizado");
         return;
     }
 
@@ -196,12 +207,12 @@ function siguienteNumero() {
     numerosSalidos.push(numero);
 
     const numeroDisplay = document.getElementById('numero');
-    if(numeroDisplay) numeroDisplay.textContent = numero;
-    
+    if (numeroDisplay) numeroDisplay.textContent = numero;
+
     marcarNumero(numero);
     actualizarUltimosNumeros();
     anunciarNumero(numero);
-    verificarTodosLosCartones(); 
+    verificarTodosLosCartones(); // This will now handle sound for tracked bingos
 }
 
 function anunciarNumero(numero) {
@@ -209,11 +220,11 @@ function anunciarNumero(numero) {
         const mensaje = new SpeechSynthesisUtterance(numero.toString());
         if (selectedVoice) {
             mensaje.voice = selectedVoice;
-            mensaje.lang = selectedVoice.lang; 
+            mensaje.lang = selectedVoice.lang;
         } else {
-            mensaje.lang = 'es-ES'; 
+            mensaje.lang = 'es-ES';
         }
-        window.speechSynthesis.cancel(); 
+        window.speechSynthesis.cancel();
         window.speechSynthesis.speak(mensaje);
     }
 }
@@ -237,9 +248,10 @@ function actualizarUltimosNumeros() {
 }
 
 function verificarNumero() {
+    playBingoSoundEffect(); // Req 1: Button sound
     const numeroVerificar = document.getElementById('numeroVerificar');
     const mensajeVerificacion = document.getElementById('mensajeVerificacion');
-    if(!numeroVerificar || !mensajeVerificacion) return;
+    if (!numeroVerificar || !mensajeVerificacion) return;
     const numero = parseInt(numeroVerificar.value);
     if (isNaN(numero) || numero < 1 || numero > 90) {
         mensajeVerificacion.innerHTML = "Por favor, ingresa un número válido (1-90).";
@@ -252,29 +264,31 @@ function verificarNumero() {
         mensajeVerificacion.innerHTML = `❌ El número <span class="numeroFaltante">${numero}</span> no ha salido.`;
         mensajeVerificacion.style.color = "red";
     }
-    if(numeroVerificar) numeroVerificar.value = "";
-    if(numeroVerificar) numeroVerificar.focus();
+    if (numeroVerificar) numeroVerificar.value = "";
+    if (numeroVerificar) numeroVerificar.focus();
 }
 
 function verificarCarton() {
+    playBingoSoundEffect(); // Req 1: Button sound
+
     const cartonVerificar = document.getElementById('cartonVerificar');
     const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
     if (!cartonVerificar || !mensajeVerificacionCarton) return;
-    
+
     const numeroCartonInput = cartonVerificar.value;
     const numeroCarton = parseInt(numeroCartonInput.replace(/[^0-9]/g, ''));
 
     if (isNaN(numeroCarton)) {
-         mensajeVerificacionCarton.innerHTML = "Ingresa un número de cartón válido.";
-         mensajeVerificacionCarton.style.color = "red";
+        mensajeVerificacionCarton.innerHTML = "Ingresa un número de cartón válido.";
+        mensajeVerificacionCarton.style.color = "red";
     } else {
-        const cartonElement = document.getElementById(`carton${numeroCarton}`); 
+        const cartonElement = document.getElementById(`carton${numeroCarton}`);
         if (!cartonElement || !cartonElement.getAttribute('data-numeros')) {
             mensajeVerificacionCarton.innerHTML = `❌ Cartón ${numeroCarton} no encontrado o inválido.`;
             mensajeVerificacionCarton.style.color = "red";
         } else {
             const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
-            if (!numerosEnCartonAttr || numerosEnCartonAttr.trim() === "") { 
+            if (!numerosEnCartonAttr || numerosEnCartonAttr.trim() === "") {
                 mensajeVerificacionCarton.innerHTML = `❌ Cartón ${numeroCarton} no tiene números definidos.`;
                 mensajeVerificacionCarton.style.color = "red";
             } else {
@@ -282,8 +296,8 @@ function verificarCarton() {
                 const faltantes = numerosEnCarton.filter(num => !numerosSalidos.includes(num));
                 const numerosSalidosEnCarton = numerosEnCarton.filter(num => numerosSalidos.includes(num));
 
-                if (numerosEnCarton.length > 0 && faltantes.length === 0) {
-                    mensajeVerificacionCarton.innerHTML = `✅ ¡Bingo! Cartón ${numeroCarton} completo: ` + 
+                if (numerosEnCarton.length > 0 && faltantes.length === 0) { // Bingo detected
+                    mensajeVerificacionCarton.innerHTML = `✅ ¡Bingo! Cartón ${numeroCarton} completo: ` +
                         numerosSalidosEnCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
                     mensajeVerificacionCarton.style.color = "green";
                     if (window.speechSynthesis) {
@@ -296,10 +310,20 @@ function verificarCarton() {
                         }
                         window.speechSynthesis.speak(msg);
                     }
-                    if (!cartonesConBingo.includes(numeroCarton)) { 
-                        try { bingoAudio.currentTime = 0; bingoAudio.play().catch(e => console.warn("Error al reproducir sonido (verif. manual):", e)); } 
-                        catch (e) { console.warn("Excepción al reproducir sonido (verif. manual):", e); }
+                    // Req 3: Sound for tracked card bingo detected manually
+                    // Check if it's a tracked card AND if it's a "new" bingo in the general list
+                    if (myTrackedCardNumbers.includes(numeroCarton) && !cartonesConBingo.includes(numeroCarton)) {
+                        playBingoSoundEffect();
+                        // Note: verificarCarton does not currently add to cartonesConBingo array.
+                        // For consistent "new" detection, cartonesConBingo should be updated here if a bingo is confirmed.
+                        // However, sticking to "no cambies nada mas" for core logic beyond sound for now.
+                        // This sound will play if it's tracked and not yet in the `cartonesConBingo` array from automatic checks.
                     }
+                    // Req 2: Original sound for manual verification bingo removed from here.
+                    // The original sound was:
+                    // if (!cartonesConBingo.includes(numeroCarton)) {
+                    // try { bingoAudio.currentTime = 0; bingoAudio.play()... } catch ...
+                    // }
                 } else if (numerosEnCarton.length === 0) {
                     mensajeVerificacionCarton.innerHTML = `ℹ️ Cartón ${numeroCarton} sin números válidos.`;
                     mensajeVerificacionCarton.style.color = "orange";
@@ -312,16 +336,16 @@ function verificarCarton() {
             }
         }
     }
-    if(cartonVerificar) {
+    if (cartonVerificar) {
         cartonVerificar.value = "";
         cartonVerificar.focus();
     }
 }
 
-// Eventos focus/blur
+// Eventos focus/blur (sin cambios de sonido aquí)
 const numeroVerificarInputEl = document.getElementById('numeroVerificar');
 const cartonVerificarInputEl = document.getElementById('cartonVerificar');
-const startStopBtnEl = document.getElementById('startStopBtn'); 
+const startStopBtnEl = document.getElementById('startStopBtn');
 
 if (cartonVerificarInputEl) {
     cartonVerificarInputEl.addEventListener('blur', () => {
@@ -333,14 +357,14 @@ if (cartonVerificarInputEl) {
             actualizarEstadoJuego("enMarcha");
         }
         const msgCarton = document.getElementById('mensajeVerificacionCarton');
-        if(msgCarton) msgCarton.textContent = "";
+        if (msgCarton) msgCarton.textContent = "";
     });
     cartonVerificarInputEl.addEventListener('focus', () => {
         if (enEjecucion && startStopBtnEl) {
             clearInterval(intervalo);
             juegoPausado = true;
             startStopBtnEl.textContent = 'Comenzar';
-            enEjecucion = false; 
+            enEjecucion = false;
             actualizarEstadoJuego("pausadoInput");
         }
     });
@@ -355,7 +379,7 @@ if (numeroVerificarInputEl) {
             actualizarEstadoJuego("pausadoInput");
         }
     });
-    numeroVerificarInputEl.addEventListener('blur', function() {
+    numeroVerificarInputEl.addEventListener('blur', function () {
         limpiarMensajeVerificacion();
         if (juegoPausado && startStopBtnEl) {
             intervalo = setInterval(siguienteNumero, 3000);
@@ -366,7 +390,7 @@ if (numeroVerificarInputEl) {
         }
     });
 }
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
     const msgVerificacion = document.getElementById('mensajeVerificacion');
     const msgCarton = document.getElementById('mensajeVerificacionCarton');
     if (msgVerificacion && !event.target.closest('#verificarNumeroContainer')) {
@@ -387,75 +411,81 @@ function actualizarEstadoJuego(estado) {
         case "listo": estadoJuegoDiv.textContent = "ℹ️ Juego listo. ¡Presiona Comenzar! ℹ️"; estadoJuegoDiv.className = "listo"; break;
         case "finalizado": estadoJuegoDiv.textContent = "🏁 ¡Juego finalizado! 🏁"; estadoJuegoDiv.className = "finalizado"; break;
         case "pausadoInput": estadoJuegoDiv.textContent = "⌨️ Pausa (input activo) ⌨️"; estadoJuegoDiv.className = "pausadoInput"; break;
-        default: estadoJuegoDiv.textContent = estado; estadoJuegoDiv.className = estado; 
+        default: estadoJuegoDiv.textContent = estado; estadoJuegoDiv.className = estado;
     }
 }
 
 function limpiarMensajeVerificacion() {
     const mensajeVerificacion = document.getElementById('mensajeVerificacion');
     if (mensajeVerificacion) {
-        mensajeVerificacion.innerHTML = ''; 
-        mensajeVerificacion.style.color = ''; 
+        mensajeVerificacion.innerHTML = '';
+        mensajeVerificacion.style.color = '';
     }
 }
 
 // --- Lógica de Bingo (General - basada en tu script original, corregida y con sonido) ---
 function verificarTodosLosCartones() {
     const elementosCartones = document.querySelectorAll('#cartonesContainer > div[id^="carton"]');
-    let algunBingoNuevoEsteTurno = false;
+    // let algunBingoNuevoEsteTurno = false; // Variable no longer used for sound here
 
     elementosCartones.forEach(cartonElement => {
         const idCompleto = cartonElement.id;
         const match = idCompleto.match(/^carton(\d+)$/);
-        if (!match || !match[1]) return; 
+        if (!match || !match[1]) return;
         const numeroCarton = parseInt(match[1]);
 
-        if (cartonesConBingo.includes(numeroCarton)) { 
-            return; 
+        if (cartonesConBingo.includes(numeroCarton)) {
+            return;
         }
-        
+
         const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
         if (numerosEnCartonAttr && numerosEnCartonAttr.trim() !== "") {
             const numerosEnCarton = numerosEnCartonAttr.split(',').map(Number).filter(n => n > 0 && !isNaN(n));
-            if (numerosEnCarton.length > 0) { 
+            if (numerosEnCarton.length > 0) {
                 const faltantes = numerosEnCarton.filter(num => !numerosSalidos.includes(num));
-                if (faltantes.length === 0) { 
-                    if (!cartonesConBingo.includes(numeroCarton)) { 
+                if (faltantes.length === 0) { // Bingo detected
+                    if (!cartonesConBingo.includes(numeroCarton)) {
                         cartonesConBingo.push(numeroCarton);
-                        algunBingoNuevoEsteTurno = true;
+                        // algunBingoNuevoEsteTurno = true; // Not used for sound here
+
+                        // Req 3: Play sound if this new bingo is for a tracked card
+                        if (myTrackedCardNumbers.includes(numeroCarton)) {
+                            playBingoSoundEffect();
+                        }
                     }
                 }
             }
         }
     });
 
-    if (algunBingoNuevoEsteTurno) {
-        try {
-            bingoAudio.currentTime = 0; 
-            bingoAudio.play().catch(e => console.warn("Error al reproducir sonido de bingo:", e));
-        } catch (e) {
-            console.warn("Excepción al reproducir sonido de bingo (general):", e);
-        }
-    }
+    // Req 2: Sound for general new bingos (algunBingoNuevoEsteTurno) is REMOVED from here.
+    // if (algunBingoNuevoEsteTurno) {
+    // try {
+    // bingoAudio.currentTime = 0;
+    // bingoAudio.play().catch(e => console.warn("Error al reproducir sonido de bingo:", e));
+    // } catch (e) {
+    // console.warn("Excepción al reproducir sonido de bingo (general):", e);
+    // }
+    // }
 
     actualizarListaBingos();
-    actualizarMisCartonesBingoDisplay(); 
+    actualizarMisCartonesBingoDisplay();
 }
 
-function actualizarListaBingos() { 
+function actualizarListaBingos() {
     const lista = document.getElementById('listaCartonesBingo');
-    if(!lista) return;
+    if (!lista) return;
     lista.innerHTML = '';
-    
+
     if (cartonesConBingo.length === 0) {
         lista.textContent = "Ningún cartón tiene bingo todavía";
         return;
     }
-    
-    cartonesConBingo.sort((a,b) => a - b); 
+
+    cartonesConBingo.sort((a, b) => a - b);
     cartonesConBingo.forEach(numero => {
         const elemento = document.createElement('div');
-        elemento.className = 'carton-bingo'; 
+        elemento.className = 'carton-bingo';
         elemento.textContent = `${numero}`;
         lista.appendChild(elemento);
     });
@@ -482,12 +512,12 @@ window.onload = () => {
             speechSynthesis.onvoiceschanged = () => {
                 populateVoiceList();
                 const voiceSelectElement = document.getElementById('voiceSelect');
-                 if (voiceSelectElement && !voiceSelectElement.onchange) { 
+                if (voiceSelectElement && !voiceSelectElement.onchange) {
                     voiceSelectElement.addEventListener('change', setVoice);
                 }
             };
         } else {
-            populateVoiceList(); 
+            populateVoiceList();
             const voiceSelectElement = document.getElementById('voiceSelect');
             if (voiceSelectElement) {
                 voiceSelectElement.addEventListener('change', setVoice);
@@ -497,6 +527,6 @@ window.onload = () => {
         const voiceSettingsContainer = document.getElementById('voiceSettingsContainer');
         if (voiceSettingsContainer) voiceSettingsContainer.style.display = 'none';
     }
-    
-    reiniciarJuego(); 
+
+    reiniciarJuego();
 };
