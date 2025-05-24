@@ -1,4 +1,4 @@
-/* ... (Estilos existentes de antes) ... */
+/* ... (Estilos existentes de antes, sin cambios hasta la sección de verificación) ... */
 
 #seedDisplayContainer {
     margin-bottom: 15px;
@@ -18,17 +18,12 @@
     color: #000;
 }
 
-
-
-/* Contenedor para "Seguir Mis Cartones" */
 #myCardsTrackerContainer {
-    /* Heredará el estilo de .control-box si le aplicas esa clase en el HTML */
-    /* Si no, puedes copiar los estilos de .control-box aquí */
     margin-top: 20px;
     padding: 15px;
     background-color: #fff;
     border-radius: 8px;
-    min-width: 340px;
+    width: auto;
     max-width: 480px;
     margin-left: auto;
     margin-right: auto;
@@ -37,10 +32,10 @@
 }
 
 #myCardsTrackerContainer h3 {
-    margin-top: 0; 
-    margin-bottom: 15px; 
-    color: #2c3e50; /* O un color temático para esta sección */
-    text-align: center; 
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #2c3e50;
+    text-align: center;
     font-size: 1.2em;
     border-bottom: 1px solid #eee;
     padding-bottom: 10px;
@@ -56,23 +51,22 @@
 }
 
 #myCardsTrackerContainer input[type="text"] {
-    width: calc(100% - 22px); /* Ocupar ancho disponible menos padding del input */
-    padding: 9px; 
+    width: calc(100% - 22px);
+    padding: 9px;
     margin-bottom: 10px;
-    border: 1px solid #ccc; 
+    border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 0.95em;
-    box-sizing: border-box; 
+    box-sizing: border-box;
 }
 
-#myCardsTrackerContainer button { 
-    display: block; 
-    width: auto; /* O '100%' si quieres que ocupen todo el ancho */
-    margin: 10px auto 0 auto; /* Centrar botón */
+#myCardsTrackerContainer button {
+    display: block;
+    width: auto;
+    margin: 10px auto 0 auto;
     padding: 9px 18px;
-    background-color: #FF9800; /* Un color distintivo para este botón */
+    background-color: #FF9800;
     color: white;
-    /* Otros estilos de botón se heredan o se definen en la regla 'button' general */
 }
 #myCardsTrackerContainer button:hover {
     background-color: #F57C00;
@@ -81,75 +75,61 @@
 #myCardsTrackerContainer h4 {
     margin-top: 15px;
     margin-bottom: 5px;
-    color: #555; /* O el color del h3 */
+    color: #555;
     font-size: 1em;
     text-align: left;
 }
 
-#myTrackedBingosList { /* La lista de tus cartones con bingo */
+#myTrackedBingosList {
     padding: 10px;
-    background-color: #fff9e6; /* Un fondo amarillo muy pálido */
-    border: 1px dashed #ffcc80; /* Borde naranja discontinuo */
+    background-color: #fff9e6;
+    border: 1px dashed #ffcc80;
     border-radius: 4px;
     min-height: 22px;
-    text-align: left; 
+    text-align: left;
     font-size: 0.9em;
-    display: flex; /* Para que los spans se pongan en línea */
-    flex-wrap: wrap; /* Para que se ajusten */
-    gap: 5px; /* Espacio entre los cartones */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
 }
 
-/* Estilo para cada uno de tus cartones con bingo en tu lista de seguimiento */
-.mis-cartones-bingo-item { 
-    background-color: #FFB74D !important; /* Naranja claro para tus bingos */
-    color: #424242 !important; /* Texto oscuro para contraste */
+.mis-cartones-bingo-item {
+    background-color: #FFB74D !important;
+    color: #424242 !important;
     padding: 4px 8px;
     border-radius: 12px;
-    /* display: inline-block; /* No es necesario si el padre es flex */
     font-weight: 500;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
-
-
-
-
-
-
-
-/* Contenedor principal de la lista de cartones con bingo */
 #listaCartonesBingo {
-    display: flex;         /* Activa Flexbox para el layout */
-    flex-direction: row;   /* Los elementos se disponen en fila (horizontal) */
-    flex-wrap: wrap;       /* Permite que los elementos pasen a la siguiente línea si no hay espacio */
-    justify-content: center; /* Centra los cartones horizontalmente si hay espacio extra */
-    align-items: center;   /* Centra los cartones verticalmente (útil si tienen alturas diferentes) */
-    gap: 8px;              /* Espacio entre cada cartón con bingo */
-    padding: 10px;         /* Un poco de espacio interno en el contenedor */
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
     margin-top: 10px;
-    min-height: 30px;      /* Altura mínima para que el contenedor sea visible incluso vacío */
-    border: 1px solid #e0e0e0; /* Un borde sutil para el área de la lista */
+    min-height: 30px;
+    border: 1px solid #e0e0e0;
     border-radius: 6px;
-    background-color: #f9f9f9; /* Un fondo claro para el área de la lista */
+    background-color: #f9f9f9;
 }
 
-/* Estilo para cada cartón individual en la lista de bingo */
-/* Asegúrate de que el nombre de la clase coincida con el que usas en tu script.js */
-/* Tu script original usaba 'carton-bingo' */
 .carton-bingo {
-    background-color: #2ecc71; /* Color verde que tenías */
+    background-color: #2ecc71;
     color: white;
-    padding: 8px 15px;      /* Espaciado interno del número de cartón */
-    border-radius: 20px;    /* Bordes redondeados */
+    padding: 8px 15px;
+    border-radius: 20px;
     font-weight: bold;
-    font-size: 0.9em;       /* Tamaño de fuente para el número del cartón */
+    font-size: 0.9em;
     text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12); /* Sombra sutil */
-    /* display: inline-block; ya no es necesario si el padre es flex, pero no hace daño */
-    margin: 0; /* El 'gap' en el contenedor flex se encarga del espaciado */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    margin: 0;
 }
 
-/* Estilo para cuando la lista está vacía (el texto que pone JavaScript) */
 #listaCartonesBingo:empty {
     padding: 15px;
     text-align: center;
@@ -157,9 +137,8 @@
     font-style: italic;
 }
 
-      
-.numeroVerificado { /* Bola que ha salido (en la verificación manual) */
-    background-color: #e74c3c; 
+.numeroVerificado {
+    background-color: #e74c3c;
     font-size: 1.2em;
     width: 30px;
     height: 30px;
@@ -171,9 +150,9 @@
     margin: 2px;
     font-weight: bold;
 }
-        
-.numeroFaltante { /* Bola que falta (en la verificación manual) */
-    background-color: #05102e; 
+
+.numeroFaltante {
+    background-color: #05102e;
     font-size: 1.2em;
     width: 30px;
     height: 30px;
@@ -198,48 +177,49 @@ body {
     justify-content: flex-start;
     min-height: 100vh;
     box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 #numeroContainer {
-    width: 180px; /* Un poco más pequeño */
+    width: 180px;
     height: 180px;
     border-radius: 50%;
-    border: 5px solid #a51818; 
+    border: 5px solid #a51818;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 15px auto; 
+    margin: 15px auto;
 }
 
 #numero {
-    font-size: 5em; /* Un poco más pequeño */
+    font-size: 5em;
     font-weight: bold;
     color: #2c3e50;
 }
 
 #historial {
     margin-top: 10px;
-    font-size: 1.2em; /* Este selector no parece usarse directamente */
+    font-size: 1.2em;
 }
 
-#numerosContainer, #ultimosNumerosContainer { /* Contenedor de todas las bolas y de las últimas 10 */
+#numerosContainer, #ultimosNumerosContainer {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
     gap: 5px;
-    max-width: 980px; 
-    margin: 10px auto; 
+    max-width: 980px;
+    margin: 10px auto;
     padding: 10px;
-    background-color: #e9ecef; 
+    background-color: #e9ecef;
     border-radius: 1px;
 }
 
 #ultimosNumerosContainer {
     margin-top: 10px;
-    background-color: #ddebf7; 
+    background-color: #ddebf7;
 }
 
-.numeroCirculo { /* Las 90 bolas del historial */
-    width: 28px; /* Ligeramente más pequeño */
+.numeroCirculo {
+    width: 28px;
     height: 28px;
     border-radius: 50%;
     background-color: #05102e;
@@ -247,7 +227,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9em; /* Ligeramente más pequeño */
+    font-size: 0.9em;
     font-weight: bold;
     cursor: default;
     transition: background-color 0.3s;
@@ -255,10 +235,10 @@ body {
 }
 
 .numeroCirculo.marcado {
-    background-color: #af1000; 
+    background-color: #af1000;
 }
 
-.ultimoNumeroCirculo { /* Las últimas 10 bolas */
+.ultimoNumeroCirculo {
     background-color: #8d1307;
     font-size: 1.2em;
     border: 1px solid #fff;
@@ -269,30 +249,28 @@ button {
     font-size: 1em;
     margin-top: 10px;
     cursor: pointer;
-    background-color: #0e324b; 
+    background-color: #0e324b;
     color: white;
     border: none;
     border-radius: 5px;
-    min-width: 150px; 
+    min-width: 150px;
     transition: background-color 0.2s ease-in-out;
 }
 
 button:hover {
-    background-color: #081b27; 
+    background-color: #081b27;
 }
 
 #botonesContainer {
     display: flex;
-    gap: 10px; 
+    gap: 10px;
     justify-content: center;
     margin-top: 20px;
-    flex-wrap: wrap; 
+    flex-wrap: wrap;
 }
 
-
 #ultimosNumeros {
-    margin-top: 30px; /* Un poco menos de margen */
-    /* font-size: 1.0em; */
+    margin-top: 30px;
     color: #2c3e50;
 }
 
@@ -302,40 +280,59 @@ button:hover {
     font-weight: bold;
 }
 
+/* MODIFIED SECTION FOR VERIFICATION CONTAINERS */
 #verificarNumeroContainer, #verificarCartonContainer {
     margin-top: 10px;
+    padding: 15px;
     background-color: #e9f1f9;
     border-radius: 9px;
-    min-width: 340px;
+    width: auto;
+    max-width: 450px; /* Slightly increased max-width to accommodate inline items */
     margin-left: auto;
     margin-right: auto;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-sizing: border-box;
+
+    /* Flex properties to align input and button on the same line */
+    display: flex;
+    justify-content: center; /* Center the group of input & button */
+    align-items: center;     /* Align items vertically */
+    gap: 10px;               /* Space between input and button */
+    flex-wrap: wrap;         /* Allow wrapping on very small screens */
 }
 
 #verificarNumeroContainer input, #verificarCartonContainer input {
-    padding: 10px; /* Un poco menos de padding */
-    font-size: 1.1em; /* Un poco más pequeño */
-    border: 1px solid #ced4da; 
+    padding: 10px;
+    font-size: 1.1em;
+    border: 1px solid #ced4da;
     border-radius: 5px;
-    width: 100px; 
-    margin-bottom: 10px; 
+    width: 120px; /* Fixed width for the input field */
+    box-sizing: border-box;
+    /* Remove display:block and auto margins for centering */
+    margin-top: 5px; /* For spacing when wrapped */
+    margin-bottom: 5px; /* For spacing when wrapped */
 }
 
 #verificarNumeroContainer button, #verificarCartonContainer button {
-    padding: 10px 20px; /* Un poco menos de padding */
-    font-size: 1.1em; /* Un poco más pequeño */
-    margin-left: 8px; /* Un poco menos de margen */
+    padding: 10px 20px;
+    font-size: 1.1em;
+    /* Remove display:block and auto margins for centering */
+    margin-top: 5px; /* For spacing when wrapped */
+    margin-bottom: 5px; /* For spacing when wrapped */
+    /* Button width will be auto based on content and padding */
 }
+/* END OF MODIFIED SECTION */
 
 #verificarNumeroContainer button:hover, #verificarCartonContainer button:hover {
-    background-color: #28a745; 
+    background-color: #28a745;
 }
 
 #mensajeVerificacion, #mensajeVerificacionCarton {
-    font-size: 0.95em; /* Un poco más pequeño */
+    font-size: 0.95em;
     color: #2c3e50;
     min-height: 11px;
     line-height: 1.3;
+    margin-top: 10px;
 }
 
 #estadoJuego {
@@ -343,9 +340,9 @@ button:hover {
     padding: 10px;
     font-size: 1.0em;
     font-weight: bold;
-    color: #fff; 
+    color: #fff;
     border-radius: 5px;
-    display: none; 
+    display: none;
     max-width: 400px;
     margin-left: auto;
     margin-right: auto;
@@ -357,8 +354,7 @@ button:hover {
 #estadoJuego.finalizado { background-color: #6c757d; color: white; }
 #estadoJuego.pausadoInput { background-color: #6c757d; color: white; }
 
-
-#cartonesContainer { display: none; } /* Banco de datos de cartones oculto */
+#cartonesContainer { display: none; }
 
 @media (max-width: 600px) {
     #seedDisplayContainer { max-width: 90%; font-size: 0.8em; }
@@ -367,8 +363,25 @@ button:hover {
     #numerosContainer, #ultimosNumerosContainer { grid-template-columns: repeat(10, 1fr); max-width: 95%; gap: 3px; }
     .numeroCirculo { width: 24px; height: 24px; font-size: 0.75em; }
     button { font-size: 0.9em; padding: 8px 15px; min-width: 120px; }
-    #verificarNumeroContainer input, #verificarCartonContainer input { font-size: 1em; width: 80px; padding: 8px; }
-    #verificarNumeroContainer button, #verificarCartonContainer button { font-size: 1em; padding: 8px 15px; }
+
+    #myCardsTrackerContainer, #verificarNumeroContainer, #verificarCartonContainer {
+        width: 90%;
+        max-width: none; /* Allow it to be 90% of the smaller screen */
+    }
+
+    #verificarNumeroContainer input, #verificarCartonContainer input {
+        font-size: 1em;
+        width: 100px; /* Slightly smaller input for small screens */
+        padding: 8px;
+        flex-grow: 1; /* Allow input to take available space if you want it to be more flexible */
+        max-width: 150px; /* Cap flexible growth */
+
+    }
+    #verificarNumeroContainer button, #verificarCartonContainer button {
+        font-size: 1em;
+        padding: 8px 15px;
+        flex-shrink: 0; /* Prevent button from shrinking too much */
+    }
     #listaCartonesBingo { gap: 5px; }
     .bingo-group { padding: 5px; gap: 4px; }
     .cartonBingo { padding: 5px 10px; font-size: 0.8em; }
