@@ -60,7 +60,7 @@
     <h3>Seguir Cartones</h3>
     <label for="myCardNumbersInput">Números de cartón (ej: 7, 15, 23):</label>
     <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
-    <button onclick="trackMyCards()">Actualizar</button>
+    <button onclick="trackMyCards()">Anadir</button>
     <h4>Cartones con Bingo:</h4>
     <div id="myTrackedBingosList" class="bingo-list-display">---</div>
 </div>
@@ -168,6 +168,127 @@
 <div data-numeros="" id="carton1000">1</div> </div>
 <p></p>
 <br/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Botón para abrir la sección de cartones guardados -->
+<div style="text-align: center; margin-top: 20px;">
+    <button id="toggleCartonesBtn" style="
+        padding: 10px 20px; 
+        font-size: 1rem; 
+        border-radius: 8px; 
+        border: 1px solid #0077cc;
+        background-color: #103559;
+        cursor: pointer;
+    ">Ver Cartones Guardados</button>
+</div>
+
+<!-- Sección oculta de cartones guardados -->
+<div id="cartonesGuardadosContainer" style="
+    display: none;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f0f8ff;
+    border-radius: 8px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+">
+    <h3>Cartones Guardados</h3>
+    <div id="listaCartonesGuardados" style="
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+        font-family: monospace;
+    ">
+        <!-- Aquí se generarán los mini-tableros -->
+    </div>
+</div>
+
+<script>
+// Función para generar mini-tablero de un cartón
+function generarMiniTablero(numeros) {
+    const nums = numeros.split(',').map(n => n.trim());
+    let html = '<div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:2px; text-align:center; background:#fff; padding:5px; border-radius:5px; border:1px solid #ccc;">';
+    nums.forEach(num => {
+        html += `<div style="padding:2px 0; border:1px solid #eee; font-size:0.8rem;">${num}</div>`;
+    });
+    html += '</div>';
+    return html;
+}
+
+// Función para mostrar todos los cartones ordenados
+function mostrarCartonesGuardados() {
+    const contenedor = document.getElementById('listaCartonesGuardados');
+    const cartonesNodeList = document.querySelectorAll('#cartonesContainer > div[data-numeros]');
+    const cartonesArray = Array.from(cartonesNodeList);
+
+    // Ordenar por número de cartón
+    cartonesArray.sort((a, b) => {
+        const numA = parseInt(a.id.replace('carton','')) || 0;
+        const numB = parseInt(b.id.replace('carton','')) || 0;
+        return numA - numB;
+    });
+
+    // Generar HTML con mini-tableros
+    let html = '';
+    cartonesArray.forEach(carton => {
+        const id = carton.id;
+        const numeros = carton.getAttribute('data-numeros') || '';
+        html += `<div><strong>${id}</strong>${generarMiniTablero(numeros)}</div>`;
+    });
+
+    contenedor.innerHTML = html;
+}
+
+// Alternar visibilidad del contenedor al pulsar el botón
+document.getElementById('toggleCartonesBtn').addEventListener('click', () => {
+    const container = document.getElementById('cartonesGuardadosContainer');
+    if(container.style.display === 'none') {
+        mostrarCartonesGuardados();
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+});
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <div style="height: 100px;"></div>
 <p></p>
 <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
