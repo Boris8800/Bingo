@@ -6,7 +6,7 @@ let enEjecucion = false;
 let juegoPausado = false;
 let cartonesConBingo = [];
 
-// ---- Variables para Selección de Voz ----
+/// ---- Variables para Selección de Voz ----
 let voices = [];
 let selectedVoice = null;
 
@@ -36,9 +36,7 @@ function populateVoiceList() {
 
     voices = speechSynthesis.getVoices();
     const voiceSelect = document.getElementById('voiceSelect');
-    if (!voiceSelect) {
-        return;
-    }
+    if (!voiceSelect) return;
 
     const previouslySelectedURI = selectedVoice ? selectedVoice.voiceURI : (voiceSelect.value || '');
     voiceSelect.innerHTML = '';
@@ -55,15 +53,22 @@ function populateVoiceList() {
         voiceSelect.appendChild(option);
     });
 
-    if (previouslySelectedURI) {
+    // Intentamos auto-seleccionar Google Español o Paulina
+    let autoSelectedVoice = voices.find(v => /Google Español/i.test(v.name) || /Paulina/i.test(v.name));
+    if (autoSelectedVoice) {
+        selectedVoice = autoSelectedVoice;
+        const optionToSelect = Array.from(voiceSelect.options).find(opt => opt.value === autoSelectedVoice.voiceURI);
+        if (optionToSelect) optionToSelect.selected = true;
+    } else if (previouslySelectedURI) {
         const optionToSelect = Array.from(voiceSelect.options).find(opt => opt.value === previouslySelectedURI);
         if (optionToSelect) {
             optionToSelect.selected = true;
-        } else if (voiceSelect.options.length > 0) {
+            selectedVoice = voices.find(voice => voice.voiceURI === previouslySelectedURI) || null;
+        } else {
             voiceSelect.options[0].selected = true;
             selectedVoice = null;
         }
-    } else if (voiceSelect.options.length > 0) {
+    } else {
         voiceSelect.options[0].selected = true;
         selectedVoice = null;
     }
@@ -75,9 +80,31 @@ function setVoice() {
         selectedVoice = null;
         return;
     }
-    selectedVoice = voices.find(voice => voice.voiceURI === voiceSelect.value);
-    if (!selectedVoice) selectedVoice = null;
+    selectedVoice = voices.find(voice => voice.voiceURI === voiceSelect.value) || null;
 }
+
+// Llamada inicial al cargar la página
+window.onload = () => {
+    if (typeof speechSynthesis !== 'undefined') {
+        if (speechSynthesis.getVoices().length === 0) {
+            speechSynthesis.onvoiceschanged = () => {
+                populateVoiceList();
+                const voiceSelectElement = document.getElementById('voiceSelect');
+                if (voiceSelectElement && !voiceSelectElement.onchange) {
+                    voiceSelectElement.addEventListener('change', setVoice);
+                }
+            };
+        } else {
+            populateVoiceList();
+            const voiceSelectElement = document.getElementById('voiceSelect');
+            if (voiceSelectElement) voiceSelectElement.addEventListener('change', setVoice);
+        }
+    } else {
+        const voiceSettingsContainer = document.getElementById('voiceSettingsContainer');
+        if (voiceSettingsContainer) voiceSettingsContainer.style.display = 'none';
+    }
+};
+
 // ---- FIN FUNCIONES DE VOZ ----
 
 // ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
