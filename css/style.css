@@ -132,6 +132,17 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
     color: var(--text-primary);
 }
 
+body.night-mode #myCardsTrackerContainer input[type="text"] {
+    background-color: #1f4068 !important;
+    color: #e8e8e8 !important;
+    border-color: #f39c12 !important;
+}
+
+body.night-mode #myCardsTrackerContainer input[type="text"]::placeholder {
+    color: #95a5a6 !important;
+    opacity: 0.8;
+}
+
 #myCardsTrackerContainer button {
     display: block;
     width: auto;
