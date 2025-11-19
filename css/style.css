@@ -43,6 +43,24 @@ body.night-mode {
     --ultimo-numero: #c0392b;
     --bingo-success: #27ae60;
     --border-primary: #e74c3c;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+}
+
+/* Force night mode styles with higher specificity */
+body.night-mode #cartonesBingoContainer {
+    background-color: var(--bg-tertiary) !important;
+}
+
+body.night-mode #listaCartonesBingo {
+    background-color: var(--bg-card) !important;
+}
+
+body.night-mode #cartonesGuardadosContainer {
+    background-color: var(--bg-container) !important;
+}
+
+body.night-mode #toggleCartonesBtn {
+    background: linear-gradient(135deg, var(--btn-primary) 0%, var(--btn-primary-hover) 100%) !important;
 }
 
 /* Smooth transitions for theme changes */
@@ -149,8 +167,8 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
 }
 
 body.night-mode #myTrackedBingosList {
-    background-color: #2c3e50;
-    border-color: #f39c12;
+    background-color: #1f4068 !important;
+    border-color: #f39c12 !important;
 }
 
 .mis-cartones-bingo-item {
@@ -164,8 +182,9 @@ body.night-mode #myTrackedBingosList {
 
 body.night-mode .mis-cartones-bingo-item {
     background-color: #f39c12 !important;
-    color: #1a1a2e !important;
-    box-shadow: 0 2px 4px rgba(243,156,18,0.3);
+    color: #000 !important;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(243,156,18,0.5);
 }
 
 #listaCartonesBingo {
@@ -243,10 +262,11 @@ body {
     min-height: 100vh;
     box-sizing: border-box;
     overflow-x: hidden;
+    color: var(--text-primary);
 }
 
 body.night-mode {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
 }
 
 #numeroContainer {
