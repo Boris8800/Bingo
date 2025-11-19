@@ -15,6 +15,52 @@ let myTrackedCardNumbers = [];
 const bingoAudio = new Audio('bingo-sound.mp3');
 bingoAudio.preload = 'auto';
 
+// ---- Night Mode Variables ----
+let nightModeEnabled = false;
+
+// ---- Night Mode Functions ----
+function initNightMode() {
+    // Check if user has a saved preference
+    const savedMode = localStorage.getItem('nightMode');
+    if (savedMode === 'true') {
+        enableNightMode();
+    }
+}
+
+function toggleNightMode() {
+    if (nightModeEnabled) {
+        disableNightMode();
+    } else {
+        enableNightMode();
+    }
+}
+
+function enableNightMode() {
+    document.body.classList.add('night-mode');
+    nightModeEnabled = true;
+    localStorage.setItem('nightMode', 'true');
+    
+    const toggleBtn = document.getElementById('nightModeToggle');
+    if (toggleBtn) {
+        toggleBtn.innerHTML = '&#9728;';
+        toggleBtn.style.background = '#f39c12';
+        toggleBtn.style.borderColor = '#e74c3c';
+    }
+}
+
+function disableNightMode() {
+    document.body.classList.remove('night-mode');
+    nightModeEnabled = false;
+    localStorage.setItem('nightMode', 'false');
+    
+    const toggleBtn = document.getElementById('nightModeToggle');
+    if (toggleBtn) {
+        toggleBtn.innerHTML = '&#127769;';
+        toggleBtn.style.background = '#0e324b';
+        toggleBtn.style.borderColor = '#a51818';
+    }
+}
+
 // ---- Helper function to play the bingo sound ----
 function playBingoSoundEffect() {
     try {
@@ -85,6 +131,9 @@ function setVoice() {
 
 // Llamada inicial al cargar la página
 window.onload = () => {
+    // Initialize night mode
+    initNightMode();
+    
     if (typeof speechSynthesis !== 'undefined') {
         if (speechSynthesis.getVoices().length === 0) {
             speechSynthesis.onvoiceschanged = () => {

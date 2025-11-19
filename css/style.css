@@ -1,43 +1,95 @@
-/* ... (Estilos existentes de antes, sin cambios hasta la sección de verificación) ... */
+/* CSS Variables for Theme Support */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #e9ecef;
+    --bg-tertiary: #e9f1f9;
+    --bg-container: #f0f8ff;
+    --bg-card: #ffffff;
+    --text-primary: #2c3e50;
+    --text-secondary: #333;
+    --border-color: #ddd;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-md: 0 3px 8px rgba(0,0,0,0.1);
+    --shadow-lg: 0 4px 15px rgba(0,0,0,0.2);
+    --btn-primary: #0e324b;
+    --btn-primary-hover: #081b27;
+    --btn-secondary: #FF9800;
+    --btn-secondary-hover: #F57C00;
+    --numero-bg: #05102e;
+    --numero-marcado: #af1000;
+    --ultimo-numero: #8d1307;
+    --bingo-success: #2ecc71;
+    --border-primary: #a51818;
+}
+
+body.night-mode {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-tertiary: #0f3460;
+    --bg-container: #162447;
+    --bg-card: #1f4068;
+    --text-primary: #e8e8e8;
+    --text-secondary: #c7c7c7;
+    --border-color: #2d4059;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.4);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+    --shadow-lg: 0 6px 20px rgba(0,0,0,0.6);
+    --btn-primary: #1e3a5f;
+    --btn-primary-hover: #2a5a8f;
+    --btn-secondary: #ff6b35;
+    --btn-secondary-hover: #ff8c42;
+    --numero-bg: #1e3a5f;
+    --numero-marcado: #e74c3c;
+    --ultimo-numero: #c0392b;
+    --bingo-success: #27ae60;
+    --border-primary: #e74c3c;
+}
+
+/* Smooth transitions for theme changes */
+body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
+#myCardsTrackerContainer, #verificarNumeroContainer, #verificarCartonContainer,
+.numeroCirculo, button, input, select {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
 
 #seedDisplayContainer {
     margin-bottom: 15px;
     padding: 10px;
-    background-color: #f0f0f0;
+    background-color: var(--bg-secondary);
     border-radius: 5px;
     text-align: center;
     font-size: 0.9em;
-    color: #333;
-    border: 1px solid #ddd;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
     max-width: 400px;
     margin-left: auto;
     margin-right: auto;
 }
 #seedDisplayContainer strong {
     font-family: 'Courier New', Courier, monospace;
-    color: #000;
+    color: var(--text-primary);
 }
 
 #myCardsTrackerContainer {
     margin-top: 20px;
     padding: 15px;
-    background-color: #fff;
+    background-color: var(--bg-card);
     border-radius: 8px;
     width: auto;
     max-width: 480px;
     margin-left: auto;
     margin-right: auto;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-    border: 1px solid #e0e0e0;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
 }
 
 #myCardsTrackerContainer h3 {
     margin-top: 0;
     margin-bottom: 15px;
-    color: #2c3e50;
+    color: var(--text-primary);
     text-align: center;
     font-size: 1.2em;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
 }
 
@@ -46,7 +98,7 @@
     margin-bottom: 6px;
     font-weight: 500;
     font-size: 0.9em;
-    color: #555;
+    color: var(--text-secondary);
     text-align: center;
 }
 
@@ -54,10 +106,12 @@
     width: calc(100% - 22px);
     padding: 9px;
     margin-bottom: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 0.95em;
     box-sizing: border-box;
+    background-color: var(--bg-card);
+    color: var(--text-primary);
 }
 
 #myCardsTrackerContainer button {
@@ -65,17 +119,17 @@
     width: auto;
     margin: 10px auto 0 auto;
     padding: 9px 18px;
-    background-color: #FF9800;
+    background-color: var(--btn-secondary);
     color: white;
 }
 #myCardsTrackerContainer button:hover {
-    background-color: #F57C00;
+    background-color: var(--btn-secondary-hover);
 }
 
 #myCardsTrackerContainer h4 {
     margin-top: 15px;
     margin-bottom: 5px;
-    color: #555;
+    color: var(--text-secondary);
     font-size: 1em;
     /* text-align: left; */
 }
@@ -94,6 +148,11 @@
     justify-content: center;
 }
 
+body.night-mode #myTrackedBingosList {
+    background-color: #2c3e50;
+    border-color: #f39c12;
+}
+
 .mis-cartones-bingo-item {
     background-color: #FFB74D !important;
     color: #424242 !important;
@@ -101,6 +160,12 @@
     border-radius: 12px;
     font-weight: 500;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+body.night-mode .mis-cartones-bingo-item {
+    background-color: #f39c12 !important;
+    color: #1a1a2e !important;
+    box-shadow: 0 2px 4px rgba(243,156,18,0.3);
 }
 
 #listaCartonesBingo {
@@ -170,7 +235,7 @@ body {
     text-align: center;
     margin: 0;
     padding: 20px;
-    background-color: #ffffff;
+    background: var(--bg-primary);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -180,26 +245,54 @@ body {
     overflow-x: hidden;
 }
 
+body.night-mode {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+}
+
 #numeroContainer {
     width: 180px;
     height: 180px;
     border-radius: 50%;
-    border: 5px solid #a51818;
+    border: 5px solid var(--border-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 15px auto;
+    background: var(--bg-card);
+    box-shadow: var(--shadow-lg);
+    position: relative;
+}
+
+#numeroContainer::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, var(--border-primary), transparent);
+    z-index: -1;
+    opacity: 0.3;
+    animation: rotate 3s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 #numero {
     font-size: 5em;
     font-weight: bold;
-    color: #2c3e50;
+    color: var(--text-primary);
+    text-shadow: var(--shadow-md);
 }
 
 #historial {
     margin-top: 10px;
     font-size: 1.2em;
+    color: var(--text-primary);
 }
 
 #numerosContainer, #ultimosNumerosContainer {
@@ -209,20 +302,21 @@ body {
     max-width: 980px;
     margin: 10px auto;
     padding: 10px;
-    background-color: #e9ecef;
-    border-radius: 1px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
 }
 
 #ultimosNumerosContainer {
     margin-top: 10px;
-    background-color: #ddebf7;
+    background-color: var(--bg-tertiary);
 }
 
 .numeroCirculo { /* Las 90 bolas del historial */
     width: 28px;  /* Base width */
     height: 28px; /* Base height */
     border-radius: 50%;
-    background-color: #05102e;
+    background: linear-gradient(135deg, var(--numero-bg) 0%, rgba(5,16,46,0.8) 100%);
     color: white;
     display: flex;
     align-items: center;
@@ -230,21 +324,25 @@ body {
     font-size: 0.9em; /* Base font size */
     font-weight: bold;
     cursor: default;
-    transition: background-color 0.3s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
 }
 
 .numeroCirculo.marcado {
-    background-color: #af1000;
+    background: linear-gradient(135deg, var(--numero-marcado) 0%, #c0392b 100%);
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(175,16,0,0.5);
 }
 
 /* MODIFIED .ultimoNumeroCirculo */
 .ultimoNumeroCirculo { /* Las últimas 10 bolas */
-    background-color: #8d1307;
+    background: linear-gradient(135deg, var(--ultimo-numero) 0%, #8b0000 100%);
     font-size: 1.2em; /* Kept from your original for larger text */
-    border: 1px solid #fff;
+    border: 2px solid #fff;
     width: 32px;  /* ADDED: Slightly larger than .numeroCirculo's 28px */
     height: 32px; /* ADDED: Slightly larger than .numeroCirculo's 28px */
+    box-shadow: 0 4px 10px rgba(141,19,7,0.6);
+    animation: pulse 2s infinite;
     /* Assuming it also has .numeroCirculo class for flex, border-radius etc. */
     /* If not, add these: */
     /* display: flex; */
@@ -254,21 +352,30 @@ body {
     /* border-radius: 50%; */
 }
 
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
 button {
     padding: 10px 20px;
     font-size: 1em;
     margin-top: 10px;
     cursor: pointer;
-    background-color: #0e324b;
+    background: linear-gradient(135deg, var(--btn-primary) 0%, var(--btn-primary-hover) 100%);
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     min-width: 150px;
-    transition: background-color 0.2s ease-in-out;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-md);
+    font-weight: 500;
 }
 
 button:hover {
-    background-color: #081b27;
+    background: linear-gradient(135deg, var(--btn-primary-hover) 0%, var(--btn-primary) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
 }
 
 #botonesContainer {
@@ -281,42 +388,53 @@ button:hover {
 
 #ultimosNumeros {
     margin-top: 30px;
-    color: #2c3e50;
+    color: var(--text-primary);
 }
 
 #ultimosNumeros p {
     font-size: 1.0em;
     margin: 5px 0;
     font-weight: bold;
+    color: var(--text-primary);
 }
 
 #verificarNumeroContainer, #verificarCartonContainer {
     margin-top: 10px;
     padding: 15px;
-    background-color: #e9f1f9;
-    border-radius: 9px;
+    background-color: var(--bg-tertiary);
+    border-radius: 12px;
     width: auto;
     max-width: 450px;
     margin-left: auto;
     margin-right: auto;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: var(--shadow-md);
     box-sizing: border-box;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+    border: 1px solid var(--border-color);
 }
 
 #verificarNumeroContainer input, #verificarCartonContainer input {
     padding: 10px;
     font-size: 1.1em;
-    border: 1px solid #ced4da;
-    border-radius: 5px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
     width: 120px;
     box-sizing: border-box;
     margin-top: 5px;
     margin-bottom: 5px;
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+#verificarNumeroContainer input:focus, #verificarCartonContainer input:focus {
+    outline: none;
+    border-color: var(--btn-primary);
+    box-shadow: 0 0 10px rgba(14,50,75,0.3);
 }
 
 #verificarNumeroContainer button, #verificarCartonContainer button {
@@ -332,7 +450,7 @@ button:hover {
 
 #mensajeVerificacion, #mensajeVerificacionCarton {
     font-size: 0.95em;
-    color: #2c3e50;
+    color: var(--text-primary);
     min-height: 11px;
     line-height: 1.3;
     margin-top: 10px;
@@ -358,6 +476,111 @@ button:hover {
 #estadoJuego.pausadoInput { background-color: #6c757d; color: white; }
 
 #cartonesContainer { display: none; }
+
+/* Night Mode Toggle Button */
+#nightModeToggle {
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+#nightModeToggle:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3) !important;
+}
+
+#nightModeToggle:active {
+    transform: scale(0.98) !important;
+}
+
+/* Cartones Guardados Container */
+#cartonesGuardadosContainer {
+    background-color: var(--bg-container) !important;
+    border: 1px solid var(--border-color);
+}
+
+#cartonesGuardadosContainer h3 {
+    color: var(--text-primary);
+}
+
+#listaCartonesGuardados > div {
+    background-color: var(--bg-card);
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+#listaCartonesGuardados strong {
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 5px;
+}
+
+#listaCartonesGuardados div[style*="grid"] {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+#listaCartonesGuardados div[style*="grid"] > div {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color) !important;
+}
+
+#toggleCartonesBtn {
+    background: linear-gradient(135deg, var(--btn-primary) 0%, var(--btn-primary-hover) 100%) !important;
+    border: 2px solid var(--border-primary) !important;
+    transition: all 0.3s ease;
+}
+
+#toggleCartonesBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg) !important;
+}
+
+/* Voice Settings Container */
+#voiceSettingsContainer {
+    background-color: var(--bg-tertiary);
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px auto;
+    max-width: 450px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+#voiceSettingsContainer label {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+#voiceSelect {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 1em;
+    width: 100%;
+    max-width: 300px;
+    margin-top: 8px;
+}
+
+/* Cartones Bingo Container */
+#cartonesBingoContainer {
+    background-color: var(--bg-tertiary) !important;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md) !important;
+}
+
+#cartonesBingoContainer h3 {
+    color: var(--text-primary);
+}
+
+#listaCartonesBingo {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
 
 @media (max-width: 600px) {
     #seedDisplayContainer { max-width: 90%; font-size: 0.8em; }
