@@ -129,31 +129,6 @@ function setVoice() {
     selectedVoice = voices.find(voice => voice.voiceURI === voiceSelect.value) || null;
 }
 
-// Llamada inicial al cargar la página
-window.onload = () => {
-    // Initialize night mode
-    initNightMode();
-    
-    if (typeof speechSynthesis !== 'undefined') {
-        if (speechSynthesis.getVoices().length === 0) {
-            speechSynthesis.onvoiceschanged = () => {
-                populateVoiceList();
-                const voiceSelectElement = document.getElementById('voiceSelect');
-                if (voiceSelectElement && !voiceSelectElement.onchange) {
-                    voiceSelectElement.addEventListener('change', setVoice);
-                }
-            };
-        } else {
-            populateVoiceList();
-            const voiceSelectElement = document.getElementById('voiceSelect');
-            if (voiceSelectElement) voiceSelectElement.addEventListener('change', setVoice);
-        }
-    } else {
-        const voiceSettingsContainer = document.getElementById('voiceSettingsContainer');
-        if (voiceSettingsContainer) voiceSettingsContainer.style.display = 'none';
-    }
-};
-
 // ---- FIN FUNCIONES DE VOZ ----
 
 // ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
@@ -570,6 +545,9 @@ function actualizarListaBingos() {
 
 // --- INICIALIZACIÓN DEL JUEGO ---
 window.onload = () => {
+    // Initialize night mode
+    initNightMode();
+    
     const numerosContainer = document.getElementById('numerosContainer');
     if (numerosContainer) {
         for (let i = 1; i <= 90; i++) {
