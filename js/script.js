@@ -19,7 +19,7 @@ bingoAudio.preload = 'auto';
 let nightModeEnabled = false;
 
 // ---- Night Mode Functions ----
-function initNightMode() {
+window.initNightMode = function() {
     // Check if user has a saved preference
     const savedMode = localStorage.getItem('nightMode');
     if (savedMode === 'true') {
@@ -27,7 +27,7 @@ function initNightMode() {
     }
 }
 
-function toggleNightMode() {
+window.toggleNightMode = function() {
     if (nightModeEnabled) {
         disableNightMode();
     } else {
@@ -35,7 +35,7 @@ function toggleNightMode() {
     }
 }
 
-function enableNightMode() {
+window.enableNightMode = function() {
     document.body.classList.add('night-mode');
     nightModeEnabled = true;
     localStorage.setItem('nightMode', 'true');
@@ -48,7 +48,7 @@ function enableNightMode() {
     }
 }
 
-function disableNightMode() {
+window.disableNightMode = function() {
     document.body.classList.remove('night-mode');
     nightModeEnabled = false;
     localStorage.setItem('nightMode', 'false');
