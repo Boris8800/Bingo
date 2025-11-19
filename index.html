@@ -5,6 +5,38 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>🅑🅘🅝🅖🅞</title>
     <link href="css/style.css" rel="stylesheet">
+    <script>
+        // Night mode toggle function - defined early to be accessible
+        function toggleNightMode() {
+            const body = document.body;
+            const btn = document.getElementById('nightModeToggle');
+            
+            if (body.classList.contains('night-mode')) {
+                body.classList.remove('night-mode');
+                localStorage.setItem('nightMode', 'false');
+                if (btn) {
+                    btn.innerHTML = '&#127769;';
+                    btn.style.background = '#0e324b';
+                    btn.style.borderColor = '#a51818';
+                }
+            } else {
+                body.classList.add('night-mode');
+                localStorage.setItem('nightMode', 'true');
+                if (btn) {
+                    btn.innerHTML = '&#9728;';
+                    btn.style.background = '#f39c12';
+                    btn.style.borderColor = '#e74c3c';
+                }
+            }
+        }
+        
+        // Check saved preference on load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('nightMode') === 'true') {
+                toggleNightMode();
+            }
+        });
+    </script>
 </head>
 <body>
    <a href="https://boris8800.github.io/Bingo/" style="

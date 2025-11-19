@@ -15,52 +15,6 @@ let myTrackedCardNumbers = [];
 const bingoAudio = new Audio('bingo-sound.mp3');
 bingoAudio.preload = 'auto';
 
-// ---- Night Mode Variables ----
-let nightModeEnabled = false;
-
-// ---- Night Mode Functions ----
-window.initNightMode = function() {
-    // Check if user has a saved preference
-    const savedMode = localStorage.getItem('nightMode');
-    if (savedMode === 'true') {
-        enableNightMode();
-    }
-}
-
-window.toggleNightMode = function() {
-    if (nightModeEnabled) {
-        disableNightMode();
-    } else {
-        enableNightMode();
-    }
-}
-
-window.enableNightMode = function() {
-    document.body.classList.add('night-mode');
-    nightModeEnabled = true;
-    localStorage.setItem('nightMode', 'true');
-    
-    const toggleBtn = document.getElementById('nightModeToggle');
-    if (toggleBtn) {
-        toggleBtn.innerHTML = '&#9728;';
-        toggleBtn.style.background = '#f39c12';
-        toggleBtn.style.borderColor = '#e74c3c';
-    }
-}
-
-window.disableNightMode = function() {
-    document.body.classList.remove('night-mode');
-    nightModeEnabled = false;
-    localStorage.setItem('nightMode', 'false');
-    
-    const toggleBtn = document.getElementById('nightModeToggle');
-    if (toggleBtn) {
-        toggleBtn.innerHTML = '&#127769;';
-        toggleBtn.style.background = '#0e324b';
-        toggleBtn.style.borderColor = '#a51818';
-    }
-}
-
 // ---- Helper function to play the bingo sound ----
 function playBingoSoundEffect() {
     try {
@@ -545,9 +499,6 @@ function actualizarListaBingos() {
 
 // --- INICIALIZACIÓN DEL JUEGO ---
 window.onload = () => {
-    // Initialize night mode
-    initNightMode();
-    
     const numerosContainer = document.getElementById('numerosContainer');
     if (numerosContainer) {
         for (let i = 1; i <= 90; i++) {
