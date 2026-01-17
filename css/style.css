@@ -70,6 +70,133 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* Top bar */
+.topbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 10px;
+    box-sizing: border-box;
+    background: color-mix(in srgb, var(--bg-tertiary) 85%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    padding: 4px 10px;
+    border-radius: 999px;
+    box-shadow: var(--shadow-sm);
+    font-size: clamp(0.75rem, 2vw, 1rem);
+}
+
+.icon-btn {
+    min-width: auto;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-primary);
+    background: var(--btn-primary);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+    font-size: clamp(0.75rem, 2vw, 1rem);
+}
+
+.center {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, var(--btn-primary) 0%, var(--btn-primary-hover) 100%);
+    border: 2px solid var(--border-primary);
+}
+
+/* Generic container style for control panels */
+.control-box {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: var(--bg-tertiary);
+    border-radius: 12px;
+    width: auto;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+/* Saved cards grid + mini board */
+.saved-cards-grid {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+}
+
+.saved-card {
+    width: 220px;
+    background-color: var(--bg-card);
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.saved-card-title {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    font-size: 1.1em;
+}
+
+.mini-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    text-align: center;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+
+.mini-cell {
+    padding: 6px 0;
+    border: 1px solid var(--border-color);
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.page-spacer {
+    height: 60px;
+}
+
 #seedDisplayContainer {
     margin-bottom: 15px;
     padding: 10px;
@@ -264,7 +391,7 @@ body {
     font-family: Arial, sans-serif;
     text-align: center;
     margin: 0;
-    padding: 20px;
+    padding: 60px 20px 20px;
     background: var(--bg-primary);
     display: flex;
     flex-direction: column;
@@ -274,6 +401,8 @@ body {
     box-sizing: border-box;
     overflow-x: hidden;
     color: var(--text-primary);
+    /* DYNAMIC SCALING: Shrinks earlier for small screens to preserve layout */
+    font-size: clamp(0.75rem, 0.5rem + 1.2vw, 1.1rem);
 }
 
 body.night-mode {
@@ -314,7 +443,7 @@ body.night-mode {
 }
 
 #numero {
-    font-size: 5em;
+    font-size: clamp(3rem, 15vw, 6rem);
     font-weight: bold;
     color: var(--text-primary);
     text-shadow: var(--shadow-md);
@@ -329,13 +458,16 @@ body.night-mode {
 #numerosContainer, #ultimosNumerosContainer {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
-    gap: 5px;
-    max-width: 980px;
+    gap: clamp(4px, 1.2vw, 12px);
+    width: 100%;
+    max-width: 1100px;
     margin: 10px auto;
-    padding: 10px;
+    padding: clamp(8px, 2vw, 20px);
     background-color: var(--bg-secondary);
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: var(--shadow-md);
+    box-sizing: border-box;
+    justify-items: center;
 }
 
 #ultimosNumerosContainer {
@@ -344,15 +476,15 @@ body.night-mode {
 }
 
 .numeroCirculo { /* Las 90 bolas del historial */
-    width: 28px;  /* Base width */
-    height: 28px; /* Base height */
+    width: clamp(20px, 6.5vw, 38px);  /* Shrinks further on small screens */
+    height: clamp(20px, 6.5vw, 38px); 
     border-radius: 50%;
     background: linear-gradient(135deg, var(--numero-bg) 0%, rgba(5,16,46,0.8) 100%);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9em; /* Base font size */
+    font-size: clamp(0.6rem, 2.2vw, 1.2rem); 
     font-weight: bold;
     cursor: default;
     transition: all 0.3s ease;
@@ -361,19 +493,23 @@ body.night-mode {
 
 .numeroCirculo.marcado {
     background: linear-gradient(135deg, var(--numero-marcado) 0%, #c0392b 100%);
-    transform: scale(1.1);
-    box-shadow: 0 3px 8px rgba(175,16,0,0.5);
+    transform: scale(1.1); /* Reduced from 1.15 to avoid overlap on small screens */
+    box-shadow: 0 4px 12px rgba(175,16,0,0.6);
 }
 
 /* MODIFIED .ultimoNumeroCirculo */
 .ultimoNumeroCirculo { /* Las últimas 10 bolas */
     background: linear-gradient(135deg, var(--ultimo-numero) 0%, #8b0000 100%);
-    font-size: 1.2em; /* Kept from your original for larger text */
+    font-size: clamp(0.9rem, 4vw, 1.8rem); /* Increased font size significantly */
     border: 2px solid #fff;
-    width: 32px;  /* ADDED: Slightly larger than .numeroCirculo's 28px */
-    height: 32px; /* ADDED: Slightly larger than .numeroCirculo's 28px */
-    box-shadow: 0 4px 10px rgba(141,19,7,0.6);
-    animation: pulse 2s infinite;
+    width: clamp(23px, 8vw, 42px);  
+    height: clamp(23px, 8vw, 42px); 
+    box-shadow: 0 6px 15px rgba(141,19,7,0.6);
+}
+
+.pulse-once {
+    animation: pulse 1s ease-in-out 1;
+}
     /* Assuming it also has .numeroCirculo class for flex, border-radius etc. */
     /* If not, add these: */
     /* display: flex; */
@@ -415,6 +551,86 @@ button:hover {
     justify-content: center;
     margin-top: 20px;
     flex-wrap: wrap;
+}
+
+/* Speed slider */
+#speedControl {
+    /* occupy 70% of the screen width as requested */
+    width: 70%;
+    max-width: 1100px;
+    margin: 20px auto;
+}
+
+#speedControl label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+#speedControl label strong {
+    font-size: 0.95em;
+    min-width: 3.2ch;
+    text-align: right;
+}
+
+#speedSlider {
+    /* Fill 100% of its 70% card */
+    width: 100%;
+    max-width: 100%;
+    height: 36px;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    display: block;
+}
+
+/* Track */
+#speedSlider::-webkit-slider-runnable-track {
+    height: 8px;
+    background: linear-gradient(90deg, rgba(14,50,75,0.15), rgba(255,152,0,0.12));
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+}
+#speedSlider::-moz-range-track {
+    height: 8px;
+    background: linear-gradient(90deg, rgba(14,50,75,0.15), rgba(255,152,0,0.12));
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+}
+
+/* Thumb (bigger for touch) */
+#speedSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--btn-secondary);
+    border: 2px solid #fff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    margin-top: -7px; /* centers the thumb on the track */
+}
+#speedSlider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--btn-secondary);
+    border: 2px solid #fff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+#speedSlider:focus {
+    outline: none;
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--btn-secondary) 12%, transparent);
+}
+
+@media (max-width: 420px) {
+    #speedSlider { width: calc(100% - 32px); height: 32px; }
+    #speedControl label { gap: 8px; }
 }
 
 #ultimosNumeros {
@@ -616,28 +832,50 @@ button:hover {
 @media (max-width: 600px) {
     #seedDisplayContainer { max-width: 90%; font-size: 0.8em; }
     #numeroContainer { width: 140px; height: 140px; }
-    #numero { font-size: 3.5em; }
-    #numerosContainer, #ultimosNumerosContainer { grid-template-columns: repeat(10, 1fr); max-width: 95%; gap: 3px; }
+    #numerosContainer, #ultimosNumerosContainer { 
+        grid-template-columns: repeat(10, 1fr) !important; 
+        width: 100% !important;
+        max-width: 100% !important; 
+        gap: 4px !important; 
+        padding: 5px !important;
+    }
     
     .numeroCirculo { 
-        width: 24px; /* Responsive base width */
-        height: 24px; /* Responsive base height */
-        font-size: 0.75em; /* Responsive base font size */
+        /* Removed static overrides to let clamp() handle shrinking */
     }
 
     /* ADDED/MODIFIED rule for .ultimoNumeroCirculo in media query */
     .ultimoNumeroCirculo {
-        font-size: 0.95em; /* Slightly larger than .numeroCirculo's 0.75em */
-        width: 28px;     /* Slightly larger than .numeroCirculo's 24px */
-        height: 28px;    /* Slightly larger than .numeroCirculo's 24px */
+        /* Removed static overrides to let clamp() handle shrinking */
         /* Other properties like background-color, border are inherited from main .ultimoNumeroCirculo style */
     }
 
-    button { font-size: 0.9em; padding: 8px 15px; min-width: 120px; }
+    button {
+        font-size: 1em;
+        padding: 12px 14px;
+        min-width: 0;
+        min-height: 44px;
+    }
 
     #myCardsTrackerContainer, #verificarNumeroContainer, #verificarCartonContainer {
         width: 90%;
         max-width: none; 
+    }
+
+    /* Avoid iOS zoom on focus (>=16px) */
+    input, select {
+        font-size: 16px;
+    }
+
+    /* Reduce scroll jitter on mobile */
+    .topbar {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        background: var(--bg-tertiary);
+    }
+
+    .page-spacer {
+        height: 60px;
     }
 
     #verificarNumeroContainer input, #verificarCartonContainer input {

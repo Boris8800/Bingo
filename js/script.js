@@ -6,9 +6,16 @@ let enEjecucion = false;
 let juegoPausado = false;
 let cartonesConBingo = [];
 
+// ---- Velocidad del juego (ms) ----
+let drawIntervalMs = 3000;
+
 /// ---- Variables para Selección de Voz ----
 let voices = [];
 let selectedVoice = null;
+
+// ---- Persistencia (localStorage) ----
+const STORAGE_KEY = 'bingoGameStateV1';
+let preferredVoiceURI = '';
 
 // ---- Variables para Nuevas Funcionalidades ----
 let myTrackedCardNumbers = [];
@@ -38,7 +45,9 @@ function populateVoiceList() {
     const voiceSelect = document.getElementById('voiceSelect');
     if (!voiceSelect) return;
 
-    const previouslySelectedURI = selectedVoice ? selectedVoice.voiceURI : (voiceSelect.value || '');
+    const previouslySelectedURI = selectedVoice
+        ? selectedVoice.voiceURI
+        : (preferredVoiceURI || voiceSelect.value || '');
     voiceSelect.innerHTML = '';
 
     const defaultOption = document.createElement('option');
@@ -78,9 +87,13 @@ function setVoice() {
     const voiceSelect = document.getElementById('voiceSelect');
     if (!voiceSelect || !voiceSelect.value) {
         selectedVoice = null;
+        preferredVoiceURI = '';
+        saveGameState();
         return;
     }
     selectedVoice = voices.find(voice => voice.voiceURI === voiceSelect.value) || null;
+    preferredVoiceURI = voiceSelect.value;
+    saveGameState();
 }
 
 // ---- FIN FUNCIONES DE VOZ ----
@@ -100,6 +113,7 @@ function trackMyCards() {
 
     actualizarMisCartonesBingoDisplay();
     inputEl.value = myTrackedCardNumbers.join(', ');
+    saveGameState();
 }
 
 function actualizarMisCartonesBingoDisplay() {
@@ -154,6 +168,7 @@ function reiniciarJuego() {
     actualizarListaBingos();
     actualizarMisCartonesBingoDisplay();
     actualizarEstadoJuego("listo");
+    saveGameState();
 }
 
 function startStop() {
@@ -190,7 +205,7 @@ function startStop() {
 
         setTimeout(() => {
             if (enEjecucion) {
-                intervalo = setInterval(siguienteNumero, 3000);
+                intervalo = setInterval(siguienteNumero, drawIntervalMs);
             }
         }, 100);
     }
@@ -218,6 +233,7 @@ function siguienteNumero() {
     actualizarUltimosNumeros();
     anunciarNumero(numero);
     verificarTodosLosCartones(); // This will now handle sound for tracked bingos
+    saveGameState();
 }
 
 function anunciarNumero(numero) {
@@ -244,9 +260,15 @@ function actualizarUltimosNumeros() {
     if (!ultimosNumerosContainer) return;
     const ultimos10 = numerosSalidos.slice(-10);
     ultimosNumerosContainer.innerHTML = '';
-    ultimos10.forEach(numero => {
+    ultimos10.forEach((numero, index) => {
         const circulo = document.createElement('div');
         circulo.classList.add('numeroCirculo', 'ultimoNumeroCirculo');
+        
+        // Add pulse-once only to the most recent number (the last one in the list)
+        if (index === ultimos10.length - 1) {
+            circulo.classList.add('pulse-once');
+        }
+        
         circulo.textContent = numero;
         ultimosNumerosContainer.appendChild(circulo);
     });
@@ -355,7 +377,7 @@ const startStopBtnEl = document.getElementById('startStopBtn');
 if (cartonVerificarInputEl) {
     cartonVerificarInputEl.addEventListener('blur', () => {
         if (juegoPausado && startStopBtnEl) {
-            intervalo = setInterval(siguienteNumero, 3000);
+            intervalo = setInterval(siguienteNumero, drawIntervalMs);
             enEjecucion = true;
             juegoPausado = false;
             startStopBtnEl.textContent = 'Detener';
@@ -387,13 +409,36 @@ if (numeroVerificarInputEl) {
     numeroVerificarInputEl.addEventListener('blur', function () {
         limpiarMensajeVerificacion();
         if (juegoPausado && startStopBtnEl) {
-            intervalo = setInterval(siguienteNumero, 3000);
+            intervalo = setInterval(siguienteNumero, drawIntervalMs);
             enEjecucion = true;
             juegoPausado = false;
             startStopBtnEl.textContent = 'Detener';
             actualizarEstadoJuego("enMarcha");
         }
     });
+}
+
+function formatMs(ms) {
+    return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function setDrawSpeed(ms, { persist = true } = {}) {
+    if (!Number.isFinite(ms)) return;
+    const clamped = Math.min(7000, Math.max(1000, Math.round(ms / 500) * 500));
+    drawIntervalMs = clamped;
+
+    const slider = document.getElementById('speedSlider');
+    if (slider) slider.value = String(clamped);
+    const label = document.getElementById('speedValue');
+    if (label) label.textContent = formatMs(clamped);
+
+    // If the game is running, apply immediately
+    if (enEjecucion) {
+        if (intervalo) clearInterval(intervalo);
+        intervalo = setInterval(siguienteNumero, drawIntervalMs);
+    }
+
+    if (persist) saveGameState();
 }
 document.addEventListener('click', function (event) {
     const msgVerificacion = document.getElementById('mensajeVerificacion');
@@ -429,7 +474,8 @@ function limpiarMensajeVerificacion() {
 }
 
 // --- Lógica de Bingo (General - basada en tu script original, corregida y con sonido) ---
-function verificarTodosLosCartones() {
+function verificarTodosLosCartones(options = {}) {
+    const { silent = false } = options;
     const elementosCartones = document.querySelectorAll('#cartonesContainer > div[id^="carton"]');
     // let algunBingoNuevoEsteTurno = false; // Variable no longer used for sound here
 
@@ -454,7 +500,7 @@ function verificarTodosLosCartones() {
                         // algunBingoNuevoEsteTurno = true; // Not used for sound here
 
                         // Req 3: Play sound if this new bingo is for a tracked card
-                        if (myTrackedCardNumbers.includes(numeroCarton)) {
+                        if (!silent && myTrackedCardNumbers.includes(numeroCarton)) {
                             playBingoSoundEffect();
                         }
                     }
@@ -475,6 +521,169 @@ function verificarTodosLosCartones() {
 
     actualizarListaBingos();
     actualizarMisCartonesBingoDisplay();
+}
+
+// ---- Persistencia: guardar/cargar estado ----
+function saveGameState() {
+    try {
+        if (typeof localStorage === 'undefined') return;
+        const state = {
+            numerosSalidos,
+            numerosDisponibles,
+            cartonesConBingo,
+            myTrackedCardNumbers,
+            preferredVoiceURI,
+            drawIntervalMs,
+            updatedAt: Date.now()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+        // localStorage puede fallar (modo privado / cuota / permisos)
+        console.warn('No se pudo guardar el estado del juego:', e);
+    }
+}
+
+function loadGameState() {
+    try {
+        if (typeof localStorage === 'undefined') return false;
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+
+        const state = JSON.parse(raw);
+        if (!state || typeof state !== 'object') return false;
+
+        const salidos = Array.isArray(state.numerosSalidos) ? state.numerosSalidos : null;
+        const disponibles = Array.isArray(state.numerosDisponibles) ? state.numerosDisponibles : null;
+        if (!salidos || !disponibles) return false;
+
+        numerosSalidos = salidos.filter(n => Number.isInteger(n) && n >= 1 && n <= 90);
+        numerosDisponibles = disponibles.filter(n => Number.isInteger(n) && n >= 1 && n <= 90);
+        cartonesConBingo = Array.isArray(state.cartonesConBingo)
+            ? state.cartonesConBingo.filter(n => Number.isInteger(n) && n > 0)
+            : [];
+        myTrackedCardNumbers = Array.isArray(state.myTrackedCardNumbers)
+            ? state.myTrackedCardNumbers.filter(n => Number.isInteger(n) && n > 0)
+            : [];
+        preferredVoiceURI = typeof state.preferredVoiceURI === 'string' ? state.preferredVoiceURI : '';
+
+        if (typeof state.drawIntervalMs === 'number' && Number.isFinite(state.drawIntervalMs)) {
+            drawIntervalMs = state.drawIntervalMs;
+        }
+
+        // Nunca reanudamos automáticamente en modo "en ejecución" al recargar.
+        if (intervalo) clearInterval(intervalo);
+        enEjecucion = false;
+        juegoPausado = false;
+
+        return true;
+    } catch (e) {
+        console.warn('No se pudo cargar el estado del juego:', e);
+        return false;
+    }
+}
+
+function applyGameStateToUI() {
+    // Reset visual marks
+    const circulos = document.querySelectorAll('#numerosContainer .numeroCirculo');
+    circulos.forEach(circulo => circulo.classList.remove('marcado'));
+
+    // Mark drawn numbers
+    numerosSalidos.forEach(marcarNumero);
+
+    // Current number = last drawn
+    const numeroDisplay = document.getElementById('numero');
+    if (numeroDisplay) {
+        numeroDisplay.textContent = numerosSalidos.length ? String(numerosSalidos[numerosSalidos.length - 1]) : '--';
+    }
+
+    // Inputs
+    const inputEl = document.getElementById('myCardNumbersInput');
+    if (inputEl) inputEl.value = myTrackedCardNumbers.join(', ');
+
+    // Voice preference
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (voiceSelect && preferredVoiceURI) {
+        const option = Array.from(voiceSelect.options).find(opt => opt.value === preferredVoiceURI);
+        if (option) {
+            voiceSelect.value = preferredVoiceURI;
+            setVoice();
+        }
+    }
+
+    actualizarUltimosNumeros();
+    verificarTodosLosCartones({ silent: true });
+    limpiarMensajeVerificacion();
+    const msgCarton = document.getElementById('mensajeVerificacionCarton');
+    if (msgCarton) msgCarton.textContent = '';
+    actualizarEstadoJuego('listo');
+
+    const startStopBtn = document.getElementById('startStopBtn');
+    if (startStopBtn) startStopBtn.textContent = 'Comenzar';
+
+    setDrawSpeed(drawIntervalMs, { persist: false });
+}
+
+// ---- Cartones guardados (mini tableros) ----
+function generarMiniTableroElement(numeros) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mini-board';
+    const nums = (numeros || '').split(',').map(n => n.trim()).filter(Boolean);
+    nums.forEach(num => {
+        const cell = document.createElement('div');
+        cell.className = 'mini-cell';
+        cell.textContent = num;
+        wrapper.appendChild(cell);
+    });
+    return wrapper;
+}
+
+function mostrarCartonesGuardados() {
+    const contenedor = document.getElementById('listaCartonesGuardados');
+    if (!contenedor) return;
+    contenedor.innerHTML = '';
+
+    const cartonesNodeList = document.querySelectorAll('#cartonesContainer > div[data-numeros]');
+    const cartonesArray = Array.from(cartonesNodeList);
+
+    cartonesArray.sort((a, b) => {
+        const numA = parseInt(a.id.replace('carton', ''), 10) || 0;
+        const numB = parseInt(b.id.replace('carton', ''), 10) || 0;
+        return numA - numB;
+    });
+
+    cartonesArray.forEach(carton => {
+        const id = carton.id;
+        const numeros = carton.getAttribute('data-numeros') || '';
+
+        const card = document.createElement('div');
+        card.className = 'saved-card';
+
+        const title = document.createElement('strong');
+        title.className = 'saved-card-title';
+        title.textContent = id;
+
+        card.appendChild(title);
+        card.appendChild(generarMiniTableroElement(numeros));
+        contenedor.appendChild(card);
+    });
+}
+
+function setupCartonesGuardadosToggle() {
+    const btn = document.getElementById('toggleCartonesBtn');
+    const container = document.getElementById('cartonesGuardadosContainer');
+    if (!btn || !container) return;
+
+    btn.addEventListener('click', () => {
+        const isHidden = container.hasAttribute('hidden');
+        if (isHidden) {
+            mostrarCartonesGuardados();
+            container.removeAttribute('hidden');
+            btn.textContent = 'Ocultar Cartones Guardados';
+        } else {
+            container.setAttribute('hidden', '');
+            btn.textContent = 'Ver Cartones Guardados';
+        }
+    });
 }
 
 function actualizarListaBingos() {
@@ -533,5 +742,38 @@ window.onload = () => {
         if (voiceSettingsContainer) voiceSettingsContainer.style.display = 'none';
     }
 
-    reiniciarJuego();
+    setupCartonesGuardadosToggle();
+
+    // Speed slider
+    const speedSlider = document.getElementById('speedSlider');
+    if (speedSlider) {
+        speedSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value, 10);
+            setDrawSpeed(value);
+        });
+    }
+
+    // Default UI
+    setDrawSpeed(drawIntervalMs, { persist: false });
+
+    document.addEventListener('keydown', (e) => {
+        const tag = document.activeElement ? document.activeElement.tagName : '';
+        const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+        if (isTyping) return;
+
+        if (e.code === 'Space') {
+            e.preventDefault();
+            startStop();
+        }
+        if (e.key && e.key.toLowerCase() === 'r') {
+            reiniciarJuego();
+        }
+    });
+
+    const restored = loadGameState();
+    if (restored) {
+        applyGameStateToUI();
+    } else {
+        reiniciarJuego();
+    }
 };

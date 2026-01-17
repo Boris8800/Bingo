@@ -15,6 +15,7 @@
                 body.classList.remove('night-mode');
                 localStorage.setItem('nightMode', 'false');
                 if (btn) {
+                    btn.setAttribute('aria-pressed', 'false');
                     btn.innerHTML = '&#127769;';
                     btn.style.background = '#0e324b';
                     btn.style.borderColor = '#a51818';
@@ -23,6 +24,7 @@
                 body.classList.add('night-mode');
                 localStorage.setItem('nightMode', 'true');
                 if (btn) {
+                    btn.setAttribute('aria-pressed', 'true');
                     btn.innerHTML = '&#9728;';
                     btn.style.background = '#f39c12';
                     btn.style.borderColor = '#e74c3c';
@@ -39,52 +41,28 @@
     </script>
 </head>
 <body>
-   <a href="https://boris8800.github.io/Bingo/" style="
-        position: fixed;
-        top: 1%;
-        left: 1%;
-        font-size: 2vw;
-        color: #000000;
-        background: rgb(229 241 249);
-        padding: 0.6% 1%;
-        border-radius: 3vw;
-        border: 1px solid #d10d0d;
-        z-index: 1000;
-        text-decoration: none;
-        font-weight: bold;
-        display: inline-block;
-        ">
-        🅑🅘🅝🅖🅞
-    </a>
+    <header class="topbar">
+        <a class="brand-badge" href="https://boris8800.github.io/Bingo/">🅑🅘🅝🅖🅞</a>
+        <button id="nightModeToggle" class="icon-btn" onclick="toggleNightMode()" aria-label="Cambiar modo noche" aria-pressed="false">&#127769;</button>
+    </header>
 
-    <button id="nightModeToggle" onclick="toggleNightMode()" style="
-        position: fixed;
-        top: 1%;
-        right: 1%;
-        font-size: 1.3vw;
-        background: #0e324b;
-        color: white;
-        padding: 0.5% 0.8%;
-        border-radius: 2vw;
-        border: 1px solid #a51818;
-        z-index: 1000;
-        cursor: pointer;
-        font-weight: bold;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        ">&#127769;
-    </button>
-  
-<link href="css/style.css" rel="stylesheet"/> <div id="voiceSettingsContainer">
-    <label for="voiceSelect">Seleccionar Voz:</label>
-    <select id="voiceSelect"></select>
-</div>
+    <div id="voiceSettingsContainer" class="control-box">
+        <label for="voiceSelect">Seleccionar Voz:</label>
+        <select id="voiceSelect" aria-label="Seleccionar voz"></select>
+    </div>
 
 <div id="numeroContainer">
-<div id="numero">--</div>
+<div id="numero" role="status" aria-live="polite" aria-atomic="true">--</div>
 </div>
+
 <div id="botonesContainer">
 <button id="reiniciarBtn" onclick="reiniciarJuego()">Reiniciar Juego</button>
 <button id="startStopBtn" onclick="startStop()">Comenzar</button>
+</div>
+
+<div id="speedControl" class="control-box">
+    <label for="speedSlider">Velocidad: <strong id="speedValue">3.0s</strong></label>
+    <input id="speedSlider" type="range" min="1000" max="7000" step="500" value="3000" aria-label="Velocidad de sorteo en milisegundos" />
 </div>
 <div id="historial">
 <div id="numerosContainer"></div>
@@ -109,34 +87,16 @@
     <h3>Seguir Cartones</h3>
     <label for="myCardNumbersInput">Números de cartón (ej: 7, 15, 23):</label>
     <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
-    <button onclick="trackMyCards()">Anadir</button>
+    <button onclick="trackMyCards()">Añadir</button>
     <h4>Cartones con Bingo:</h4>
     <div id="myTrackedBingosList" class="bingo-list-display">---</div>
 </div>
 
 
     
-<div id="cartonesBingoContainer" style="
-    margin-top: 20px;
-    padding: 20px;
-    background-color: #e9f1f9;
-    border-radius: 8px;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-">
+<div id="cartonesBingoContainer" class="control-box">
 <h3>Cartones con Bingo:</h3>
-<div id="listaCartonesBingo" style="
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-">Ningún cartón tiene bingo todavía</div>
+<div id="listaCartonesBingo">Ningún cartón tiene bingo todavía</div>
 </div>
 
 
@@ -236,88 +196,18 @@
 
 
 <!-- Botón para abrir la sección de cartones guardados -->
-<div style="text-align: center; margin-top: 20px;">
-    <button id="toggleCartonesBtn" style="
-        padding: 10px 20px; 
-        font-size: 1rem; 
-        border-radius: 8px; 
-        border: 1px solid #0077cc;
-        background-color: #103559;
-        cursor: pointer;
-    ">Ver Cartones Guardados</button>
+<div class="center">
+    <button id="toggleCartonesBtn" class="btn-secondary" type="button">Ver Cartones Guardados</button>
 </div>
 
 <!-- Sección oculta de cartones guardados -->
-<div id="cartonesGuardadosContainer" style="
-    display: none;
-    margin-top: 20px;
-    padding: 20px;
-    background-color: #f0f8ff;
-    border-radius: 8px;
-    max-width: 800px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-">
+<div id="cartonesGuardadosContainer" class="control-box" hidden>
     <h3>Cartones Guardados</h3>
-    <div id="listaCartonesGuardados" style="
-        margin-top: 20px;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 10px;
-        font-family: monospace;
-    ">
+    <div id="listaCartonesGuardados" class="saved-cards-grid">
         <!-- Aquí se generarán los mini-tableros -->
     </div>
 </div>
 
-<script>
-// Función para generar mini-tablero de un cartón
-function generarMiniTablero(numeros) {
-    const nums = numeros.split(',').map(n => n.trim());
-    let html = '<div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:2px; text-align:center; background:#fff; padding:5px; border-radius:5px; border:1px solid #ccc;">';
-    nums.forEach(num => {
-        html += `<div style="padding:2px 0; border:1px solid #eee; font-size:0.8rem;">${num}</div>`;
-    });
-    html += '</div>';
-    return html;
-}
-
-// Función para mostrar todos los cartones ordenados
-function mostrarCartonesGuardados() {
-    const contenedor = document.getElementById('listaCartonesGuardados');
-    const cartonesNodeList = document.querySelectorAll('#cartonesContainer > div[data-numeros]');
-    const cartonesArray = Array.from(cartonesNodeList);
-
-    // Ordenar por número de cartón
-    cartonesArray.sort((a, b) => {
-        const numA = parseInt(a.id.replace('carton','')) || 0;
-        const numB = parseInt(b.id.replace('carton','')) || 0;
-        return numA - numB;
-    });
-
-    // Generar HTML con mini-tableros
-    let html = '';
-    cartonesArray.forEach(carton => {
-        const id = carton.id;
-        const numeros = carton.getAttribute('data-numeros') || '';
-        html += `<div><strong>${id}</strong>${generarMiniTablero(numeros)}</div>`;
-    });
-
-    contenedor.innerHTML = html;
-}
-
-// Alternar visibilidad del contenedor al pulsar el botón
-document.getElementById('toggleCartonesBtn').addEventListener('click', () => {
-    const container = document.getElementById('cartonesGuardadosContainer');
-    if(container.style.display === 'none') {
-        mostrarCartonesGuardados();
-        container.style.display = 'block';
-    } else {
-        container.style.display = 'none';
-    }
-});
-</script>
 
 
 
@@ -336,15 +226,7 @@ document.getElementById('toggleCartonesBtn').addEventListener('click', () => {
 
 
 
-
-<div style="height: 100px;"></div>
-<p></p>
-<br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-<br/><br/><br/>
-<br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
-<br/><br/><br/>
-<a href="" target="_blank">
-
+<div class="page-spacer" aria-hidden="true"></div>
 <script type="text/javascript" src="https://contador.websiteout.com/js/21/8/0/0"></script>
 
     
