@@ -244,16 +244,27 @@
     <div class="modal-content">
         <span class="close-modal" onclick="closeShareModal()">&times;</span>
         <h2>Comparte este Juego</h2>
-        <div id="qrCodeContainer"></div>
+        
+        <!-- QR Code -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+            <div id="qrCodeContainer" style="background: white; padding: 10px; border-radius: 8px;"></div>
+            
+            <!-- Full Token Display -->
+            <div style="width: 100%; max-width: 400px;">
+                <p style="margin: 5px 0; font-size: 0.85em; font-weight: bold; color: var(--text-secondary);">Token Completo:</p>
+                <div id="fullTokenDisplay" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; font-family: monospace; font-size: 0.75em; word-break: break-all; max-height: 100px; overflow-y: auto; color: var(--text-primary); margin-bottom: 10px;"></div>
+                <button class="btn-primary" onclick="copyFullToken()" style="width: 100%; margin-bottom: 10px;">Copiar Token</button>
+            </div>
+        </div>
         
         <div id="modalTokenContainer">
-            <p style="margin: 0; font-weight: bold;">Token del Juego:</p>
-            <div id="modalTokenDisplay">---</div>
-            <p id="modalShareUrl"></p>
+            <p style="margin: 0; font-weight: bold; text-align: center;">Código del Juego:</p>
+            <div id="modalTokenDisplay" style="font-size: 1.5em; font-weight: bold; color: var(--btn-secondary); margin: 10px 0; text-align: center;">---</div>
+            <p id="modalShareUrl" style="word-break: break-all; font-size: 0.8em;"></p>
             <button class="btn-primary" onclick="copyShareUrl()" style="width: 100%; margin-top: 10px;">Copiar Enlace</button>
         </div>
-        <p style="font-size: 0.85em; color: var(--text-secondary);">
-            Tus amigos pueden entrar a <br><strong>boris8800.github.io/Bingo/web3.html</strong><br> e ingresar el token.
+        <p style="font-size: 0.85em; color: var(--text-secondary); text-align: center; margin-top: 15px;">
+            Tus amigos pueden entrar a <br><strong>boris8800.github.io/Bingo/web3.html</strong><br> e ingresar el token o código.
         </p>
     </div>
 </div>

@@ -867,10 +867,12 @@ function shareGame() {
         // Update Modal Content
         const tokenDisplay = document.getElementById('modalTokenDisplay');
         const shareUrlDisplay = document.getElementById('modalShareUrl');
+        const fullTokenDisplay = document.getElementById('fullTokenDisplay');
         const qrContainer = document.getElementById('qrCodeContainer');
         
         if (tokenDisplay) tokenDisplay.textContent = state.gameCode || '---';
         if (shareUrlDisplay) shareUrlDisplay.textContent = shareUrl;
+        if (fullTokenDisplay) fullTokenDisplay.textContent = token;
         
         // Clear and Generate QR Code
         if (qrContainer) {
@@ -924,6 +926,27 @@ function copyShareUrl() {
         }, 2000);
     }).catch(err => {
         console.error('Error al copiar:', err);
+    });
+}
+
+function copyFullToken() {
+    const tokenDisplay = document.getElementById('fullTokenDisplay');
+    if (!tokenDisplay) return;
+    
+    const token = tokenDisplay.textContent;
+    navigator.clipboard.writeText(token).then(() => {
+        // Simple visual feedback on the button
+        const btn = document.querySelector('[onclick="copyFullToken()"]');
+        const originalText = btn.textContent;
+        btn.textContent = '¡Copiado!';
+        btn.style.backgroundColor = 'var(--bingo-success)';
+        
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.backgroundColor = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('Error al copiar token:', err);
     });
 }
 
