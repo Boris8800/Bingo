@@ -846,20 +846,10 @@ function shareGame() {
         const basePath = currentPath.substring(0, currentPath.lastIndexOf('/')) || '/Bingo'; // Get the directory
         const shareUrl = window.location.origin + basePath + '/web3.html#' + token;
         
-        console.log('Share URL:', shareUrl);
-        console.log('Current Path:', currentPath);
-        console.log('Base Path:', basePath);
-        
         // Update Modal Content
         const tokenDisplay = document.getElementById('modalTokenDisplay');
         const shareUrlDisplay = document.getElementById('modalShareUrl');
         const qrContainer = document.getElementById('qrCodeContainer');
-        
-        console.log('Modal elements found:', {
-            tokenDisplay: !!tokenDisplay,
-            shareUrlDisplay: !!shareUrlDisplay,
-            qrContainer: !!qrContainer
-        });
         
         if (tokenDisplay) tokenDisplay.textContent = state.gameCode || '---';
         if (shareUrlDisplay) shareUrlDisplay.textContent = shareUrl;
@@ -867,22 +857,25 @@ function shareGame() {
         // Clear and Generate QR Code
         if (qrContainer) {
             qrContainer.innerHTML = '';
-            new QRCode(qrContainer, {
-                text: shareUrl,
-                width: 180,
-                height: 180,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.L  // Use Low error correction to fit longer URLs
-            });
+            try {
+                new QRCode(qrContainer, {
+                    text: shareUrl,
+                    width: 180,
+                    height: 180,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.L  // Use Low error correction to fit longer URLs
+                });
+            } catch (qrError) {
+                console.error('QR Code generation failed:', qrError);
+                qrContainer.innerHTML = '<p style="color: red; font-size: 0.9em;">QR code too large. Use the link below.</p>';
+            }
         }
         
         // Show Modal
         const modal = document.getElementById('shareModal');
-        console.log('Modal element found:', !!modal);
         if (modal) {
             modal.style.display = 'block';
-            console.log('Modal displayed');
         }
     } catch (error) {
         console.error('Error in shareGame:', error);
