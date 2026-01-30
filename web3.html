@@ -40,17 +40,24 @@
             }
             
             // Auto-load token from URL hash if present
-            const urlToken = window.location.hash.substring(1);
-            if (urlToken && /^\d{2}(\+\d+)*$/.test(urlToken)) {
-                // Valid token format detected, auto-load it
                 const tokenInput = document.getElementById('newTokenInput');
-                if (tokenInput) {
-                    tokenInput.value = urlToken;
-                    // Delay to ensure UI is ready
-                    setTimeout(() => {
-                        loadNewGameFromToken();
-                    }, 100);
-                }
+                const tokenMessage = document.getElementById('tokenMessage');
+                const urlToken = window.location.hash.substring(1);
+
+                if (urlToken) {
+                    if (isPageReloaded()) {
+                        stopAutoSync();
+                        if (tokenMessage) {
+                            tokenMessage.textContent = 'Página recargada: ingresa el token nuevamente para reconectar.';
+                            tokenMessage.style.color = 'purple';
+                        }
+                        window.history.replaceState(null, null, window.location.pathname);
+                    } else if (tokenInput) {
+                        tokenInput.value = urlToken;
+                        setTimeout(() => {
+                            loadNewGameFromToken();
+                        }, 100);
+                    }
             }
         });
     </script>
@@ -144,10 +151,8 @@
         <select id="voiceSelect"></select>
         <div id="speedValue"></div>
         <input id="speedSlider" type="range">
-        <input id="myCardNumbersInput">
         <button id="startStopBtn"></button>
         <div id="listaCartonesBingo"></div>
-        <div id="myTrackedBingosList"></div>
         <div id="estadoJuego"></div>
 
         <div id="cartonesContainer">
@@ -254,10 +259,24 @@
         // Start the retry loop
         wrapApplyGameState();
         
+        const AUTO_SYNC_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
         let lastLoadedToken = null;
         let autoSyncInterval = null;
         let baseGameToken = null; // Store base token (2-digit code like "22")
         let nextExpectedCounter = 1; // Start expecting +1
+        let lastHashSeen = '';
+        let lastActivityTimestamp = 0;
+
+        function isPageReloaded() {
+            const navEntries = performance.getEntriesByType('navigation');
+            if (navEntries.length) {
+                return navEntries[0].type === 'reload';
+            }
+            if (performance && performance.navigation) {
+                return performance.navigation.type === 1;
+            }
+            return false;
+        }
         
         function buildExpectedToken(base, counter) {
             // Build token like: "22" or "22+1" or "22+1+2"
@@ -277,6 +296,8 @@
             lastLoadedToken = initialToken;
             baseGameToken = initialToken.split('+')[0]; // Extract base code "22"
             nextExpectedCounter = 1; // Start expecting first number (+1)
+            lastHashSeen = initialToken;
+            lastActivityTimestamp = Date.now();
             
             console.log(`🎯 Web3 Sync Started | Base: ${baseGameToken} | Expected first: +1`);
             
@@ -285,9 +306,13 @@
             // Update every 1 second to check for next expected number
             autoSyncInterval = setInterval(() => {
                 try {
-                    // Check if URL hash has been updated with next number
                     const urlHash = window.location.hash.substring(1);
                     const expectedToken = buildExpectedToken(baseGameToken, nextExpectedCounter);
+                    
+                    if (urlHash && urlHash !== lastHashSeen) {
+                        lastHashSeen = urlHash;
+                        lastActivityTimestamp = Date.now();
+                    }
                     
                     console.log(`🔍 Check: URL="${urlHash}" | Expected="${expectedToken}"`);
                     
@@ -295,6 +320,8 @@
                         // Got the expected number!
                         lastLoadedToken = urlHash;
                         nextExpectedCounter++;
+                        lastHashSeen = urlHash;
+                        lastActivityTimestamp = Date.now();
                         
                         console.log(`✅ Detected +${nextExpectedCounter - 1} | Now waiting for +${nextExpectedCounter}`);
                         
@@ -318,6 +345,15 @@
                 } catch (e) {
                     console.warn('Auto-sync error:', e);
                 }
+
+                const now = Date.now();
+                if (now - lastActivityTimestamp >= AUTO_SYNC_TIMEOUT_MS) {
+                    stopAutoSync();
+                    if (messageDiv) {
+                        messageDiv.textContent = 'Sincronización pausada (sin conexión por 15 min). Ingresa el token nuevamente.';
+                        messageDiv.style.color = 'red';
+                    }
+                }
             }, 1000);
         }
         
@@ -327,7 +363,8 @@
                 autoSyncInterval = null;
             }
             lastLoadedToken = null;
-            expectedDrawCount = 0;
+            lastHashSeen = '';
+            lastActivityTimestamp = 0;
         }
         
         function loadNewGameFromToken() {
@@ -395,6 +432,11 @@
                     messageDiv.textContent = '';
                 }
             }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            stopAutoSync();
+            window.history.replaceState(null, null, window.location.pathname);
         });
     </script>
 
