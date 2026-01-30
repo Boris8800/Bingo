@@ -342,62 +342,75 @@
             }
             
             lastLoadedToken = initialToken;
-            baseGameToken = initialToken.split(',')[0]; // Extract base code "56"
+            baseGameToken = initialToken.split(',')[0]; // Extract base code "21"
             lastHashSeen = initialToken;
             lastActivityTimestamp = Date.now();
             lastDetectedNumber = null;
+            detectedNumbers = []; // Reset detected numbers
             
-            // Parse initial token: "56" or "56,45" (game code, last number)
+            // Parse initial token: "21" or "21,1,30" (game code, then all numbers)
             const parts = initialToken.split(',');
             if (parts.length > 1) {
-                lastDetectedNumber = parseInt(parts[1]);
+                // Extract all numbers except the first part (which is the game code)
+                for (let i = 1; i < parts.length; i++) {
+                    const num = parseInt(parts[i]);
+                    if (!isNaN(num)) {
+                        detectedNumbers.push(num);
+                        lastDetectedNumber = num;
+                    }
+                }
             }
             
-            console.log(`🎯 Web3 Sync Started | Base: ${baseGameToken} | Last number: ${lastDetectedNumber}...`);
+            console.log(`🎯 Web3 Sync Started | Base: ${baseGameToken} | Numbers: ${detectedNumbers.join(',')}...`);
+            updateLastNumbersDisplay();
             
             const messageDiv = document.getElementById('tokenMessage');
             
-            // Update every 1 second to check for new number
+            // Update every 1 second to check for new numbers
             autoSyncInterval = setInterval(() => {
                 try {
                     const urlHash = window.location.hash.substring(1);
                     const parts = urlHash.split(',');
-                    const currentLastNumber = parts.length > 1 ? parseInt(parts[1]) : null;
                     
                     if (urlHash && urlHash !== lastHashSeen) {
                         lastHashSeen = urlHash;
                         lastActivityTimestamp = Date.now();
                     }
                     
-                    console.log(`🔍 Check: URL="${urlHash}" | Current: ${currentLastNumber} | Last seen: ${lastDetectedNumber}`);
+                    console.log(`🔍 Check: URL="${urlHash}" | Detected so far: ${detectedNumbers.length}`);
                     
-                    // Detect new draw by checking if the last number changed
-                    if (currentLastNumber && currentLastNumber !== lastDetectedNumber) {
-                        // NEW NUMBER DETECTED!
+                    // Check if new numbers were added (token got longer)
+                    if (parts.length - 1 > detectedNumbers.length) {
+                        // NEW NUMBERS DETECTED!
                         lastLoadedToken = urlHash;
-                        lastDetectedNumber = currentLastNumber;
-                        detectedNumbers.push(currentLastNumber); // Add to tracking array
-                        lastHashSeen = urlHash;
-                        lastActivityTimestamp = Date.now();
                         
-                        console.log(`✅ DETECTED NEW NUMBER: ${currentLastNumber}`);
-                        
-                        // Update last 10 numbers display
-                        updateLastNumbersDisplay();
-                        
-                        if (messageDiv) {
-                            messageDiv.textContent = `✅ Nuevo número: ${currentLastNumber}`;
-                            messageDiv.style.color = "green";
-                            setTimeout(() => {
-                                if (messageDiv.textContent.startsWith('✅')) {
-                                    messageDiv.textContent = '';
+                        // Add new numbers to our array
+                        for (let i = detectedNumbers.length + 1; i < parts.length; i++) {
+                            const num = parseInt(parts[i]);
+                            if (!isNaN(num)) {
+                                detectedNumbers.push(num);
+                                lastDetectedNumber = num;
+                                
+                                console.log(`✅ DETECTED NEW NUMBER: ${num}`);
+                                
+                                // Update display for each new number
+                                updateLastNumbersDisplay();
+                                
+                                if (messageDiv) {
+                                    messageDiv.textContent = `✅ Nuevo número: ${num}`;
+                                    messageDiv.style.color = "green";
+                                    setTimeout(() => {
+                                        if (messageDiv.textContent.startsWith('✅')) {
+                                            messageDiv.textContent = '';
+                                        }
+                                    }, 3000);
                                 }
-                            }, 3000);
+                            }
                         }
                     } else if (urlHash.startsWith(baseGameToken)) {
-                        // Token valid but no new number yet
+                        // Token valid but no new numbers yet
                         if (messageDiv && !messageDiv.textContent.startsWith('✅')) {
-                            messageDiv.textContent = `⏳ Sincronizando... | Código: ${baseGameToken} | Última: ${lastDetectedNumber || '---'}`;
+                            messageDiv.textContent = `⏳ Sincronizando... | Código: ${baseGameToken} | Números: ${detectedNumbers.length}`;
                             messageDiv.style.color = "orange";
                         }
                     } else {
@@ -456,10 +469,10 @@
             messageDiv.style.color = "blue";
             
             try {
-                // Token format: "56" or "56,45" or "56,23"
-                // Just game code and last number
-                if (!/^\d{2}(,\d+)?$/.test(token)) {
-                    throw new Error("Token debe ser formato: 'XX' o 'XX,45' (XX = código 2 dígitos, número 1-90)");
+                // Token format: \"21\" or \"21,1\" or \"21,1,30\" or \"21,1,30,21,45,...\"
+                // Game code followed by all drawn numbers
+                if (!/^\\d{2}(,\\d+)*$/.test(token)) {
+                    throw new Error(\"Token debe ser formato: 'XX' o 'XX,1,30,21' (XX = código 2 dígitos)\");
                 }
                 
                 // Token is valid - start syncing

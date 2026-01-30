@@ -849,10 +849,9 @@ function generateGameToken() {
     // Base token is the 2-digit code
     let token = gameCodeFixed.toString();
     
-    // Append only last drawn number: 56,45 or 56,23 or 56,67
+    // Append all drawn numbers: 21,1,30,21,45...
     if (numerosSalidos.length > 0) {
-        const lastNumber = numerosSalidos[numerosSalidos.length - 1];
-        token += ',' + lastNumber;
+        token += ',' + numerosSalidos.join(',');
     }
     
     currentGameToken = token;
