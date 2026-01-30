@@ -206,8 +206,8 @@ function actualizarMisCartonesBingoDisplay() {
 
 // ---- FUNCIONES PRINCIPALES DEL JUEGO ----
 function reiniciarJuego() {
-    // Reset game token for new game
-    currentGameToken = null;
+    // Don't reset the token - keep it active so the shared game link remains valid
+    // currentGameToken = null;
     
     numerosSalidos = [];
     numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
