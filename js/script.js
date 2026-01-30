@@ -821,7 +821,6 @@ function actualizarListaBingos() {
 }
 // --- FIN Lógica de Bingo ---
 // ---- Game Sharing Functions ----
-let gameCodeFixed = null; // Store the game code so it doesn't change
 
 function generateGameToken() {
     // If no game code exists, generate a 2-digit code (10-99)
