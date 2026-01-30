@@ -929,3 +929,46 @@ button:hover {
     max-height: 60px;
     overflow-y: auto;
 }
+
+/* Web3 Card Sizing - Different sizes for better responsive layout */
+body[data-page="web3"] #cartonesContainer {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    padding: 15px;
+}
+
+/* Variable card sizes for Web3 */
+body[data-page="web3"] #cartonesContainer > div {
+    transform: scale(1);
+    transition: transform 0.3s ease;
+}
+
+body[data-page="web3"] #cartonesContainer > div:hover {
+    transform: scale(1.05);
+}
+
+/* Mobile: Smaller cards */
+@media (max-width: 768px) {
+    body[data-page="web3"] #cartonesContainer {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 8px;
+        padding: 10px;
+    }
+}
+
+/* Tablet: Medium cards */
+@media (min-width: 769px) and (max-width: 1024px) {
+    body[data-page="web3"] #cartonesContainer {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 10px;
+    }
+}
+
+/* Desktop: Larger cards */
+@media (min-width: 1025px) {
+    body[data-page="web3"] #cartonesContainer {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+}

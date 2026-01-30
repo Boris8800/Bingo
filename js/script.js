@@ -972,51 +972,146 @@ window.onclick = function(event) {
     }
 }
 
+function validateSharedToken(encoded) {
+    // Returns a structured result describing decode/parse outcome for easier debugging
+    const result = {
+        ok: false,
+        reason: null, // 'not-base64'|'not-json'|'null-state'|'invalid-structure'|'error'|'ok'
+        message: '',
+        decoded: null,
+        state: null,
+        errors: {}
+    };
+
+    if (typeof encoded !== 'string') {
+        result.reason = 'error';
+        result.message = 'Token must be a string';
+        return result;
+    }
+
+    // Attempt several decoding strategies and record any errors
+    let decodedStr = null;
+    let lastError = null;
+
+    // Raw base64
+    try {
+        decodedStr = atob(encoded);
+    } catch (e1) {
+        result.errors.raw = e1.toString();
+        lastError = e1;
+    }
+
+    // URL-decoded base64
+    if (decodedStr === null) {
+        try {
+            const decodedUri = decodeURIComponent(encoded);
+            if (decodedUri !== encoded) {
+                decodedStr = atob(decodedUri);
+                result.errors.used = 'decodeURIComponent';
+            }
+        } catch (e2) {
+            result.errors.decodeURIComponent = e2.toString();
+            lastError = lastError || e2;
+        }
+    }
+
+    // Base64 with padding
+    if (decodedStr === null) {
+        try {
+            const padded = encoded + '='.repeat((4 - encoded.length % 4) % 4);
+            decodedStr = atob(padded);
+            result.errors.used = 'padding';
+        } catch (e3) {
+            result.errors.padding = e3.toString();
+            lastError = lastError || e3;
+        }
+    }
+
+    if (decodedStr === null) {
+        result.reason = 'not-base64';
+        result.message = 'Token is not valid Base64 (tried raw, decodeURIComponent, and padding).';
+        return result;
+    }
+
+    result.decoded = decodedStr;
+
+    // Try parsing JSON
+    let parsed = null;
+    try {
+        parsed = JSON.parse(decodedStr);
+    } catch (parseErr) {
+        result.reason = 'not-json';
+        result.message = 'Token decodes to non-JSON text.';
+        result.errors.parse = parseErr.toString();
+        return result;
+    }
+
+    // Check for null
+    if (parsed === null) {
+        result.reason = 'null-state';
+        result.message = 'Token decoded to JSON null ("null"). Not a valid shared game snapshot.';
+        result.state = null;
+        return result;
+    }
+
+    // Validate structure
+    if (typeof parsed !== 'object' || !Array.isArray(parsed.numerosSalidos)) {
+        result.reason = 'invalid-structure';
+        result.message = 'Decoded JSON does not have required structure (missing numerosSalidos array).';
+        result.state = parsed;
+        return result;
+    }
+
+    // Looks good
+    result.ok = true;
+    result.reason = 'ok';
+    result.message = 'Valid shared-game snapshot';
+    result.state = parsed;
+    return result;
+}
+
 function loadSharedGame(encoded) {
     try {
-        let state = null;
-        let decodedToken = encoded;
-        
-        // Try to decode the token (it might be URL-encoded or have missing padding)
-        try {
-            state = JSON.parse(atob(encoded));
-        } catch (e1) {
-            // If that fails, try URL decoding first
-            try {
-                const decoded = decodeURIComponent(encoded);
-                if (decoded !== encoded) {
-                    // Only try if decoding actually changed something
-                    state = JSON.parse(atob(decoded));
-                    decodedToken = decoded;
-                }
-            } catch (e2) {
-                // Try adding padding for Base64
-                try {
-                    const padded = encoded + '='.repeat((4 - encoded.length % 4) % 4);
-                    state = JSON.parse(atob(padded));
-                } catch (e3) {
-                    console.error('All decoding attempts failed:', { e1, e2, e3 });
-                    throw new Error('Token is not in valid Base64 format');
-                }
+        const validation = validateSharedToken(encoded);
+
+        // If invalid, provide detailed logs and optional UI feedback
+        if (!validation.ok) {
+            console.error('loadSharedGame failed:', validation.reason, validation.message, validation.errors || '');
+            // If token message area exists, show helpful message
+            const tokenMessage = document.getElementById('tokenMessage');
+            if (tokenMessage) {
+                tokenMessage.textContent = `Error al cargar token: ${validation.message}`;
+                tokenMessage.style.color = 'red';
             }
+            return false;
         }
-        
-        if (state && state.numerosSalidos && Array.isArray(state.numerosSalidos)) {
-            numerosSalidos = state.numerosSalidos;
-            drawIntervalMs = state.drawIntervalMs || 3500;
-            myTrackedCardNumbers = state.myTrackedCardNumbers || [];
-            cartonesConBingo = state.cartonesConBingo || [];
-            // Set the current game token to the loaded shared game token
-            currentGameToken = decodedToken;
-            // Apply the state
-            applyGameStateToUI();
-            updateShareButton();
-            return true;
-        } else {
-            console.error('Invalid state structure:', state);
+
+        // Apply the state
+        const state = validation.state;
+        numerosSalidos = state.numerosSalidos;
+        drawIntervalMs = state.drawIntervalMs || 3500;
+        myTrackedCardNumbers = state.myTrackedCardNumbers || [];
+        cartonesConBingo = state.cartonesConBingo || [];
+        currentGameToken = encoded;
+
+        applyGameStateToUI();
+        updateShareButton();
+
+        // Success message (optional UI feedback)
+        const tokenMessage = document.getElementById('tokenMessage');
+        if (tokenMessage) {
+            tokenMessage.textContent = '✅ Partida cargada desde token compartido.';
+            tokenMessage.style.color = 'green';
         }
+
+        return true;
     } catch (e) {
-        console.error('Error loading shared game:', e);
+        console.error('Unexpected error in loadSharedGame:', e);
+        const tokenMessage = document.getElementById('tokenMessage');
+        if (tokenMessage) {
+            tokenMessage.textContent = 'Error inesperado al cargar el token.';
+            tokenMessage.style.color = 'red';
+        }
     }
     return false;
 }
@@ -1090,8 +1185,28 @@ window.onload = () => {
     } else {
         // Check for shared game in URL hash
         const hash = window.location.hash.substring(1);
-        if (hash && loadSharedGame(hash)) {
-            // Shared game loaded
+        if (hash) {
+            // If the hash looks like the numeric game token used by Web3 (e.g., "47" or "47,16,80")
+            if (/^\d{2}(?:,\d+)*$/.test(hash)) {
+                // Load as Web3 token (start auto-sync)
+                const tokenInput = document.getElementById('newTokenInput');
+                if (tokenInput) {
+                    tokenInput.value = hash;
+                    // Trigger the normal loader which validates and starts sync
+                    loadNewGameFromToken();
+                } else {
+                    // Fallback: start auto-sync directly
+                    if (typeof startAutoSync === 'function') {
+                        startAutoSync(hash);
+                    } else {
+                        reiniciarJuego();
+                    }
+                }
+            } else if (loadSharedGame(hash)) {
+                // Shared game loaded
+            } else {
+                reiniciarJuego();
+            }
         } else {
             reiniciarJuego();
         }
