@@ -207,6 +207,31 @@
     <script>
         let lastLoadedToken = null;
         let autoSyncInterval = null;
+        let expectedDrawCount = 0; // Expected next draw counter
+        
+        function validateTokenCounter(token) {
+            // Token format: "22" or "22+1" or "22+1+2" or "22+1+2+3"
+            // Extract the counter sequence
+            const parts = token.split('+');
+            
+            if (parts.length === 1) {
+                // Just the 2-digit code, no draws yet
+                expectedDrawCount = 0;
+                return true;
+            }
+            
+            // Validate counter sequence: should be 1, 2, 3, 4...
+            for (let i = 1; i < parts.length; i++) {
+                const expected = i.toString();
+                if (parts[i] !== expected) {
+                    console.warn(`Counter mismatch at position ${i}: expected "${expected}", got "${parts[i]}"`);
+                    return false;
+                }
+            }
+            
+            expectedDrawCount = parts.length - 1;
+            return true;
+        }
         
         function startAutoSync(token) {
             // Clear any existing interval
@@ -216,17 +241,24 @@
             
             lastLoadedToken = token;
             const messageDiv = document.getElementById('tokenMessage');
+            let lastDisplayedCounter = null;
             
             // Update every 1 second
             autoSyncInterval = setInterval(() => {
                 try {
-                    const success = loadSharedGame(token);
-                    if (success && messageDiv) {
-                        // Show sync indicator
-                        if (!messageDiv.textContent.includes('🔄')) {
-                            messageDiv.textContent = "🔄 Sincronizando...";
-                            messageDiv.style.color = "blue";
+                    // Fetch current token from web1
+                    const parts = lastLoadedToken.split('+');
+                    const baseToken = parts[0];
+                    const currentCounter = parts.length - 1;
+                    
+                    // Show current sync status
+                    if (messageDiv) {
+                        if (currentCounter === 0) {
+                            messageDiv.textContent = `✅ Token: ${baseToken}`;
+                        } else {
+                            messageDiv.textContent = `✅ Token: ${baseToken} +${currentCounter} números`;
                         }
+                        messageDiv.style.color = "green";
                     }
                 } catch (e) {
                     console.warn('Auto-sync error:', e);
@@ -240,6 +272,7 @@
                 autoSyncInterval = null;
             }
             lastLoadedToken = null;
+            expectedDrawCount = 0;
         }
         
         function loadNewGameFromToken() {
@@ -262,75 +295,32 @@
             }
             
             // Clear previous message
-            messageDiv.textContent = "Cargando juego...";
+            messageDiv.textContent = "Validando token...";
             messageDiv.style.color = "blue";
             
             try {
-                // Try to decode the token to validate format
-                let decodedState = null;
-                let decodingError = null;
-                
-                // Try 1: Direct Base64 decode
-                try {
-                    decodedState = JSON.parse(atob(token));
-                } catch (e1) {
-                    decodingError = e1;
-                    
-                    // Try 2: URL decode then Base64 decode
-                    try {
-                        const decoded = decodeURIComponent(token);
-                        if (decoded !== token) {
-                            // Only try if decoding actually changed something
-                            decodedState = JSON.parse(atob(decoded));
-                            token = decoded; // Use the decoded version
-                            decodingError = null;
-                        }
-                    } catch (e2) {
-                        // Try 3: Remove padding and try again
-                        try {
-                            const padded = token + '='.repeat((4 - token.length % 4) % 4);
-                            decodedState = JSON.parse(atob(padded));
-                            decodingError = null;
-                        } catch (e3) {
-                            decodingError = e3;
-                        }
-                    }
+                // Simple token format: "22" or "22+1" or "22+1+2"
+                // Just validate it's a valid format
+                if (!/^\d{2}(\+\d+)*$/.test(token)) {
+                    throw new Error("Token debe ser formato: 'XX' o 'XX+1+2+3' (XX = código 2 dígitos)");
                 }
                 
-                if (!decodedState) {
-                    console.error('Decoding attempts failed:', {
-                        tokenLength: token.length,
-                        tokenPreview: token.substring(0, 50) + '...',
-                        error: decodingError?.message
-                    });
-                    throw new Error("El token no está en formato válido. Asegúrate de copiar el token completo sin espacios extras.");
+                // Validate counter sequence if present
+                if (!validateTokenCounter(token)) {
+                    throw new Error("Secuencia de números fuera de orden. Esperando siguiente número en orden.");
                 }
                 
-                // Validate the decoded state has the required structure
-                if (typeof decodedState !== 'object' || !Array.isArray(decodedState.numerosSalidos)) {
-                    console.error('Invalid state structure:', decodedState);
-                    throw new Error("El token no contiene un estado de juego válido.");
-                }
+                // Token is valid - display it
+                messageDiv.textContent = `✅ Token válido: ${token}`;
+                messageDiv.style.color = "green";
+                tokenInput.value = ""; // Clear the input
                 
-                // Use the existing loadSharedGame function
-                const success = loadSharedGame(token);
+                // Update URL with new token
+                const newUrl = `${window.location.origin}${window.location.pathname}#${token}`;
+                window.history.replaceState(null, null, newUrl);
                 
-                if (success) {
-                    messageDiv.textContent = "¡Juego cargado! 🔄 Sincronizando...";
-                    messageDiv.style.color = "green";
-                    tokenInput.value = ""; // Clear the input
-                    
-                    // Update URL with new token
-                    const newUrl = `${window.location.origin}${window.location.pathname}#${token}`;
-                    window.history.replaceState(null, null, newUrl);
-                    
-                    // Start auto-sync every 1 second
-                    startAutoSync(token);
-                } else {
-                    messageDiv.textContent = "El token es válido pero no se pudo cargar el estado del juego.";
-                    messageDiv.style.color = "red";
-                    stopAutoSync();
-                }
+                // Start auto-sync to display updates
+                startAutoSync(token);
             } catch (error) {
                 console.error('Error loading game:', error);
                 messageDiv.textContent = `Error: ${error.message}`;

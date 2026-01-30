@@ -6,8 +6,10 @@ let enEjecucion = false;
 let juegoPausado = false;
 let cartonesConBingo = [];
 
-// ---- Current Game Token (persists for the game session) ----
+// ---- Current Game Token (simple 2-digit code + draw counter) ----
 let currentGameToken = null;
+let gameCodeFixed = null; // 2-digit code (10-99)
+let drawCounter = 0; // Increments after each number draw
 
 // ---- Velocidad del juego (ms) ----
 let drawIntervalMs = 3500;
@@ -219,6 +221,7 @@ function reiniciarJuego() {
     // Reset the game code when starting a fresh game
     gameCodeFixed = null;
     currentGameToken = null;
+    drawCounter = 0; // Reset draw counter for new game
     
     numerosSalidos = [];
     numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
@@ -304,6 +307,7 @@ function siguienteNumero() {
     const indice = Math.floor(Math.random() * numerosDisponibles.length);
     const numero = numerosDisponibles.splice(indice, 1)[0];
     numerosSalidos.push(numero);
+    drawCounter++; // Increment draw counter for web3 sync
 
     const numeroDisplay = document.getElementById('numero');
     if (numeroDisplay) numeroDisplay.textContent = numero;
@@ -820,44 +824,36 @@ function actualizarListaBingos() {
 let gameCodeFixed = null; // Store the game code so it doesn't change
 
 function generateGameToken() {
-    // If no game code exists, generate one and keep it for the entire session
+    // If no game code exists, generate a 2-digit code (10-99)
     if (!gameCodeFixed) {
-        gameCodeFixed = Math.floor(Math.random() * 10); // 1 digit only
+        gameCodeFixed = Math.floor(Math.random() * 90) + 10; // 10-99
     }
     
-    // Always generate a fresh token with the current game state
-    // This way, the shared link shows the latest game progress
-    const state = {
-        numerosSalidos: [...numerosSalidos],
-        drawIntervalMs: drawIntervalMs,
-        myTrackedCardNumbers: [...myTrackedCardNumbers],
-        cartonesConBingo: [...cartonesConBingo],
-        seed: Math.random().toString(36).substr(2, 9),
-        gameCode: gameCodeFixed // Keep the same game code
-    };
-    currentGameToken = btoa(JSON.stringify(state));
-    return currentGameToken;
-}
+    // Base token is the 2-digit code
+    let token = gameCodeFixed.toString();
+    
+    // Append draw counter as suffix: +1, +2, +3...
+    for (let i = 1; i <= drawCounter; i++) {
+        token += '+' + i;
+    }
+    
+    currentGameToken = token;
+    return token;
+}}
 
 function updateShareButton() {
     const token = generateGameToken();
     const btn = document.getElementById('shareGameBtn');
     if (btn) {
-        // Extract just the game code for display (1 digit)
-        try {
-            const state = JSON.parse(atob(token));
-            const gameCode = state.gameCode || '---';
-            btn.textContent = `Compartir (${gameCode})`;
-        } catch (e) {
-            btn.textContent = 'Compartir';
-        }
+        // Extract just the 2-digit game code for display
+        const gameCode = gameCodeFixed || '---';
+        btn.textContent = `Compartir (${gameCode})`;
     }
-}
+}}
 
 function shareGame() {
     try {
         const token = generateGameToken();
-        const state = JSON.parse(atob(token));
         
         // Build the correct share URL based on the current location
         const currentPath = window.location.pathname; // e.g., "/Bingo/index.html" or "/Bingo/"
@@ -870,9 +866,10 @@ function shareGame() {
         const fullTokenDisplay = document.getElementById('fullTokenDisplay');
         const qrContainer = document.getElementById('qrCodeContainer');
         
-        if (tokenDisplay) tokenDisplay.textContent = state.gameCode || '---';
+        // Display 2-digit game code
+        if (tokenDisplay) tokenDisplay.textContent = gameCodeFixed || '---';
         if (shareUrlDisplay) shareUrlDisplay.textContent = shareUrl;
-        if (fullTokenDisplay) fullTokenDisplay.textContent = token;
+        if (fullTokenDisplay) fullTokenDisplay.textContent = token; // Show token like "22+1+2+3"
         
         // Clear and Generate QR Code
         if (qrContainer) {
