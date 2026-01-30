@@ -205,6 +205,43 @@
 
     <script src="js/script.js"></script>
     <script>
+        let lastLoadedToken = null;
+        let autoSyncInterval = null;
+        
+        function startAutoSync(token) {
+            // Clear any existing interval
+            if (autoSyncInterval) {
+                clearInterval(autoSyncInterval);
+            }
+            
+            lastLoadedToken = token;
+            const messageDiv = document.getElementById('tokenMessage');
+            
+            // Update every 1 second
+            autoSyncInterval = setInterval(() => {
+                try {
+                    const success = loadSharedGame(token);
+                    if (success && messageDiv) {
+                        // Show sync indicator
+                        if (!messageDiv.textContent.includes('🔄')) {
+                            messageDiv.textContent = "🔄 Sincronizando...";
+                            messageDiv.style.color = "blue";
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Auto-sync error:', e);
+                }
+            }, 1000);
+        }
+        
+        function stopAutoSync() {
+            if (autoSyncInterval) {
+                clearInterval(autoSyncInterval);
+                autoSyncInterval = null;
+            }
+            lastLoadedToken = null;
+        }
+        
         function loadNewGameFromToken() {
             const tokenInput = document.getElementById('newTokenInput');
             const messageDiv = document.getElementById('tokenMessage');
@@ -215,7 +252,13 @@
             if (!token) {
                 messageDiv.textContent = "Por favor ingresa un token válido.";
                 messageDiv.style.color = "red";
+                stopAutoSync();
                 return;
+            }
+            
+            // Check if token is different from the last loaded one
+            if (lastLoadedToken && token !== lastLoadedToken) {
+                stopAutoSync();
             }
             
             // Clear previous message
@@ -273,21 +316,26 @@
                 const success = loadSharedGame(token);
                 
                 if (success) {
-                    messageDiv.textContent = "¡Juego cargado exitosamente!";
+                    messageDiv.textContent = "¡Juego cargado! 🔄 Sincronizando...";
                     messageDiv.style.color = "green";
                     tokenInput.value = ""; // Clear the input
                     
                     // Update URL with new token
                     const newUrl = `${window.location.origin}${window.location.pathname}#${token}`;
                     window.history.replaceState(null, null, newUrl);
+                    
+                    // Start auto-sync every 1 second
+                    startAutoSync(token);
                 } else {
                     messageDiv.textContent = "El token es válido pero no se pudo cargar el estado del juego.";
                     messageDiv.style.color = "red";
+                    stopAutoSync();
                 }
             } catch (error) {
                 console.error('Error loading game:', error);
                 messageDiv.textContent = `Error: ${error.message}`;
                 messageDiv.style.color = "red";
+                stopAutoSync();
             }
         }
         
@@ -295,6 +343,17 @@
         document.getElementById('newTokenInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 loadNewGameFromToken();
+            }
+        });
+        
+        // Stop sync when user starts typing a new token
+        document.getElementById('newTokenInput').addEventListener('input', function(e) {
+            if (lastLoadedToken && e.target.value.trim() !== lastLoadedToken) {
+                stopAutoSync();
+                const messageDiv = document.getElementById('tokenMessage');
+                if (messageDiv) {
+                    messageDiv.textContent = '';
+                }
             }
         });
 
