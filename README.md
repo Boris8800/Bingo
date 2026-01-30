@@ -1,51 +1,84 @@
-# Bingo
-https://boris8800.github.io/Bingo/
+# 🎉 Bingo Virtual
 
-¡Bienvenido al proyecto **Bingo**! Este juego de Bingo interactivo está desarrollado en HTML, CSS y JavaScript, diseñado para ser rápido, accesible y fácil de compartir.
+![Version](https://img.shields.io/badge/version-1.2-blue.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-## 🎲 Características Principales
-- **Juego Automatizado**: Haz clic en **Comenzar** para iniciar el sorteo automático.
-- **Velocidad Ajustable**: Controla el ritmo del juego desde 1.5s hasta 7.0s.
-- **Local Storage**: El estado del juego se guarda automáticamente en tu navegador.
-- **Modo Noche**: Cambia el tema para una mejor visualización en entornos oscuros.
-- **Voz**: Anuncio automático de los números sorteados (opcional).
-- **Seguimiento de Cartones**: Puedes ingresar tus números y el sistema te avisará si tienes Bingo.
-- **Verificación de Números y Cartones**: Verifica si un número ha salido o si un cartón tiene Bingo.
-- **Compartir Juego**: Comparte el estado del juego en tiempo real con otros usuarios.
-- **Interfaz Mejorada**: Mensajes de confirmación, bolas más pequeñas para listas de Bingo, y efectos visuales en foco.
+[**Jugar Ahora**](https://boris8800.github.io/Bingo/)
 
-## 🚀 Cómo Usar
-1. **Abrir el Juego**: Ve a [https://boris8800.github.io/Bingo/](https://boris8800.github.io/Bingo/) o abre `index.html` en tu navegador.
-2. **Configurar**: Ajusta la velocidad, habilita voz si deseas, y cambia al modo noche.
-3. **Jugar**: Haz clic en **Comenzar** para iniciar el sorteo.
-4. **Seguimiento**: En "Seguir Cartones", ingresa tus números de cartón y presiona "Añadir" para recibir notificaciones.
-5. **Verificar**: Usa las secciones de verificación para comprobar números o cartones.
-6. **Compartir**: Comparte el enlace generado para que otros vean el juego en vivo.
+Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y adaptable para jugar al Bingo en reuniones familiares o con amigos. Desarrollada con HTML5, CSS3 y JavaScript puro.
 
-## 🔗 Sistema de Compartir (Convención Interna)
-Para el desarrollo, utilizamos la siguiente estructura:
+## ✨ Características Destacadas
 
-- **Web 1**: El juego principal (`index.html`). Ahora incluye la funcionalidad de **Compartir** como una ventana modal integrada (anteriormente Web 2).
-- **Web 3**: La **Vista de Juego Compartido** (`web3.html`), que permite a otros usuarios ver el estado exacto de tu tablero a través de un enlace o QR.
+### 🎮 Juego Principal
+- **Sorteo Automático**: Sistema robusto de generación de números aleatorios con visualización clara.
+- **Sintetizador de Voz**: Anuncio vocal de los números (compatible con voces del navegador).
+- **Control Total**: Pausa, reanuda o reinicia el juego en cualquier momento.
+- **Velocidad Ajustable**: Controla el ritmo del sorteo (intervalos de 1.5s a 7s).
 
-## 📁 Estructura del Proyecto
-- `index.html`: Página principal del juego.
-- `live_index.html`: Versión para transmisión en vivo.
-- `web3.html`: Vista compartida del juego.
-- `css/style.css`: Estilos CSS.
-- `js/script.js`: Lógica del juego en JavaScript.
-- `server.js`: Servidor Node.js para compartir (opcional).
+### 📱 Experiencia de Usuario
+- **Diseño Responsivo**: Optimizado para móviles, tablets y escritorio.
+- **Modo Oscuro/Claro**: Interfaz adaptable a tus preferencias visuales.
+- **Historial Visual**: Panel con los últimos 10 números y tablero completo.
+- **Seguimiento Personal**: Añade tu cartón manual y el sistema te avisará si haces ¡BINGO!
 
-## 🛠️ Desarrollo Local
-1. Clona el repositorio: `git clone https://github.com/Boris8800/Bingo.git`
-2. Abre `index.html` en tu navegador web.
-3. Para el servidor de compartir: Instala Node.js, ejecuta `npm install`, luego `node server.js`.
+### 📤 Compartir y Exportar
+- **PDF Export**: Genera y descarga tus cartones en PDF listos para imprimir con un solo clic.
+- **Live Share**: Comparte tu partida en tiempo real mediante un código simple de 1 dígito o un enlace QR.
+- **Modo Espectador**: Tus amigos pueden seguir el juego sincronizado desde sus propios dispositivos (`web3.html`).
 
-## 📝 Notas de Versión Reciente
-- **v1.x**: Agregado mensaje "Recordado" al añadir cartones en seguimiento.
-- **v1.x**: Bolas más pequeñas en listas de Bingo para consistencia visual.
-- **v1.x**: Efectos verdes en foco para inputs de verificación.
-- **v1.x**: Aumento general de tamaño de fuente para mejor legibilidad.
+## 🚀 Guía Rápida
+
+1. **Jugar como Host**:
+   - Abre [https://boris8800.github.io/Bingo/](https://boris8800.github.io/Bingo/).
+   - Configura tus preferencias (voz, velocidad).
+   - Pulsa **"Comenzar"** para iniciar el sorteo.
+   - Usa **"Compartir"** para generar un código y que otros se unan.
+
+2. **Jugar como Invitado**:
+   - Accede al enlace compartido o entra en la sección **Web 3**.
+   - Ingresa el token/enlace proporcionado por el host.
+   - ¡Sigue el juego en tu pantalla!
+
+3. **Descargar Cartones**:
+   - Ve a la sección de "Cartones".
+   - Pulsa **"Descargar Cartones (PDF)"**.
+   - Imprímelos y repártelos a los jugadores.
+
+## 🛠️ Instalación Local
+
+Si deseas ejecutar este proyecto en tu propia máquina:
+
+```bash
+# 1. Clona el repositorio
+git clone https://github.com/Boris8800/Bingo.git
+
+# 2. Navega al directorio
+cd Bingo
+
+# 3. Inicia un servidor local simple (requiere Python 3)
+python3 -m http.server 8000
+
+# 4. Abre tu navegador en:
+# http://localhost:8000
+```
+
+## 📂 Estructura del Proyecto
+
+- `index.html`: **Core del Juego**. Lógica principal, tablero y controles de host.
+- `web3.html`: **Vista de Cliente**. Interfaz simplificada para espectadores remotos.
+- `js/script.js`: **Cerebro**. Contiene toda la lógica de estado, sorteo, PDF y sincronización.
+- `css/style.css`: **Estilos**. Variables CSS modernas para temas y diseño responsive.
+
+## 🤝 Contribuyendo
+
+¡Las contribuciones son bienvenidas! Si tienes ideas para mejorar la UI o nuevas funciones:
+
+1. Haz un Fork del proyecto.
+2. Crea tu rama de características (`git checkout -b feature/AmazingFeature`).
+3. Haz Commit de tus cambios (`git commit -m 'Add some AmazingFeature'`).
+4. Haz Push a la rama (`git push origin feature/AmazingFeature`).
+5. Abre un Pull Request.
 
 ---
-© Boris8800 - 2026
+© 2026 Boris8800. Hecho con ❤️ y JavaScript.

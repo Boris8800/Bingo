@@ -805,7 +805,7 @@ function generateGameToken() {
             myTrackedCardNumbers: [...myTrackedCardNumbers],
             cartonesConBingo: [...cartonesConBingo],
             seed: Math.random().toString(36).substr(2, 9),
-            gameCode: Math.floor(100 + Math.random() * 900) // 3 numbers only
+            gameCode: Math.floor(Math.random() * 10) // 1 digit only
         };
         currentGameToken = btoa(JSON.stringify(state));
     }
