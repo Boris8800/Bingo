@@ -203,8 +203,37 @@
         </div>
     </div>
 
-    <script src="js/script.js"></script>
+    <script src="js/script.js?v=2"></script>
     <script>
+        // Wait for applyGameStateToUI to be defined
+        let maxRetries = 50;
+        let retries = 0;
+        
+        function wrapApplyGameState() {
+            if (typeof applyGameStateToUI !== 'function') {
+                if (retries++ < maxRetries) {
+                    setTimeout(wrapApplyGameState, 100);
+                }
+                return;
+            }
+            
+            // Function is now defined, wrap it
+            const originalApply = applyGameStateToUI;
+            applyGameStateToUI = function() {
+                originalApply();
+                // After applying state, ensure the last 10 container is visible and styled
+                const ultimos = document.getElementById('ultimosNumerosContainer');
+                if (ultimos && ultimos.children.length === 0) {
+                    document.getElementById('statusMessage').textContent = "Esperando números...";
+                } else {
+                    document.getElementById('statusMessage').textContent = "";
+                }
+            };
+        }
+        
+        // Start the retry loop
+        wrapApplyGameState();
+        
         let lastLoadedToken = null;
         let autoSyncInterval = null;
         let baseGameToken = null; // Store base token (2-digit code like "22")
@@ -341,19 +370,6 @@
                 }
             }
         });
-
-        // Adjust style slightly for Web 3 view once script.js finishes
-        const originalApply = applyGameStateToUI;
-        applyGameStateToUI = function() {
-            originalApply();
-            // After applying state, ensure the last 10 container is visible and styled
-            const ultimos = document.getElementById('ultimosNumerosContainer');
-            if (ultimos && ultimos.children.length === 0) {
-                document.getElementById('statusMessage').textContent = "Esperando números...";
-            } else {
-                document.getElementById('statusMessage').textContent = "";
-            }
-        };
     </script>
 
     <footer style="text-align: center; margin-top: 20px; padding: 10px; font-size: 0.9em; color: var(--text-secondary);">
