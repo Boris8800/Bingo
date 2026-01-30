@@ -27,16 +27,23 @@ let audioCtx = null;
 // ---- Sound Effects (Synthesized for reliability) ----
 function initAudioContext() {
     if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.warn("AudioContext not available:", e);
+            return false;
+        }
     }
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(e => console.warn("Could not resume AudioContext:", e));
     }
+    return !!audioCtx;
 }
 
 function playBingoSoundEffect() {
     try {
-        initAudioContext();
+        if (!initAudioContext()) return; // Exit silently if AudioContext unavailable
+        
         const now = audioCtx.currentTime;
         
         function playNote(freq, startTime, duration, type = 'triangle') {
@@ -63,9 +70,11 @@ function playBingoSoundEffect() {
     }
 }
 
-// Unlock audio on mobile with first touch
-['click', 'touchstart'].forEach(evt => {
-    window.addEventListener(evt, () => initAudioContext(), { once: true });
+// Unlock audio on mobile with first user gesture (click, touch, keyboard)
+['click', 'touchstart', 'keydown'].forEach(evt => {
+    window.addEventListener(evt, () => {
+        initAudioContext();
+    }, { once: true });
 });
 
 // ---- Funciones para Selección de Voz ----
