@@ -207,37 +207,13 @@
     <script>
         let lastLoadedToken = null;
         let autoSyncInterval = null;
-        let expectedDrawCount = 0; // Expected next draw counter
-        let baseGameToken = null; // Store base token (2-digit code)
+        let baseGameToken = null; // Store base token (2-digit code like "22")
+        let nextExpectedCounter = 1; // Start expecting +1
         
-        function validateTokenCounter(token) {
-            // Token format: "22" or "22+1" or "22+1+2" or "22+1+2+3"
-            // Extract the counter sequence
-            const parts = token.split('+');
-            
-            if (parts.length === 1) {
-                // Just the 2-digit code, no draws yet
-                expectedDrawCount = 0;
-                return true;
-            }
-            
-            // Validate counter sequence: should be 1, 2, 3, 4...
-            for (let i = 1; i < parts.length; i++) {
-                const expected = i.toString();
-                if (parts[i] !== expected) {
-                    console.warn(`Counter mismatch at position ${i}: expected "${expected}", got "${parts[i]}"`);
-                    return false;
-                }
-            }
-            
-            expectedDrawCount = parts.length - 1;
-            return true;
-        }
-        
-        function getNextExpectedToken() {
-            // Build next expected token: base + 1 + 2 + ... + (expectedDrawCount + 1)
-            let token = baseGameToken;
-            for (let i = 1; i <= expectedDrawCount + 1; i++) {
+        function buildExpectedToken(base, counter) {
+            // Build token like: "22" or "22+1" or "22+1+2"
+            let token = base;
+            for (let i = 1; i <= counter; i++) {
                 token += '+' + i;
             }
             return token;
@@ -250,43 +226,38 @@
             }
             
             lastLoadedToken = initialToken;
-            baseGameToken = initialToken.split('+')[0]; // Store base code like "22"
-            validateTokenCounter(initialToken); // Set expectedDrawCount
+            baseGameToken = initialToken.split('+')[0]; // Extract base code "22"
+            nextExpectedCounter = 1; // Start expecting first number (+1)
             
             const messageDiv = document.getElementById('tokenMessage');
             
-            // Update every 1 second to check for new draws
+            // Update every 1 second to check for next expected number
             autoSyncInterval = setInterval(() => {
                 try {
-                    // Check if URL hash has been updated (e.g., from web1 QR refresh)
+                    // Check if URL hash has been updated with next number
                     const urlHash = window.location.hash.substring(1);
-                    if (urlHash && urlHash !== lastLoadedToken) {
+                    const expectedToken = buildExpectedToken(baseGameToken, nextExpectedCounter);
+                    
+                    if (urlHash === expectedToken) {
+                        // Got the expected number!
                         lastLoadedToken = urlHash;
-                        if (validateTokenCounter(urlHash)) {
-                            console.log('Token updated from URL:', urlHash);
+                        nextExpectedCounter++;
+                        
+                        if (messageDiv) {
+                            messageDiv.textContent = `✅ Detectado +${nextExpectedCounter - 1} | Esperando +${nextExpectedCounter}...`;
+                            messageDiv.style.color = "green";
                         }
-                    }
-                    
-                    const parts = lastLoadedToken.split('+');
-                    const currentCounter = parts.length - 1;
-                    
-                    // Show current sync status
-                    if (messageDiv) {
-                        if (currentCounter === 0) {
-                            messageDiv.textContent = `✅ Token: ${baseGameToken} (Esperando primer número)`;
+                    } else if (urlHash === baseGameToken || urlHash.startsWith(baseGameToken + '+')) {
+                        // Token changed but not what we expect yet
+                        if (messageDiv) {
+                            messageDiv.textContent = `⏳ Token: ${urlHash} | Esperando: ${expectedToken}`;
                             messageDiv.style.color = "orange";
-                        } else if (currentCounter > expectedDrawCount) {
-                            // Got next expected number!
-                            expectedDrawCount = currentCounter;
-                            messageDiv.textContent = `✅ Token: ${baseGameToken} +${currentCounter} números sincronizados`;
-                            messageDiv.style.color = "green";
-                        } else if (currentCounter === expectedDrawCount) {
-                            // Waiting for next
-                            messageDiv.textContent = `⏳ Token: ${baseGameToken} +${currentCounter} | Esperando +${currentCounter + 1}...`;
+                        }
+                    } else {
+                        // Still waiting for expected token
+                        if (messageDiv) {
+                            messageDiv.textContent = `⏳ Esperando ${expectedToken}... (Actual: ${urlHash || 'vacío'})`;
                             messageDiv.style.color = "blue";
-                        } else {
-                            messageDiv.textContent = `✅ Token: ${baseGameToken} +${currentCounter} números`;
-                            messageDiv.style.color = "green";
                         }
                     }
                 } catch (e) {
@@ -334,13 +305,8 @@
                     throw new Error("Token debe ser formato: 'XX' o 'XX+1+2+3' (XX = código 2 dígitos)");
                 }
                 
-                // Validate counter sequence if present
-                if (!validateTokenCounter(token)) {
-                    throw new Error("Secuencia de números fuera de orden. Esperando siguiente número en orden.");
-                }
-                
-                // Token is valid - display it
-                messageDiv.textContent = `✅ Token válido: ${token}`;
+                // Token is valid - start syncing
+                messageDiv.textContent = `✅ Iniciando sincronización...`;
                 messageDiv.style.color = "green";
                 tokenInput.value = ""; // Clear the input
                 
@@ -348,7 +314,7 @@
                 const newUrl = `${window.location.origin}${window.location.pathname}#${token}`;
                 window.history.replaceState(null, null, newUrl);
                 
-                // Start auto-sync to display updates
+                // Start auto-sync to check for new numbers
                 startAutoSync(token);
             } catch (error) {
                 console.error('Error loading game:', error);
