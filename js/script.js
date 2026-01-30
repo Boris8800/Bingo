@@ -838,7 +838,7 @@ function generateGameToken() {
     
     currentGameToken = token;
     return token;
-}}
+}
 
 function updateShareButton() {
     const token = generateGameToken();
@@ -848,7 +848,7 @@ function updateShareButton() {
         const gameCode = gameCodeFixed || '---';
         btn.textContent = `Compartir (${gameCode})`;
     }
-}}
+}
 
 function shareGame() {
     try {
