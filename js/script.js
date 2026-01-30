@@ -308,6 +308,13 @@ function siguienteNumero() {
     const numero = numerosDisponibles.splice(indice, 1)[0];
     numerosSalidos.push(numero);
     drawCounter++; // Increment draw counter for web3 sync
+    
+    // Update URL hash with new token for web3 sync
+    if (gameCodeFixed && lastLoadedToken !== undefined) {
+        const newToken = generateGameToken();
+        window.location.hash = newToken;
+        console.log(`📡 Token updated: ${newToken}`);
+    }
 
     const numeroDisplay = document.getElementById('numero');
     if (numeroDisplay) numeroDisplay.textContent = numero;
@@ -617,6 +624,8 @@ function saveGameState() {
             preferredVoiceURI,
             drawIntervalMs,
             currentGameToken,
+            gameCodeFixed,  // Save game code to persist token
+            drawCounter,    // Save draw counter to rebuild token
             updatedAt: Date.now()
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -658,6 +667,14 @@ function loadGameState() {
 
         if (typeof state.currentGameToken === 'string') {
             currentGameToken = state.currentGameToken;
+        }
+        
+        // Restore game code and draw counter for token persistence
+        if (typeof state.gameCodeFixed === 'number') {
+            gameCodeFixed = state.gameCodeFixed;
+        }
+        if (typeof state.drawCounter === 'number') {
+            drawCounter = state.drawCounter;
         }
 
         // Nunca reanudamos automáticamente en modo "en ejecución" al recargar.
@@ -826,6 +843,7 @@ function generateGameToken() {
     // If no game code exists, generate a 2-digit code (10-99)
     if (!gameCodeFixed) {
         gameCodeFixed = Math.floor(Math.random() * 90) + 10; // 10-99
+        console.log(`🎲 New game code generated: ${gameCodeFixed}`);
     }
     
     // Base token is the 2-digit code
