@@ -38,6 +38,20 @@
             if (localStorage.getItem('nightMode') === 'true') {
                 toggleNightMode();
             }
+            
+            // Auto-load token from URL hash if present
+            const urlToken = window.location.hash.substring(1);
+            if (urlToken && /^\d{2}(\+\d+)*$/.test(urlToken)) {
+                // Valid token format detected, auto-load it
+                const tokenInput = document.getElementById('newTokenInput');
+                if (tokenInput) {
+                    tokenInput.value = urlToken;
+                    // Delay to ensure UI is ready
+                    setTimeout(() => {
+                        loadNewGameFromToken();
+                    }, 100);
+                }
+            }
         });
     </script>
     <style>
@@ -264,6 +278,8 @@
             baseGameToken = initialToken.split('+')[0]; // Extract base code "22"
             nextExpectedCounter = 1; // Start expecting first number (+1)
             
+            console.log(`🎯 Web3 Sync Started | Base: ${baseGameToken} | Expected first: +1`);
+            
             const messageDiv = document.getElementById('tokenMessage');
             
             // Update every 1 second to check for next expected number
@@ -273,10 +289,14 @@
                     const urlHash = window.location.hash.substring(1);
                     const expectedToken = buildExpectedToken(baseGameToken, nextExpectedCounter);
                     
+                    console.log(`🔍 Check: URL="${urlHash}" | Expected="${expectedToken}"`);
+                    
                     if (urlHash === expectedToken) {
                         // Got the expected number!
                         lastLoadedToken = urlHash;
                         nextExpectedCounter++;
+                        
+                        console.log(`✅ Detected +${nextExpectedCounter - 1} | Now waiting for +${nextExpectedCounter}`);
                         
                         if (messageDiv) {
                             messageDiv.textContent = `✅ Detectado +${nextExpectedCounter - 1} | Esperando +${nextExpectedCounter}...`;
