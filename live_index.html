@@ -6,7 +6,6 @@
     <title>� BINGO</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎱</text></svg>">
     <link href="css/style.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         // Night mode toggle function - defined early to be accessible
         function toggleNightMode() {
@@ -62,14 +61,12 @@
 <div id="botonesContainer">
 <button id="reiniciarBtn" onclick="reiniciarJuego()">Reiniciar Juego</button>
 <button id="startStopBtn" onclick="startStop()">Comenzar</button>
-<button id="shareGameBtn" onclick="shareGame()">Compartir</button>
 </div>
 
 <div id="speedControl" class="control-box">
     <label for="speedSlider">Velocidad: <strong id="speedValue">3.0s</strong></label>
-    <input id="speedSlider" type="range" min="1500" max="7000" step="500" value="3000" aria-label="Velocidad de sorteo en milisegundos" />
+    <input id="speedSlider" type="range" min="1000" max="7000" step="500" value="3000" aria-label="Velocidad de sorteo en milisegundos" />
 </div>
-
 <div id="historial">
 <div id="numerosContainer"></div>
 </div>
@@ -233,10 +230,9 @@
 
 
 <div class="page-spacer" aria-hidden="true"></div>
-<div id="visit-counter" style="text-align: center; margin-bottom: 20px; font-family: sans-serif; font-size: 0.9rem; color: var(--text-secondary); opacity: 0.8;">
-    <span id="count-display"></span>
-</div>
+<script type="text/javascript" src="https://contador.websiteout.com/js/21/8/0/0"></script>
 
+    
 <script src="js/script.js"></script>
 </body>
 </html>

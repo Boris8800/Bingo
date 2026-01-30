@@ -46,22 +46,6 @@ body.night-mode {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
 }
 
-/* Force night mode styles with higher specificity */
-body.night-mode #cartonesBingoContainer {
-    background-color: var(--bg-tertiary) !important;
-}
-
-body.night-mode #listaCartonesBingo {
-    background-color: var(--bg-card) !important;
-}
-
-body.night-mode #cartonesGuardadosContainer {
-    background-color: var(--bg-container) !important;
-}
-
-body.night-mode #toggleCartonesBtn {
-    background: linear-gradient(135deg, var(--btn-primary) 0%, var(--btn-primary-hover) 100%) !important;
-}
 
 /* Smooth transitions for theme changes */
 body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
@@ -93,16 +77,17 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
 .brand-badge {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
     text-decoration: none;
-    font-weight: 700;
-    color: var(--text-primary);
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
-    padding: 4px 10px;
+    padding: 6px 12px;
     border-radius: 999px;
     box-shadow: var(--shadow-sm);
-    font-size: clamp(0.75rem, 2vw, 1rem);
+    line-height: 0;
+}
+
+.brand-badge img {
+    display: block;
 }
 
 .icon-btn {
@@ -191,6 +176,13 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
     border-radius: 6px;
     background: var(--bg-secondary);
     color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.mini-cell.marcado {
+    background-color: var(--numero-marcado);
+    color: white;
+    border-color: var(--border-primary);
 }
 
 .page-spacer {
@@ -510,14 +502,6 @@ body.night-mode {
 .pulse-once {
     animation: pulse 1s ease-in-out 1;
 }
-    /* Assuming it also has .numeroCirculo class for flex, border-radius etc. */
-    /* If not, add these: */
-    /* display: flex; */
-    /* align-items: center; */
-    /* justify-content: center; */
-    /* font-weight: bold; */
-    /* border-radius: 50%; */
-}
 
 @keyframes pulse {
     0%, 100% { transform: scale(1); }
@@ -555,9 +539,8 @@ button:hover {
 
 /* Speed slider */
 #speedControl {
-    /* occupy 70% of the screen width as requested */
-    width: 70%;
-    max-width: 1100px;
+    width: 90%;
+    max-width: 480px;
     margin: 20px auto;
 }
 
@@ -578,7 +561,7 @@ button:hover {
 }
 
 #speedSlider {
-    /* Fill 100% of its 70% card */
+    /* Fill its container */
     width: 100%;
     max-width: 100%;
     height: 36px;
@@ -790,7 +773,8 @@ button:hover {
     padding: 15px;
     border-radius: 8px;
     margin: 15px auto;
-    max-width: 450px;
+    width: 90%;
+    max-width: 480px;
     box-shadow: var(--shadow-md);
     border: 1px solid var(--border-color);
 }

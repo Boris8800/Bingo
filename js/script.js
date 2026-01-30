@@ -19,18 +19,51 @@ let preferredVoiceURI = '';
 
 // ---- Variables para Nuevas Funcionalidades ----
 let myTrackedCardNumbers = [];
-const bingoAudio = new Audio('bingo-sound.mp3');
-bingoAudio.preload = 'auto';
+let audioCtx = null;
 
-// ---- Helper function to play the bingo sound ----
-function playBingoSoundEffect() {
-    try {
-        bingoAudio.currentTime = 0;
-        bingoAudio.play().catch(e => console.warn("Error al reproducir bingo-sound.mp3:", e));
-    } catch (e) {
-        console.warn("Excepción al reproducir bingo-sound.mp3:", e);
+// ---- Sound Effects (Synthesized for reliability) ----
+function initAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
     }
 }
+
+function playBingoSoundEffect() {
+    try {
+        initAudioContext();
+        const now = audioCtx.currentTime;
+        
+        function playNote(freq, startTime, duration, type = 'triangle') {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, startTime);
+            gain.gain.setValueAtTime(0.2, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        }
+
+        // Happy "Winning" Sequence
+        playNote(523.25, now, 0.4);          // C5
+        playNote(659.25, now + 0.1, 0.4);    // E5
+        playNote(783.99, now + 0.2, 0.4);    // G5
+        playNote(1046.50, now + 0.3, 0.8, 'sine'); // C6
+        
+    } catch (e) {
+        console.warn("Could not play synthesized sound:", e);
+    }
+}
+
+// Unlock audio on mobile with first touch
+['click', 'touchstart'].forEach(evt => {
+    window.addEventListener(evt, () => initAudioContext(), { once: true });
+});
 
 // ---- Funciones para Selección de Voz ----
 function populateVoiceList() {
@@ -100,7 +133,6 @@ function setVoice() {
 
 // ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
 function trackMyCards() {
-    playBingoSoundEffect(); // Req 1: Button sound
     const inputEl = document.getElementById('myCardNumbersInput');
     if (!inputEl) {
         console.error("Elemento 'myCardNumbersInput' no encontrado.");
@@ -129,20 +161,32 @@ function actualizarMisCartonesBingoDisplay() {
     }
 
     misBingosEnJuego.sort((a, b) => a - b);
+    
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.flexWrap = 'wrap';
+    container.style.justifyContent = 'center';
+    container.style.gap = '10px';
+    container.style.marginTop = '10px';
 
     misBingosEnJuego.forEach(cartonId => {
-        const elemento = document.createElement('span');
-        elemento.className = 'carton-bingo mis-cartones-bingo-item';
-        elemento.textContent = `${cartonId}`;
-        myTrackedListDiv.appendChild(elemento);
-        myTrackedListDiv.appendChild(document.createTextNode(' '));
+        const elemento = document.createElement('div');
+        elemento.className = 'numeroCirculo ultimoNumeroCirculo';
+        elemento.style.backgroundColor = 'var(--bingo-success)';
+        elemento.style.color = 'white';
+        elemento.style.width = '50px';
+        elemento.style.height = '50px';
+        elemento.style.fontSize = '1.2rem';
+        elemento.textContent = cartonId;
+        container.appendChild(elemento);
     });
+    
+    myTrackedListDiv.appendChild(container);
 }
 // ---- FIN FUNCIONES "MIS CARTONES" ----
 
 // ---- FUNCIONES PRINCIPALES DEL JUEGO ----
 function reiniciarJuego() {
-    playBingoSoundEffect(); // Req 1: Button sound
     numerosSalidos = [];
     numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
     cartonesConBingo = [];
@@ -172,7 +216,6 @@ function reiniciarJuego() {
 }
 
 function startStop() {
-    playBingoSoundEffect(); // Req 1: Button sound
     const startStopBtn = document.getElementById('startStopBtn');
     if (!startStopBtn) return;
 
@@ -275,7 +318,6 @@ function actualizarUltimosNumeros() {
 }
 
 function verificarNumero() {
-    playBingoSoundEffect(); // Req 1: Button sound
     const numeroVerificar = document.getElementById('numeroVerificar');
     const mensajeVerificacion = document.getElementById('mensajeVerificacion');
     if (!numeroVerificar || !mensajeVerificacion) return;
@@ -296,8 +338,6 @@ function verificarNumero() {
 }
 
 function verificarCarton() {
-    playBingoSoundEffect(); // Req 1: Button sound
-
     const cartonVerificar = document.getElementById('cartonVerificar');
     const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
     if (!cartonVerificar || !mensajeVerificacionCarton) return;
@@ -424,7 +464,7 @@ function formatMs(ms) {
 
 function setDrawSpeed(ms, { persist = true } = {}) {
     if (!Number.isFinite(ms)) return;
-    const clamped = Math.min(7000, Math.max(1000, Math.round(ms / 500) * 500));
+    const clamped = Math.min(7000, Math.max(1500, Math.round(ms / 500) * 500));
     drawIntervalMs = clamped;
 
     const slider = document.getElementById('speedSlider');
@@ -509,18 +549,14 @@ function verificarTodosLosCartones(options = {}) {
         }
     });
 
-    // Req 2: Sound for general new bingos (algunBingoNuevoEsteTurno) is REMOVED from here.
-    // if (algunBingoNuevoEsteTurno) {
-    // try {
-    // bingoAudio.currentTime = 0;
-    // bingoAudio.play().catch(e => console.warn("Error al reproducir sonido de bingo:", e));
-    // } catch (e) {
-    // console.warn("Excepción al reproducir sonido de bingo (general):", e);
-    // }
-    // }
-
     actualizarListaBingos();
     actualizarMisCartonesBingoDisplay();
+
+    // Refresh "Cartones Guardados" if they are visible
+    const container = document.getElementById('cartonesGuardadosContainer');
+    if (container && !container.hasAttribute('hidden')) {
+        mostrarCartonesGuardados();
+    }
 }
 
 // ---- Persistencia: guardar/cargar estado ----
@@ -611,6 +647,7 @@ function applyGameStateToUI() {
     }
 
     actualizarUltimosNumeros();
+    setDrawSpeed(drawIntervalMs, { persist: false });
     verificarTodosLosCartones({ silent: true });
     limpiarMensajeVerificacion();
     const msgCarton = document.getElementById('mensajeVerificacionCarton');
@@ -631,7 +668,14 @@ function generarMiniTableroElement(numeros) {
     nums.forEach(num => {
         const cell = document.createElement('div');
         cell.className = 'mini-cell';
+        const val = parseInt(num, 10);
         cell.textContent = num;
+        
+        // Mark if the number has been drawn
+        if (numerosSalidos.includes(val)) {
+            cell.classList.add('marcado');
+        }
+        
         wrapper.appendChild(cell);
     });
     return wrapper;
@@ -697,15 +741,60 @@ function actualizarListaBingos() {
     }
 
     cartonesConBingo.sort((a, b) => a - b);
+    
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.flexWrap = 'wrap';
+    container.style.justifyContent = 'center';
+    container.style.gap = '10px';
+    container.style.marginTop = '10px';
+
     cartonesConBingo.forEach(numero => {
         const elemento = document.createElement('div');
-        elemento.className = 'carton-bingo';
-        elemento.textContent = `${numero}`;
-        lista.appendChild(elemento);
+        elemento.className = 'numeroCirculo ultimoNumeroCirculo';
+        elemento.style.backgroundColor = 'var(--bingo-success)';
+        elemento.style.color = 'white';
+        elemento.style.width = '50px';
+        elemento.style.height = '50px';
+        elemento.style.fontSize = '1.2rem';
+        elemento.textContent = numero;
+        container.appendChild(elemento);
     });
+    
+    lista.appendChild(container);
 }
 // --- FIN Lógica de Bingo ---
+// ---- Game Sharing Functions ----
+function shareGame() {
+    const state = {
+        numerosSalidos: [...numerosSalidos],
+        drawIntervalMs: drawIntervalMs,
+        myTrackedCardNumbers: [...myTrackedCardNumbers],
+        cartonesConBingo: [...cartonesConBingo],
+        seed: Math.random().toString(36).substr(2, 9),
+        gameCode: Math.floor(100 + Math.random() * 900) // 3 numbers only
+    };
+    const encoded = btoa(JSON.stringify(state));
+    window.location.href = 'share.html?game=' + encodeURIComponent(encoded);
+}
 
+function loadSharedGame(encoded) {
+    try {
+        const state = JSON.parse(atob(encoded));
+        if (state.numerosSalidos) {
+            numerosSalidos = state.numerosSalidos;
+            drawIntervalMs = state.drawIntervalMs || 3000;
+            myTrackedCardNumbers = state.myTrackedCardNumbers || [];
+            cartonesConBingo = state.cartonesConBingo || [];
+            // Apply the state
+            applyGameStateToUI();
+            return true;
+        }
+    } catch (e) {
+        console.error('Error loading shared game:', e);
+    }
+    return false;
+}
 // --- INICIALIZACIÓN DEL JUEGO ---
 window.onload = () => {
     const numerosContainer = document.getElementById('numerosContainer');
@@ -774,6 +863,21 @@ window.onload = () => {
     if (restored) {
         applyGameStateToUI();
     } else {
-        reiniciarJuego();
+        // Check for shared game in URL hash
+        const hash = window.location.hash.substring(1);
+        if (hash && loadSharedGame(hash)) {
+            // Shared game loaded
+        } else {
+            reiniciarJuego();
+        }
+    }
+
+    // New lightweight Visit Counter (Number only)
+    const visitCounter = document.getElementById('count-display');
+    if (visitCounter) {
+        let visits = parseInt(localStorage.getItem('bingo_visits') || '0', 10);
+        visits++;
+        localStorage.setItem('bingo_visits', visits);
+        visitCounter.textContent = visits;
     }
 };

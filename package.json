@@ -1,0 +1,24 @@
+{
+  "name": "bingo",
+  "version": "1.0.0",
+  "description": "https://boris8800.github.io/Bingo/ ¡Bienvenido al proyecto **Bingo**! El proyecto está desarrollado en HTML, CSS y JavaScript, y utiliza la biblioteca * **Juega al bingo**:    - Haz clic en **Comenzar** para iniciar el juego.    - Los números generados aparecerán en el círculo central.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Boris8800/Bingo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Boris8800/Bingo/issues"
+  },
+  "homepage": "https://github.com/Boris8800/Bingo#readme",
+  "dependencies": {
+    "ws": "^8.19.0"
+  }
+}

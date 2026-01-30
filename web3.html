@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>� BINGO - Web 3</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎱</text></svg>">
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        body { 
+            background-color: var(--bg-primary); 
+            color: var(--text-primary); 
+            text-align: center; 
+            padding: 0; 
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .web3-card {
+            max-width: 90%;
+            margin: 70px auto 20px;
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+        h1 { font-size: 1.5rem; margin-bottom: 20px; }
+        
+        /* Matching Web 1 Style (The History Section) */
+        #numerosContainer {
+            margin: 20px auto;
+            background-color: var(--bg-secondary) !important;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: var(--btn-primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand-badge" href="index.html">
+            <img src="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎱</text></svg>" width="32" height="32" alt="Logo">
+        </a>
+    </header>
+
+    <div class="web3-card">
+        <div id="ultimosNumeros">
+            <p>Últimos 10 números:</p>
+            <div id="ultimosNumerosContainer"></div>
+        </div>
+
+        <div id="statusMessage" style="margin-top: 20px; font-style: italic; color: var(--text-secondary);"></div>
+
+        <div style="margin-top: 30px;">
+            <a href="index.html" class="back-btn">Ir a mi Juego</a>
+        </div>
+    </div>
+
+    <!-- Hidden elements required by script.js to function -->
+    <div style="display:none">
+        <div id="numeroContainer"><div id="numero"></div></div>
+        <div id="historial"><div id="numerosContainer"></div></div>
+        <select id="voiceSelect"></select>
+        <div id="speedValue"></div>
+        <input id="speedSlider" type="range">
+        <input id="myCardNumbersInput">
+        <button id="startStopBtn"></button>
+        <div id="listaCartonesBingo"></div>
+        <div id="estadoJuego"></div>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script>
+        // Adjust style slightly for Web 3 view once script.js finishes
+        const originalApply = applyGameStateToUI;
+        applyGameStateToUI = function() {
+            originalApply();
+            // After applying state, ensure the last 10 container is visible and styled
+            const ultimos = document.getElementById('ultimosNumerosContainer');
+            if (ultimos && ultimos.children.length === 0) {
+                document.getElementById('statusMessage').textContent = "Esperando números...";
+            } else {
+                document.getElementById('statusMessage').textContent = "";
+            }
+        };
+    </script>
+</body>
+</html>
