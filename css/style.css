@@ -529,11 +529,19 @@ button:hover {
 }
 
 /* Speed slider - uses .control-box for layout */
+#speedControl {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
 #speedControl label {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    width: 90%; /* Ensure label spans efficiently in the flex column */
+    max-width: 400px;
     margin-bottom: 10px;
     color: var(--text-primary);
     font-weight: 600;
@@ -547,8 +555,8 @@ button:hover {
 
 #speedSlider {
     /* Fill its container */
-    width: 100%;
-    max-width: 100%;
+    width: 90%; /* Match label width */
+    max-width: 400px;
     height: 36px;
     background: transparent;
     -webkit-appearance: none;
@@ -737,6 +745,13 @@ button:hover {
 }
 
 /* Voice Settings Container - uses .control-box for layout */
+#voiceSettingsContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
 #voiceSettingsContainer label {
     color: var(--text-primary);
     font-weight: 500;
@@ -750,7 +765,8 @@ button:hover {
     border-radius: 8px;
     font-size: 1em;
     width: 100%;
-    max-width: 300px;
+    /* Remove fixed max-width to allow it to fill the control box naturally like others, or set to a balanced width */
+    max-width: 90%; 
     margin-top: 8px;
 }
 
