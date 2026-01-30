@@ -131,6 +131,41 @@ Los espectadores (Web3) pueden ahora rastrear sus propios cartones:
 - Lista de cartones ganadores
 - Interfaz limpia y responsiva optimizada para móviles
 
+### Cómo Funciona la Lógica +1+2+3+4+5...
+
+**Backend (Web1 - Host):**
+1. Al compartir, genera código de 2 dígitos: `22`
+2. Cada número sorteado incrementa un contador: `drawCounter++`
+3. Token se construye: `baseCode + "+1+2+3+..."`
+4. URL se actualiza automáticamente: `web3.html#22+1` → `web3.html#22+1+2` → etc.
+5. Ejemplo de secuencia:
+   - Sortea #1 → Token: `22+1`
+   - Sortea #2 → Token: `22+1+2`
+   - Sortea #3 → Token: `22+1+2+3`
+
+**Frontend (Web3 - Espectador):**
+1. Se carga con URL hash: `web3.html#22+1+2+3`
+2. Extrae código base: `22`
+3. Espera por el siguiente: `+4`
+4. Cada 1 segundo verifica la URL
+5. Cuando detecta nuevo número → marca los números en los cartones
+6. Muestra estado: `✅ Detectado | Código: 22 | Números: 3`
+
+### Persistencia del Token
+- Al recargar Web1: Código y contador se restauran desde `localStorage`
+- URL hash se mantiene actualizado
+- Si desactivas compartir y reinicias: Nuevo código (10-99) y contador reset a 0
+
+### Debugging
+Para ver el progreso de sincronización:
+1. Abre DevTools: `F12`
+2. Ve a la pestaña "Console"
+3. Verás logs como:
+   - `🎲 New game code generated: 22`
+   - `📡 Token updated: 22+1`
+   - `🔍 Check: URL="22+1" | Expected="22+1"`
+   - `✅ Detected +1 | Now waiting for +2`
+
 ## 🎯 Características Avanzadas
 
 ### Persistencia de Estado
