@@ -849,9 +849,9 @@ function generateGameToken() {
     // Base token is the 2-digit code
     let token = gameCodeFixed.toString();
     
-    // Append draw counter as suffix: +1, +2, +3...
-    for (let i = 1; i <= drawCounter; i++) {
-        token += '+' + i;
+    // Append drawn numbers as suffix: ,1,2,3 or ,34,12,7
+    if (numerosSalidos.length > 0) {
+        token += ',' + numerosSalidos.join(',');
     }
     
     currentGameToken = token;
