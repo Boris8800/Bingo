@@ -309,8 +309,8 @@ function siguienteNumero() {
     numerosSalidos.push(numero);
     drawCounter++; // Increment draw counter for web3 sync
     
-    // Update URL hash with new token for web3 sync
-    if (gameCodeFixed && lastLoadedToken !== undefined) {
+    // Update URL hash with new token for web3 sync (only if game code exists from sharing)
+    if (gameCodeFixed) {
         const newToken = generateGameToken();
         window.location.hash = newToken;
         console.log(`📡 Token updated: ${newToken}`);
