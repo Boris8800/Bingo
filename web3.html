@@ -299,19 +299,19 @@
                         console.log(`✅ Detected +${nextExpectedCounter - 1} | Now waiting for +${nextExpectedCounter}`);
                         
                         if (messageDiv) {
-                            messageDiv.textContent = `✅ Detectado +${nextExpectedCounter - 1} | Esperando +${nextExpectedCounter}...`;
+                            messageDiv.textContent = `✅ Detectado | Código: ${baseGameToken} | Números: ${nextExpectedCounter - 1}`;
                             messageDiv.style.color = "green";
                         }
                     } else if (urlHash === baseGameToken || urlHash.startsWith(baseGameToken + '+')) {
                         // Token changed but not what we expect yet
                         if (messageDiv) {
-                            messageDiv.textContent = `⏳ Token: ${urlHash} | Esperando: ${expectedToken}`;
+                            messageDiv.textContent = `⏳ Sincronizando... | Código: ${baseGameToken} | Números: ${nextExpectedCounter - 1}`;
                             messageDiv.style.color = "orange";
                         }
                     } else {
                         // Still waiting for expected token
                         if (messageDiv) {
-                            messageDiv.textContent = `⏳ Esperando ${expectedToken}... (Actual: ${urlHash || 'vacío'})`;
+                            messageDiv.textContent = `⏳ Esperando números... | Código: ${baseGameToken}`;
                             messageDiv.style.color = "blue";
                         }
                     }
