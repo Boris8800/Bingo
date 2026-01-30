@@ -115,6 +115,22 @@ Sortea número 3 → Token: 22+1+2+3   ✅ Detecta +3, marca número 3
 ...
 ```
 
+## 🎯 Características de Web3 (Espectador)
+
+### Seguir Cartones
+Los espectadores (Web3) pueden ahora rastrear sus propios cartones:
+- **Ingresa tus números**: Introduce los números de tu cartón separados por comas (ej: 7, 15, 23)
+- **Seguimiento automático**: El sistema marca automáticamente tus números conforme el host los sorteó
+- **Alertas de Bingo**: Se notifica cuando tienes un BINGO en tus cartones rastreados
+- **Sincronización**: Tu tracker se sincroniza en tiempo real con el juego del host
+- **Persistencia**: Los cartones rastreados se guardan y recuperan al recargar
+
+### Visualización en Tiempo Real
+- Panel de últimos 10 números sorteados
+- Estado de sincronización con el host
+- Lista de cartones ganadores
+- Interfaz limpia y responsiva optimizada para móviles
+
 ## 🎯 Características Avanzadas
 
 ### Persistencia de Estado
