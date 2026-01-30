@@ -828,38 +828,57 @@ function updateShareButton() {
 }
 
 function shareGame() {
-    const token = generateGameToken();
-    const state = JSON.parse(atob(token));
-    
-    // Build the correct share URL based on the current location
-    const currentPath = window.location.pathname; // e.g., "/Bingo/index.html" or "/Bingo/"
-    const basePath = currentPath.substring(0, currentPath.lastIndexOf('/')) || '/Bingo'; // Get the directory
-    const shareUrl = window.location.origin + basePath + '/web3.html#' + token;
-    
-    // Update Modal Content
-    const tokenDisplay = document.getElementById('modalTokenDisplay');
-    const shareUrlDisplay = document.getElementById('modalShareUrl');
-    const qrContainer = document.getElementById('qrCodeContainer');
-    
-    if (tokenDisplay) tokenDisplay.textContent = state.gameCode || '---';
-    if (shareUrlDisplay) shareUrlDisplay.textContent = shareUrl;
-    
-    // Clear and Generate QR Code
-    if (qrContainer) {
-        qrContainer.innerHTML = '';
-        new QRCode(qrContainer, {
-            text: shareUrl,
-            width: 180,
-            height: 180,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
+    try {
+        const token = generateGameToken();
+        const state = JSON.parse(atob(token));
+        
+        // Build the correct share URL based on the current location
+        const currentPath = window.location.pathname; // e.g., "/Bingo/index.html" or "/Bingo/"
+        const basePath = currentPath.substring(0, currentPath.lastIndexOf('/')) || '/Bingo'; // Get the directory
+        const shareUrl = window.location.origin + basePath + '/web3.html#' + token;
+        
+        console.log('Share URL:', shareUrl);
+        console.log('Current Path:', currentPath);
+        console.log('Base Path:', basePath);
+        
+        // Update Modal Content
+        const tokenDisplay = document.getElementById('modalTokenDisplay');
+        const shareUrlDisplay = document.getElementById('modalShareUrl');
+        const qrContainer = document.getElementById('qrCodeContainer');
+        
+        console.log('Modal elements found:', {
+            tokenDisplay: !!tokenDisplay,
+            shareUrlDisplay: !!shareUrlDisplay,
+            qrContainer: !!qrContainer
         });
+        
+        if (tokenDisplay) tokenDisplay.textContent = state.gameCode || '---';
+        if (shareUrlDisplay) shareUrlDisplay.textContent = shareUrl;
+        
+        // Clear and Generate QR Code
+        if (qrContainer) {
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+                text: shareUrl,
+                width: 180,
+                height: 180,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+        
+        // Show Modal
+        const modal = document.getElementById('shareModal');
+        console.log('Modal element found:', !!modal);
+        if (modal) {
+            modal.style.display = 'block';
+            console.log('Modal displayed');
+        }
+    } catch (error) {
+        console.error('Error in shareGame:', error);
+        alert('Error generating share: ' + error.message);
     }
-    
-    // Show Modal
-    const modal = document.getElementById('shareModal');
-    if (modal) modal.style.display = 'block';
 }
 
 function closeShareModal() {
