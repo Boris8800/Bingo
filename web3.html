@@ -175,7 +175,7 @@
             
             if (!tokenInput || !messageDiv) return;
             
-            const token = tokenInput.value.trim();
+            let token = tokenInput.value.trim();
             if (!token) {
                 messageDiv.textContent = "Por favor ingresa un token válido.";
                 messageDiv.style.color = "red";
@@ -187,11 +187,25 @@
             messageDiv.style.color = "blue";
             
             try {
-                // Validate token format (should be valid base64)
+                // Try to decode the token to validate format
+                let decodedState = null;
                 try {
-                    atob(token);
-                } catch (e) {
-                    throw new Error("El token no está en formato válido (debe ser Base64)");
+                    // First, try to decode directly
+                    decodedState = JSON.parse(atob(token));
+                } catch (e1) {
+                    // If that fails, try URL decoding first
+                    try {
+                        const decoded = decodeURIComponent(token);
+                        decodedState = JSON.parse(atob(decoded));
+                        token = decoded; // Use the decoded version
+                    } catch (e2) {
+                        throw new Error("El token no está en formato válido. Asegúrate de copiar el token completo sin espacios extras.");
+                    }
+                }
+                
+                // Validate the decoded state has the required structure
+                if (!decodedState || typeof decodedState !== 'object' || !Array.isArray(decodedState.numerosSalidos)) {
+                    throw new Error("El token no contiene un estado de juego válido.");
                 }
                 
                 // Use the existing loadSharedGame function
@@ -206,7 +220,7 @@
                     const newUrl = `${window.location.origin}${window.location.pathname}#${token}`;
                     window.history.replaceState(null, null, newUrl);
                 } else {
-                    messageDiv.textContent = "Token inválido o juego no encontrado. Verifica que el token sea correcto.";
+                    messageDiv.textContent = "El token es válido pero no se pudo cargar el estado del juego.";
                     messageDiv.style.color = "red";
                 }
             } catch (error) {
