@@ -312,46 +312,52 @@
             }
             
             lastLoadedToken = initialToken;
-            baseGameToken = initialToken.split(',')[0]; // Extract base code "52"
-            nextExpectedCounter = 1; // Start expecting first drawn number
+            baseGameToken = initialToken.split(',')[0]; // Extract base code "56"
+            nextExpectedCounter = 1; // Start expecting draw #1
             lastHashSeen = initialToken;
             lastActivityTimestamp = Date.now();
             
-            console.log(`🎯 Web3 Sync Started | Base: ${baseGameToken} | Waiting for draws...`);
+            // Parse initial counter if present
+            const parts = initialToken.split(',');
+            if (parts.length > 1) {
+                nextExpectedCounter = parseInt(parts[1]) + 1;
+            }
+            
+            console.log(`🎯 Web3 Sync Started | Base: ${baseGameToken} | Waiting for draw #${nextExpectedCounter}...`);
             
             const messageDiv = document.getElementById('tokenMessage');
             
-            // Update every 1 second to check for next number draw
+            // Update every 1 second to check for next draw
             autoSyncInterval = setInterval(() => {
                 try {
                     const urlHash = window.location.hash.substring(1);
                     const parts = urlHash.split(',');
-                    const drawnCount = parts.length - 1; // Number of draws (minus base)
+                    const currentDrawCount = parts.length > 1 ? parseInt(parts[1]) : 0;
                     
                     if (urlHash && urlHash !== lastHashSeen) {
                         lastHashSeen = urlHash;
                         lastActivityTimestamp = Date.now();
                     }
                     
-                    console.log(`🔍 Check: URL="${urlHash}" | Draws detected: ${drawnCount}`);
+                    console.log(`🔍 Check: URL="${urlHash}" | Current draws: ${currentDrawCount} | Waiting for: ${nextExpectedCounter}`);
                     
-                    if (drawnCount > nextExpectedCounter - 1) {
-                        // Got new numbers!
+                    if (currentDrawCount >= nextExpectedCounter && currentDrawCount > 0) {
+                        // Got new draw(s)!
                         lastLoadedToken = urlHash;
-                        nextExpectedCounter = drawnCount + 1;
+                        nextExpectedCounter = currentDrawCount + 1;
                         lastHashSeen = urlHash;
                         lastActivityTimestamp = Date.now();
                         
-                        console.log(`✅ Detected draw #${drawnCount} | Waiting for draw #${nextExpectedCounter}`);
+                        console.log(`✅ Detected draw #${currentDrawCount} | Waiting for draw #${nextExpectedCounter}`);
                         
                         if (messageDiv) {
-                            messageDiv.textContent = `✅ Detectado | Código: ${baseGameToken} | Números llamados: ${drawnCount}`;
+                            messageDiv.textContent = `✅ Detectado | Código: ${baseGameToken} | Números llamados: ${currentDrawCount}`;
                             messageDiv.style.color = "green";
                         }
                     } else if (urlHash.startsWith(baseGameToken)) {
                         // Token changed but not new draws yet
                         if (messageDiv) {
-                            messageDiv.textContent = `⏳ Sincronizando... | Código: ${baseGameToken} | Números llamados: ${drawnCount}`;
+                            messageDiv.textContent = `⏳ Sincronizando... | Código: ${baseGameToken} | Números llamados: ${currentDrawCount}`;
                             messageDiv.style.color = "orange";
                         }
                     } else {
@@ -410,10 +416,10 @@
             messageDiv.style.color = "blue";
             
             try {
-                // Simple token format: "52" or "52,1" or "52,1,2,34,12"
-                // Just validate it's a valid format (2-digit base + optional drawn numbers)
-                if (!/^\d{2}(,\d+)*$/.test(token)) {
-                    throw new Error("Token debe ser formato: 'XX' o 'XX,1,2,34' (XX = código 2 dígitos)");
+                // Simple token format: "56" or "56,1" or "56,2" or "56,123"
+                // Just validate it's a valid format (2-digit base + optional draw counter)
+                if (!/^\d{2}(,\d+)?$/.test(token)) {
+                    throw new Error("Token debe ser formato: 'XX' o 'XX,N' (XX = código 2 dígitos, N = número de sorteos)");
                 }
                 
                 // Token is valid - start syncing
