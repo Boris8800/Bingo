@@ -206,8 +206,9 @@ function actualizarMisCartonesBingoDisplay() {
 
 // ---- FUNCIONES PRINCIPALES DEL JUEGO ----
 function reiniciarJuego() {
-    // Don't reset the token - keep it active so the shared game link remains valid
-    // currentGameToken = null;
+    // Reset the game code when starting a fresh game
+    gameCodeFixed = null;
+    currentGameToken = null;
     
     numerosSalidos = [];
     numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
@@ -806,18 +807,25 @@ function actualizarListaBingos() {
 }
 // --- FIN Lógica de Bingo ---
 // ---- Game Sharing Functions ----
+let gameCodeFixed = null; // Store the game code so it doesn't change
+
 function generateGameToken() {
-    if (!currentGameToken) {
-        const state = {
-            numerosSalidos: [...numerosSalidos],
-            drawIntervalMs: drawIntervalMs,
-            myTrackedCardNumbers: [...myTrackedCardNumbers],
-            cartonesConBingo: [...cartonesConBingo],
-            seed: Math.random().toString(36).substr(2, 9),
-            gameCode: Math.floor(Math.random() * 10) // 1 digit only
-        };
-        currentGameToken = btoa(JSON.stringify(state));
+    // If no game code exists, generate one and keep it for the entire session
+    if (!gameCodeFixed) {
+        gameCodeFixed = Math.floor(Math.random() * 10); // 1 digit only
     }
+    
+    // Always generate a fresh token with the current game state
+    // This way, the shared link shows the latest game progress
+    const state = {
+        numerosSalidos: [...numerosSalidos],
+        drawIntervalMs: drawIntervalMs,
+        myTrackedCardNumbers: [...myTrackedCardNumbers],
+        cartonesConBingo: [...cartonesConBingo],
+        seed: Math.random().toString(36).substr(2, 9),
+        gameCode: gameCodeFixed // Keep the same game code
+    };
+    currentGameToken = btoa(JSON.stringify(state));
     return currentGameToken;
 }
 
@@ -825,7 +833,7 @@ function updateShareButton() {
     const token = generateGameToken();
     const btn = document.getElementById('shareGameBtn');
     if (btn) {
-        // Extract just the game code for display (3 digits)
+        // Extract just the game code for display (1 digit)
         try {
             const state = JSON.parse(atob(token));
             const gameCode = state.gameCode || '---';
