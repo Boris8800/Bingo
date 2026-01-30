@@ -242,6 +242,13 @@ function reiniciarJuego() {
 
     actualizarUltimosNumeros();
     limpiarMensajeVerificacion();
+    
+    // Clear the URL hash and generate new token
+    window.location.hash = '';
+    const newToken = generateGameToken();
+    window.location.hash = newToken;
+    console.log(`🎲 Game Restarted! New token: ${newToken}`);
+    
     const msgCarton = document.getElementById('mensajeVerificacionCarton');
     if (msgCarton) msgCarton.textContent = "";
 
