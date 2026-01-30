@@ -70,10 +70,20 @@ function playBingoSoundEffect() {
     }
 }
 
-// Unlock audio on mobile with first user gesture (click, touch, keyboard)
+// Unlock audio on mobile/browser with first user gesture (click, touch, keyboard)
+// This allows AudioContext to be created and resumed properly
 ['click', 'touchstart', 'keydown'].forEach(evt => {
     window.addEventListener(evt, () => {
-        initAudioContext();
+        if (!audioCtx) {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.warn("AudioContext not available:", e);
+            }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(e => console.warn("Could not resume AudioContext:", e));
+        }
     }, { once: true });
 });
 
