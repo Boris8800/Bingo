@@ -23,6 +23,22 @@
             lastActivityTimestamp = 0;
         }
         
+        // Function called when Web3 successfully connects to Web1
+        function onConnectionCompleted() {
+            console.log('✅ Web3 Connection Completed - Syncing with Web1!');
+            
+            const statusDiv = document.getElementById('statusMessage');
+            if (statusDiv) {
+                statusDiv.innerHTML = '<span style="color: #28a745; font-weight: bold;">✅ Conectado a Web1 - Sincronización Activa</span>';
+            }
+            
+            // Change the banner color to indicate connection
+            const banner = document.getElementById('enableSoundBanner');
+            if (banner && banner.style.display !== 'none') {
+                banner.style.background = 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)';
+            }
+        }
+        
         function loadNewGameFromToken() {
             // Will be properly defined later
             console.log('loadNewGameFromToken called');
@@ -408,6 +424,9 @@
             
             console.log(`🎯 Web3 Sync Started | Base: ${baseGameToken} | Numbers: ${detectedNumbers.join(',')}...`);
             updateLastNumbersDisplay();
+            
+            // Signal that connection is established
+            onConnectionCompleted();
             
             const messageDiv = document.getElementById('tokenMessage');
             
