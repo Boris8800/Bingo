@@ -830,7 +830,11 @@ function updateShareButton() {
 function shareGame() {
     const token = generateGameToken();
     const state = JSON.parse(atob(token));
-    const shareUrl = window.location.origin + '/Bingo/web3.html#' + token;
+    
+    // Build the correct share URL based on the current location
+    const currentPath = window.location.pathname; // e.g., "/Bingo/index.html" or "/Bingo/"
+    const basePath = currentPath.substring(0, currentPath.lastIndexOf('/')) || '/Bingo'; // Get the directory
+    const shareUrl = window.location.origin + basePath + '/web3.html#' + token;
     
     // Update Modal Content
     const tokenDisplay = document.getElementById('modalTokenDisplay');
