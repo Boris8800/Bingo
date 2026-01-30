@@ -64,6 +64,7 @@
 <button id="reiniciarBtn" onclick="reiniciarJuego()">Reiniciar Juego</button>
 <button id="startStopBtn" onclick="startStop()">Comenzar</button>
 <button id="shareGameBtn" onclick="shareGame()">Compartir</button>
+<button id="enableSoundBtn" onclick="enableAudioOnClick()" style="padding: 10px 20px; background: var(--btn-primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 10px;">🔊 Habilitar Sonido</button>
 </div>
 
 <div id="speedControl" class="control-box">
@@ -270,6 +271,25 @@
 </div>
 
 <script src="js/script.js?v=2"></script>
+<script>
+    // Enable audio context on user click to unlock Web Audio API
+    function enableAudioOnClick() {
+        try {
+            if (typeof initAudioContext === 'function') {
+                initAudioContext();
+                console.log('✅ Sonido habilitado');
+                const btn = document.getElementById('enableSoundBtn');
+                if (btn) {
+                    btn.textContent = '✅ Sonido Habilitado';
+                    btn.disabled = true;
+                    btn.style.opacity = '0.6';
+                }
+            }
+        } catch (e) {
+            console.warn('Error habilitando sonido:', e);
+        }
+    }
+</script>
 
 <footer style="text-align: center; margin-top: 20px; padding: 10px; font-size: 0.9em; color: var(--text-secondary);">
     <div style="margin-bottom: 10px;">

@@ -104,7 +104,11 @@
         <button id="nightModeToggle" class="icon-btn" onclick="toggleNightMode()" aria-label="Cambiar modo noche" aria-pressed="false">&#127769;</button>
     </header>
 
-    <div class="token-input-container control-box" style="margin-top: 80px;">
+    <div style="text-align: center; margin-top: 80px; margin-bottom: 20px;">
+        <button id="enableSoundBtn" onclick="enableAudioOnClick()" style="padding: 10px 20px; background: var(--btn-primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1em;">🔊 Habilitar Sonido</button>
+    </div>
+
+    <div class="token-input-container control-box" style="margin-top: 20px;">
         <h3 style="margin-top: 0; color: var(--text-primary);">Cargar Nuevo Juego</h3>
         <p style="font-size: 0.85em; color: var(--text-secondary); margin: 10px 0;">📋 Copia el token completo del código QR o del botón "Copiar Enlace"</p>
         <input type="text" id="newTokenInput" placeholder="Pega aquí el token completo (largo)" style="width: 100%; max-width: 300px; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--bg-primary); color: var(--text-primary);" />
@@ -233,6 +237,24 @@
 
     <script src="js/script.js?v=2"></script>
     <script>
+        // Enable audio context on user click to unlock Web Audio API
+        function enableAudioOnClick() {
+            try {
+                if (typeof initAudioContext === 'function') {
+                    initAudioContext();
+                    console.log('✅ Sonido habilitado');
+                    const btn = document.getElementById('enableSoundBtn');
+                    if (btn) {
+                        btn.textContent = '✅ Sonido Habilitado';
+                        btn.disabled = true;
+                        btn.style.opacity = '0.6';
+                    }
+                }
+            } catch (e) {
+                console.warn('Error habilitando sonido:', e);
+            }
+        }
+
         // Wait for applyGameStateToUI to be defined
         let maxRetries = 50;
         let retries = 0;
