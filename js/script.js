@@ -6,8 +6,11 @@ let enEjecucion = false;
 let juegoPausado = false;
 let cartonesConBingo = [];
 
+// ---- Current Game Token (persists for the game session) ----
+let currentGameToken = null;
+
 // ---- Velocidad del juego (ms) ----
-let drawIntervalMs = 3000;
+let drawIntervalMs = 3500;
 
 /// ---- Variables para Selección de Voz ----
 let voices = [];
@@ -146,6 +149,15 @@ function trackMyCards() {
     actualizarMisCartonesBingoDisplay();
     inputEl.value = myTrackedCardNumbers.join(', ');
     saveGameState();
+
+    const msgEl = document.getElementById('trackerMsg');
+    if (msgEl) {
+        msgEl.textContent = "Recordado";
+        msgEl.style.color = "red";
+        setTimeout(() => {
+            msgEl.textContent = "";
+        }, 1000);
+    }
 }
 
 function actualizarMisCartonesBingoDisplay() {
@@ -174,9 +186,7 @@ function actualizarMisCartonesBingoDisplay() {
         elemento.className = 'numeroCirculo ultimoNumeroCirculo';
         elemento.style.backgroundColor = 'var(--bingo-success)';
         elemento.style.color = 'white';
-        elemento.style.width = '50px';
-        elemento.style.height = '50px';
-        elemento.style.fontSize = '1.2rem';
+        // Removed hardcoded dimensions to match "Last 10 Numbers" style
         elemento.textContent = cartonId;
         container.appendChild(elemento);
     });
@@ -187,6 +197,9 @@ function actualizarMisCartonesBingoDisplay() {
 
 // ---- FUNCIONES PRINCIPALES DEL JUEGO ----
 function reiniciarJuego() {
+    // Reset game token for new game
+    currentGameToken = null;
+    
     numerosSalidos = [];
     numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
     cartonesConBingo = [];
@@ -199,7 +212,7 @@ function reiniciarJuego() {
 
     if (intervalo) clearInterval(intervalo);
     const startStopBtn = document.getElementById('startStopBtn');
-    if (startStopBtn) startStopBtn.textContent = 'Comenzar';
+    if (startStopBtn) startStopBtn.textContent = 'Empezar';
 
     enEjecucion = false;
     juegoPausado = false;
@@ -213,6 +226,9 @@ function reiniciarJuego() {
     actualizarMisCartonesBingoDisplay();
     actualizarEstadoJuego("listo");
     saveGameState();
+    
+    // Update share button with new game token
+    updateShareButton();
 }
 
 function startStop() {
@@ -221,7 +237,7 @@ function startStop() {
 
     if (enEjecucion) {
         clearInterval(intervalo);
-        startStopBtn.textContent = 'Comenzar';
+        startStopBtn.textContent = 'Empezar';
         enEjecucion = false;
         actualizarEstadoJuego("pausado");
     } else {
@@ -259,7 +275,7 @@ function siguienteNumero() {
         alert("¡Todos los números han sido llamados!");
         clearInterval(intervalo);
         const startStopBtn = document.getElementById('startStopBtn');
-        if (startStopBtn) startStopBtn.textContent = 'Comenzar';
+        if (startStopBtn) startStopBtn.textContent = 'Empezar';
         enEjecucion = false;
         actualizarEstadoJuego("finalizado");
         return;
@@ -340,33 +356,41 @@ function verificarNumero() {
 function verificarCarton() {
     const cartonVerificar = document.getElementById('cartonVerificar');
     const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
-    if (!cartonVerificar || !mensajeVerificacionCarton) return;
+    const cartonDisplayContainer = document.getElementById('cartonDisplayContainer');
+    if (!cartonVerificar || !mensajeVerificacionCarton || !cartonDisplayContainer) return;
 
     const numeroCartonInput = cartonVerificar.value;
     const numeroCarton = parseInt(numeroCartonInput.replace(/[^0-9]/g, ''));
 
+    cartonDisplayContainer.innerHTML = ''; // Clear previous display
+    mensajeVerificacionCarton.innerHTML = ''; // Clear message
+
     if (isNaN(numeroCarton)) {
-        mensajeVerificacionCarton.innerHTML = "Ingresa un número de cartón válido.";
-        mensajeVerificacionCarton.style.color = "red";
+        // No message displayed for invalid input
     } else {
         const cartonElement = document.getElementById(`carton${numeroCarton}`);
         if (!cartonElement || !cartonElement.getAttribute('data-numeros')) {
-            mensajeVerificacionCarton.innerHTML = `❌ Cartón ${numeroCarton} no encontrado o inválido.`;
-            mensajeVerificacionCarton.style.color = "red";
+            // No message displayed for not found carton
         } else {
             const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
             if (!numerosEnCartonAttr || numerosEnCartonAttr.trim() === "") {
-                mensajeVerificacionCarton.innerHTML = `❌ Cartón ${numeroCarton} no tiene números definidos.`;
-                mensajeVerificacionCarton.style.color = "red";
+                // No message displayed for empty carton
             } else {
                 const numerosEnCarton = numerosEnCartonAttr.split(',').map(Number).filter(n => n > 0 && !isNaN(n));
                 const faltantes = numerosEnCarton.filter(num => !numerosSalidos.includes(num));
                 const numerosSalidosEnCarton = numerosEnCarton.filter(num => numerosSalidos.includes(num));
 
+                // Create the saved-card style display
+                const card = document.createElement('div');
+                card.className = 'saved-card';
+                const title = document.createElement('strong');
+                title.className = 'saved-card-title';
+                title.textContent = `Cartón ${numeroCarton}`;
+                card.appendChild(title);
+                card.appendChild(generarMiniTableroParaCarton(numerosEnCartonAttr));
+                cartonDisplayContainer.appendChild(card);
+
                 if (numerosEnCarton.length > 0 && faltantes.length === 0) { // Bingo detected
-                    mensajeVerificacionCarton.innerHTML = `✅ ¡Bingo! Cartón ${numeroCarton} completo: ` +
-                        numerosSalidosEnCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
-                    mensajeVerificacionCarton.style.color = "green";
                     if (window.speechSynthesis) {
                         const msg = new SpeechSynthesisUtterance(`Bingo. El cartón número ${numeroCarton} tiene bingo`);
                         if (selectedVoice) {
@@ -392,13 +416,9 @@ function verificarCarton() {
                     // try { bingoAudio.currentTime = 0; bingoAudio.play()... } catch ...
                     // }
                 } else if (numerosEnCarton.length === 0) {
-                    mensajeVerificacionCarton.innerHTML = `ℹ️ Cartón ${numeroCarton} sin números válidos.`;
-                    mensajeVerificacionCarton.style.color = "orange";
+                    // No message for empty carton
                 } else {
-                    mensajeVerificacionCarton.innerHTML = `Cartón ${numeroCarton}:<br>
-                        ❌Faltan: ` + faltantes.map(num => `<span class="numeroFaltante">${num}</span>`).join(' ') + `<br>
-                        ✅Salieron: ` + numerosSalidosEnCarton.map(num => `<span class="numeroVerificado">${num}</span>`).join(' ');
-                    mensajeVerificacionCarton.style.color = "red";
+                    // No message for verified carton
                 }
             }
         }
@@ -425,12 +445,14 @@ if (cartonVerificarInputEl) {
         }
         const msgCarton = document.getElementById('mensajeVerificacionCarton');
         if (msgCarton) msgCarton.textContent = "";
+        const cartonDisplay = document.getElementById('cartonDisplayContainer');
+        if (cartonDisplay) cartonDisplay.innerHTML = "";
     });
     cartonVerificarInputEl.addEventListener('focus', () => {
         if (enEjecucion && startStopBtnEl) {
             clearInterval(intervalo);
             juegoPausado = true;
-            startStopBtnEl.textContent = 'Comenzar';
+            startStopBtnEl.textContent = 'Empezar';
             enEjecucion = false;
             actualizarEstadoJuego("pausadoInput");
         }
@@ -441,7 +463,7 @@ if (numeroVerificarInputEl) {
         if (enEjecucion && startStopBtnEl) {
             clearInterval(intervalo);
             juegoPausado = true;
-            startStopBtnEl.textContent = 'Comenzar';
+            startStopBtnEl.textContent = 'Empezar';
             enEjecucion = false;
             actualizarEstadoJuego("pausadoInput");
         }
@@ -498,7 +520,7 @@ function actualizarEstadoJuego(estado) {
     switch (estado) {
         case "enMarcha": estadoJuegoDiv.textContent = "✅ Juego en marcha ✅"; estadoJuegoDiv.className = "enMarcha"; break;
         case "pausado": estadoJuegoDiv.textContent = "❌ Juego pausado ❌"; estadoJuegoDiv.className = "pausado"; break;
-        case "listo": estadoJuegoDiv.textContent = "ℹ️ Juego listo. ¡Presiona Comenzar! ℹ️"; estadoJuegoDiv.className = "listo"; break;
+        case "listo": estadoJuegoDiv.textContent = "ℹ️ Juego listo. ¡Presiona Empezar! ℹ️"; estadoJuegoDiv.className = "listo"; break;
         case "finalizado": estadoJuegoDiv.textContent = "🏁 ¡Juego finalizado! 🏁"; estadoJuegoDiv.className = "finalizado"; break;
         case "pausadoInput": estadoJuegoDiv.textContent = "⌨️ Pausa (input activo) ⌨️"; estadoJuegoDiv.className = "pausadoInput"; break;
         default: estadoJuegoDiv.textContent = estado; estadoJuegoDiv.className = estado;
@@ -570,6 +592,7 @@ function saveGameState() {
             myTrackedCardNumbers,
             preferredVoiceURI,
             drawIntervalMs,
+            currentGameToken,
             updatedAt: Date.now()
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -594,6 +617,9 @@ function loadGameState() {
 
         numerosSalidos = salidos.filter(n => Number.isInteger(n) && n >= 1 && n <= 90);
         numerosDisponibles = disponibles.filter(n => Number.isInteger(n) && n >= 1 && n <= 90);
+        // If both saved arrays are empty, treat this as no valid saved state
+        // (prevents showing "all numbers called" on a fresh/new session with empty storage)
+        if (numerosSalidos.length === 0 && numerosDisponibles.length === 0) return false;
         cartonesConBingo = Array.isArray(state.cartonesConBingo)
             ? state.cartonesConBingo.filter(n => Number.isInteger(n) && n > 0)
             : [];
@@ -604,6 +630,10 @@ function loadGameState() {
 
         if (typeof state.drawIntervalMs === 'number' && Number.isFinite(state.drawIntervalMs)) {
             drawIntervalMs = state.drawIntervalMs;
+        }
+
+        if (typeof state.currentGameToken === 'string') {
+            currentGameToken = state.currentGameToken;
         }
 
         // Nunca reanudamos automáticamente en modo "en ejecución" al recargar.
@@ -655,7 +685,7 @@ function applyGameStateToUI() {
     actualizarEstadoJuego('listo');
 
     const startStopBtn = document.getElementById('startStopBtn');
-    if (startStopBtn) startStopBtn.textContent = 'Comenzar';
+    if (startStopBtn) startStopBtn.textContent = 'Empezar';
 
     setDrawSpeed(drawIntervalMs, { persist: false });
 }
@@ -679,6 +709,10 @@ function generarMiniTableroElement(numeros) {
         wrapper.appendChild(cell);
     });
     return wrapper;
+}
+
+function generarMiniTableroParaCarton(numeros) {
+    return generarMiniTableroElement(numeros);
 }
 
 function mostrarCartonesGuardados() {
@@ -754,9 +788,7 @@ function actualizarListaBingos() {
         elemento.className = 'numeroCirculo ultimoNumeroCirculo';
         elemento.style.backgroundColor = 'var(--bingo-success)';
         elemento.style.color = 'white';
-        elemento.style.width = '50px';
-        elemento.style.height = '50px';
-        elemento.style.fontSize = '1.2rem';
+        // Removed hardcoded dimensions to match "Last 10 Numbers" style
         elemento.textContent = numero;
         container.appendChild(elemento);
     });
@@ -765,17 +797,99 @@ function actualizarListaBingos() {
 }
 // --- FIN Lógica de Bingo ---
 // ---- Game Sharing Functions ----
+function generateGameToken() {
+    if (!currentGameToken) {
+        const state = {
+            numerosSalidos: [...numerosSalidos],
+            drawIntervalMs: drawIntervalMs,
+            myTrackedCardNumbers: [...myTrackedCardNumbers],
+            cartonesConBingo: [...cartonesConBingo],
+            seed: Math.random().toString(36).substr(2, 9),
+            gameCode: Math.floor(100 + Math.random() * 900) // 3 numbers only
+        };
+        currentGameToken = btoa(JSON.stringify(state));
+    }
+    return currentGameToken;
+}
+
+function updateShareButton() {
+    const token = generateGameToken();
+    const btn = document.getElementById('shareGameBtn');
+    if (btn) {
+        // Extract just the game code for display (3 digits)
+        try {
+            const state = JSON.parse(atob(token));
+            const gameCode = state.gameCode || '---';
+            btn.textContent = `Compartir (${gameCode})`;
+        } catch (e) {
+            btn.textContent = 'Compartir';
+        }
+    }
+}
+
 function shareGame() {
-    const state = {
-        numerosSalidos: [...numerosSalidos],
-        drawIntervalMs: drawIntervalMs,
-        myTrackedCardNumbers: [...myTrackedCardNumbers],
-        cartonesConBingo: [...cartonesConBingo],
-        seed: Math.random().toString(36).substr(2, 9),
-        gameCode: Math.floor(100 + Math.random() * 900) // 3 numbers only
-    };
-    const encoded = btoa(JSON.stringify(state));
-    window.location.href = 'share.html?game=' + encodeURIComponent(encoded);
+    const token = generateGameToken();
+    const state = JSON.parse(atob(token));
+    const shareUrl = window.location.origin + '/Bingo/web3.html#' + token;
+    
+    // Update Modal Content
+    const tokenDisplay = document.getElementById('modalTokenDisplay');
+    const shareUrlDisplay = document.getElementById('modalShareUrl');
+    const qrContainer = document.getElementById('qrCodeContainer');
+    
+    if (tokenDisplay) tokenDisplay.textContent = state.gameCode || '---';
+    if (shareUrlDisplay) shareUrlDisplay.textContent = shareUrl;
+    
+    // Clear and Generate QR Code
+    if (qrContainer) {
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
+            text: shareUrl,
+            width: 180,
+            height: 180,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+    
+    // Show Modal
+    const modal = document.getElementById('shareModal');
+    if (modal) modal.style.display = 'block';
+}
+
+function closeShareModal() {
+    const modal = document.getElementById('shareModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function copyShareUrl() {
+    const urlDisplay = document.getElementById('modalShareUrl');
+    if (!urlDisplay) return;
+    
+    const url = urlDisplay.textContent;
+    navigator.clipboard.writeText(url).then(() => {
+        // Simple visual feedback on the button
+        const btn = document.querySelector('#modalTokenContainer button');
+        const originalText = btn.textContent;
+        btn.textContent = '¡Copiado!';
+        btn.style.backgroundColor = 'var(--bingo-success)';
+        
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.backgroundColor = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+    });
+}
+
+// Close modal when clicking outside of it
+window.onclick = function(event) {
+    const modal = document.getElementById('shareModal');
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
 }
 
 function loadSharedGame(encoded) {
@@ -783,11 +897,14 @@ function loadSharedGame(encoded) {
         const state = JSON.parse(atob(encoded));
         if (state.numerosSalidos) {
             numerosSalidos = state.numerosSalidos;
-            drawIntervalMs = state.drawIntervalMs || 3000;
+            drawIntervalMs = state.drawIntervalMs || 3500;
             myTrackedCardNumbers = state.myTrackedCardNumbers || [];
             cartonesConBingo = state.cartonesConBingo || [];
+            // Set the current game token to the loaded shared game token
+            currentGameToken = encoded;
             // Apply the state
             applyGameStateToUI();
+            updateShareButton();
             return true;
         }
     } catch (e) {
@@ -842,8 +959,8 @@ window.onload = () => {
         });
     }
 
-    // Default UI
-    setDrawSpeed(drawIntervalMs, { persist: false });
+    // Default UI - Set to 3.5 seconds as default
+    setDrawSpeed(3500, { persist: true });
 
     document.addEventListener('keydown', (e) => {
         const tag = document.activeElement ? document.activeElement.tagName : '';
@@ -880,4 +997,182 @@ window.onload = () => {
         localStorage.setItem('bingo_visits', visits);
         visitCounter.textContent = visits;
     }
+
+    // Update share button with current token
+    updateShareButton();
 };
+
+async function downloadCardsAsPDF() {
+    const originalText = "Descargar Cartones (PDF)";
+    const links = document.querySelectorAll('a[onclick*="downloadCardsAsPDF"]');
+    links.forEach(l => l.textContent = "Generando PDF...");
+
+    // Create Loading Overlay
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.style.position = 'fixed';
+    loadingOverlay.style.top = '0';
+    loadingOverlay.style.left = '0';
+    loadingOverlay.style.width = '100%';
+    loadingOverlay.style.height = '100%';
+    // Use an opaque background to ensure the main site is hidden, highlighting that "something is happening"
+    loadingOverlay.style.backgroundColor = 'rgba(0,0,0,0.85)';
+    loadingOverlay.style.zIndex = '99999';
+    loadingOverlay.style.display = 'flex';
+    loadingOverlay.style.justifyContent = 'center';
+    loadingOverlay.style.alignItems = 'center';
+    loadingOverlay.style.color = 'white';
+    loadingOverlay.style.fontSize = '24px';
+    loadingOverlay.style.flexDirection = 'column';
+    loadingOverlay.innerHTML = '<div style="margin-bottom: 20px;"><div class="spinner" style="border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 4px solid #fff; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div></div><p>Generando tu PDF...</p><p style="font-size: 16px;">Por favor espera, esto puede tardar unos segundos.</p><style>@keyframes spin {0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }}</style>';
+    document.body.appendChild(loadingOverlay);
+
+    try {
+        // Create a temporary container for PDF generation
+        // Strategy: Render it OFF-SCREEN but fully expanded (not scrollable)
+        const tempContainer = document.createElement('div');
+        tempContainer.id = 'pdf-capture-container';
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.left = '-12000px'; 
+        tempContainer.style.top = '0';
+        tempContainer.style.width = '1000px'; // Wide enough for 3 cards per row comfortably
+        tempContainer.style.backgroundColor = '#ffffff';
+        tempContainer.style.color = '#000000';
+        tempContainer.style.padding = '40px';
+        tempContainer.style.boxSizing = 'border-box';
+        // Ensure no inherited transparency or dark mode issues
+        tempContainer.style.setProperty('background-color', '#ffffff', 'important');
+        tempContainer.style.setProperty('color', '#000000', 'important');
+
+        const title = document.createElement('h1');
+        title.style.fontSize = '36pt';
+        title.style.margin = '0 0 40px 0';
+        title.textContent = 'MIS CARTONES - BINGO';
+        title.style.textAlign = 'center';
+        title.style.color = '#000';
+        title.style.fontFamily = 'Helvetica, sans-serif';
+        tempContainer.appendChild(title);
+
+        const grid = document.createElement('div');
+        grid.style.display = 'flex';
+        grid.style.flexWrap = 'wrap';
+        grid.style.justifyContent = 'center';
+        grid.style.gap = '30px';
+        tempContainer.appendChild(grid);
+
+        // Get all hardcoded cards from the web
+        const cartonesNodeList = document.querySelectorAll('#cartonesContainer > div[data-numeros]');
+        console.log(`Encontrados ${cartonesNodeList.length} contenedores de cartones.`);
+        
+        let addedCards = 0;
+        cartonesNodeList.forEach(carton => {
+            const id = carton.id;
+            const numeros = carton.getAttribute('data-numeros');
+            if (numeros && numeros.trim().length > 0) {
+                addedCards++;
+                const cardWrapper = document.createElement('div');
+                cardWrapper.style.border = '3px solid #000';
+                cardWrapper.style.borderRadius = '15px';
+                cardWrapper.style.padding = '15px';
+                cardWrapper.style.backgroundColor = '#ffffff';
+                cardWrapper.style.width = '280px';
+                cardWrapper.style.pageBreakInside = 'avoid';
+                
+                const cardTitle = document.createElement('div');
+                cardTitle.textContent = "CARTÓN " + id.replace('carton', '').toUpperCase();
+                cardTitle.style.fontWeight = 'bold';
+                cardTitle.style.marginBottom = '15px';
+                cardTitle.style.textAlign = 'center';
+                cardTitle.style.fontSize = '16pt';
+                cardTitle.style.color = '#000';
+                cardTitle.style.fontFamily = 'Helvetica, sans-serif';
+
+                cardWrapper.appendChild(cardTitle);
+                
+                // Create the mini board manually
+                const miniBoard = document.createElement('div');
+                miniBoard.style.display = 'grid';
+                miniBoard.style.gridTemplateColumns = 'repeat(5, 1fr)';
+                miniBoard.style.gap = '4px';
+                miniBoard.style.justifyContent = 'center';
+                
+                const nums = numeros.split(',').map(n => n.trim()).filter(Boolean);
+                nums.forEach(num => {
+                    const cell = document.createElement('div');
+                    cell.style.aspectRatio = '1';
+                    cell.style.display = 'flex';
+                    cell.style.alignItems = 'center';
+                    cell.style.justifyContent = 'center';
+                    cell.style.fontSize = '14pt';
+                    cell.style.fontWeight = 'bold';
+                    cell.style.border = '1px solid #000';
+                    cell.style.borderRadius = '4px';
+                    cell.style.backgroundColor = '#ffffff';
+                    cell.style.color = '#000000';
+                    cell.style.fontFamily = 'Helvetica, sans-serif';
+                    cell.textContent = num;
+                    
+                    // Highlight if already played
+                    const val = parseInt(num, 10);
+                    if (typeof numerosSalidos !== 'undefined' && numerosSalidos.includes(val)) {
+                        cell.style.backgroundColor = '#e0e0e0'; // Light grey for printed clarity
+                        cell.style.color = '#000';
+                    }
+                    
+                    miniBoard.appendChild(cell);
+                });
+                
+                cardWrapper.appendChild(miniBoard);
+                grid.appendChild(cardWrapper);
+            }
+        });
+
+        if (addedCards === 0) {
+            alert("No se encontraron cartones para exportar.");
+            document.body.removeChild(loadingOverlay);
+            links.forEach(l => l.textContent = originalText);
+            return;
+        }
+
+        document.body.appendChild(tempContainer);
+
+        const options = {
+            margin:       10,
+            filename:     'Bingo_Cartones.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { 
+                scale: 2, 
+                useCORS: true, 
+                logging: false,
+                backgroundColor: '#ffffff'
+            },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Delay to allow DOM layout
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Generate PDF
+        await html2pdf().from(tempContainer).set(options).save();
+
+        // Cleanup
+        document.body.removeChild(tempContainer);
+        document.body.removeChild(loadingOverlay);
+        links.forEach(l => l.textContent = "¡PDF Guardado!");
+        setTimeout(() => {
+            links.forEach(l => l.textContent = originalText);
+        }, 3000);
+
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        if (document.getElementById('pdf-capture-container')) {
+            document.body.removeChild(document.getElementById('pdf-capture-container'));
+        }
+        if (loadingOverlay && loadingOverlay.parentNode) {
+            document.body.removeChild(loadingOverlay);
+        }
+        links.forEach(l => l.textContent = "Error al generar PDF");
+        setTimeout(() => {
+            links.forEach(l => l.textContent = originalText);
+        }, 3000);
+    }
+}

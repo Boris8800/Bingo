@@ -14,8 +14,7 @@ https://boris8800.github.io/Bingo/
 ## 🔗 Sistema de Compartir (Convención Interna)
 Para el desarrollo, utilizamos la siguiente estructura:
 
-- **Web 1**: La sección de **Últimos 10 números** que muestra el historial reciente en tiempo real.
-- **Web 2**: La página de **Compartir** (`share.html`), que genera códigos QR y tokens para invitar a otros.
+- **Web 1**: El juego principal (`index.html`). Ahora incluye la funcionalidad de **Compartir** como una ventana modal integrada (anteriormente Web 2).
 - **Web 3**: La **Vista de Juego Compartido** (`web3.html`), que permite a otros usuarios ver el estado exacto de tu tablero a través de un enlace o QR.
 
 ---

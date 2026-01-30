@@ -4,8 +4,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>� BINGO</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎱</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22grad%22%20cx%3D%2230%25%22%20cy%3D%2230%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b8d4e3%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2245%22%20fill%3D%22url%28%23grad%29%22%20stroke%3D%22%234a90e2%22%20stroke-width%3D%223%22/%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%2235%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20fill%3D%22%232c5282%22%3EBINGO%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%2230%22%20cy%3D%2265%22%20r%3D%223%22%20fill%3D%22%234a90e2%22/%3E%0A%20%20%3Ccircle%20cx%3D%2270%22%20cy%3D%2270%22%20r%3D%222%22%20fill%3D%22%234a90e2%22/%3E%0A%3C/svg%3E">
     <link href="css/style.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         // Night mode toggle function - defined early to be accessible
         function toggleNightMode() {
@@ -44,7 +46,7 @@
 <body>
     <header class="topbar">
         <a class="brand-badge" href="https://boris8800.github.io/Bingo/">
-            <img src="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎱</text></svg>" width="32" height="32" alt="Logo">
+            <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22grad%22%20cx%3D%2230%25%22%20cy%3D%2230%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b8d4e3%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2245%22%20fill%3D%22url%28%23grad%29%22%20stroke%3D%22%234a90e2%22%20stroke-width%3D%223%22/%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%2235%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20fill%3D%22%232c5282%22%3EBINGO%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%2230%22%20cy%3D%2265%22%20r%3D%223%22%20fill%3D%22%234a90e2%22/%3E%0A%20%20%3Ccircle%20cx%3D%2270%22%20cy%3D%2270%22%20r%3D%222%22%20fill%3D%22%234a90e2%22/%3E%0A%3C/svg%3E" width="32" height="32" alt="Logo">
         </a>
         <button id="nightModeToggle" class="icon-btn" onclick="toggleNightMode()" aria-label="Cambiar modo noche" aria-pressed="false">&#127769;</button>
     </header>
@@ -60,12 +62,12 @@
 
 <div id="botonesContainer">
 <button id="reiniciarBtn" onclick="reiniciarJuego()">Reiniciar Juego</button>
-<button id="startStopBtn" onclick="startStop()">Comenzar</button>
+<button id="startStopBtn" onclick="startStop()">Empezar</button>
 </div>
 
 <div id="speedControl" class="control-box">
-    <label for="speedSlider">Velocidad: <strong id="speedValue">3.0s</strong></label>
-    <input id="speedSlider" type="range" min="1000" max="7000" step="500" value="3000" aria-label="Velocidad de sorteo en milisegundos" />
+    <label for="speedSlider">Velocidad: <strong id="speedValue">3.5s</strong></label>
+    <input id="speedSlider" type="range" min="1000" max="7000" step="500" value="3500" aria-label="Velocidad de sorteo en milisegundos" />
 </div>
 <div id="historial">
 <div id="numerosContainer"></div>
@@ -75,12 +77,12 @@
 <div id="ultimosNumerosContainer"></div>
 <div id="estadoJuego"></div>
 </div>
-<div id="verificarNumeroContainer">
+<div id="verificarNumeroContainer" class="control-box">
 <input id="numeroVerificar" max="90" min="1" placeholder="Número" type="number"/>
 <button onclick="verificarNumero()">Verificar</button>
 <div id="mensajeVerificacion"></div>
 </div>
-<div id="verificarCartonContainer">
+<div id="verificarCartonContainer" class="control-box">
 <input id="cartonVerificar" min="1" placeholder="Cartón" type="number"/>
 <button onclick="verificarCarton()">Verificar</button>
 <div id="mensajeVerificacionCarton"></div>
@@ -91,6 +93,7 @@
     <label for="myCardNumbersInput">Números de cartón (ej: 7, 15, 23):</label>
     <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
     <button onclick="trackMyCards()">Añadir</button>
+    <span id="trackerMsg" style="margin-left: 10px; font-weight: bold;"></span>
     <h4>Cartones con Bingo:</h4>
     <div id="myTrackedBingosList" class="bingo-list-display">---</div>
 </div>
@@ -233,6 +236,32 @@
 <script type="text/javascript" src="https://contador.websiteout.com/js/21/8/0/0"></script>
 
     
+<!-- Modal de Compartir (Web 2) -->
+<div id="shareModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeShareModal()">&times;</span>
+        <h2>Comparte este Juego</h2>
+        <div id="qrCodeContainer"></div>
+        
+        <div id="modalTokenContainer">
+            <p style="margin: 0; font-weight: bold;">Token del Juego:</p>
+            <div id="modalTokenDisplay">---</div>
+            <p id="modalShareUrl"></p>
+            <button class="btn-primary" onclick="copyShareUrl()" style="width: 100%; margin-top: 10px;">Copiar Enlace</button>
+        </div>
+        <p style="font-size: 0.85em; color: var(--text-secondary);">
+            Tus amigos pueden entrar a <br><strong>boris8800.github.io/Bingo/web3.html</strong><br> e ingresar el token.
+        </p>
+    </div>
+</div>
+
 <script src="js/script.js"></script>
+
+<footer style="text-align: center; margin-top: 20px; padding: 10px; font-size: 0.9em; color: var(--text-secondary);">
+    <div style="margin-bottom: 10px;">
+        <a href="#" onclick="downloadCardsAsPDF(); return false;" style="color: var(--text-secondary); text-decoration: none; font-size: 0.8rem;">Descargar Cartones (PDF)</a>
+    </div>
+    © Boris8800 - 2026
+</footer>
 </body>
 </html>

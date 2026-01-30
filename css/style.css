@@ -46,6 +46,9 @@ body.night-mode {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
 }
 
+[hidden] {
+    display: none !important;
+}
 
 /* Smooth transitions for theme changes */
 body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
@@ -111,18 +114,36 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
     border: 2px solid var(--border-primary);
 }
 
-/* Generic container style for control panels */
+/* Distinct style for the main start button */
+#startStopBtn {
+    background: linear-gradient(135deg, #2a9d8f 0%, #21867a 100%);
+    border: 2px solid #176b5e;
+    color: #ffffff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 700;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+}
+
+#startStopBtn:hover,
+#startStopBtn:focus {
+    background: linear-gradient(135deg, #21867a 0%, #176b5e 100%);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+/* Generic container style for control panels - ensured same length on PC */
 .control-box {
-    margin-top: 20px;
+    margin: 20px auto;
     padding: 15px;
     background-color: var(--bg-tertiary);
     border-radius: 12px;
-    width: auto;
+    width: 100%;
     max-width: 480px;
-    margin-left: auto;
-    margin-right: auto;
     box-shadow: var(--shadow-md);
     border: 1px solid var(--border-color);
+    box-sizing: border-box;
+    display: block; /* Default to block, specific ones can override to flex */
 }
 
 /* Saved cards grid + mini board */
@@ -135,9 +156,9 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
 }
 
 .saved-card {
-    width: 220px;
+    width: 242px;
     background-color: var(--bg-card);
-    padding: 12px;
+    padding: 13px;
     border-radius: 12px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
@@ -160,18 +181,18 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
 .mini-board {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
+    gap: 5px;
     text-align: center;
-    padding: 8px;
+    padding: 9px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
     background: var(--bg-card);
 }
 
 .mini-cell {
-    padding: 6px 0;
+    padding: 7px 0;
     border: 1px solid var(--border-color);
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     font-weight: bold;
     border-radius: 6px;
     background: var(--bg-secondary);
@@ -189,37 +210,7 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
     height: 60px;
 }
 
-#seedDisplayContainer {
-    margin-bottom: 15px;
-    padding: 10px;
-    background-color: var(--bg-secondary);
-    border-radius: 5px;
-    text-align: center;
-    font-size: 0.9em;
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-}
-#seedDisplayContainer strong {
-    font-family: 'Courier New', Courier, monospace;
-    color: var(--text-primary);
-}
-
-#myCardsTrackerContainer {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: var(--bg-card);
-    border-radius: 8px;
-    width: auto;
-    max-width: 480px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: var(--shadow-md);
-    border: 1px solid var(--border-color);
-}
-
+/* Removed seedDisplayContainer CSS as it is unused */
 #myCardsTrackerContainer h3 {
     margin-top: 0;
     margin-bottom: 15px;
@@ -394,7 +385,7 @@ body {
     overflow-x: hidden;
     color: var(--text-primary);
     /* DYNAMIC SCALING: Shrinks earlier for small screens to preserve layout */
-    font-size: clamp(0.75rem, 0.5rem + 1.2vw, 1.1rem);
+    font-size: clamp(0.85rem, 0.6rem + 1.2vw, 1.2rem);
 }
 
 body.night-mode {
@@ -537,13 +528,7 @@ button:hover {
     flex-wrap: wrap;
 }
 
-/* Speed slider */
-#speedControl {
-    width: 90%;
-    max-width: 480px;
-    margin: 20px auto;
-}
-
+/* Speed slider - uses .control-box for layout */
 #speedControl label {
     display: flex;
     align-items: center;
@@ -629,22 +614,11 @@ button:hover {
 }
 
 #verificarNumeroContainer, #verificarCartonContainer {
-    margin-top: 10px;
-    padding: 15px;
-    background-color: var(--bg-tertiary);
-    border-radius: 12px;
-    width: auto;
-    max-width: 450px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: var(--shadow-md);
-    box-sizing: border-box;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-    border: 1px solid var(--border-color);
 }
 
 #verificarNumeroContainer input, #verificarCartonContainer input {
@@ -663,8 +637,8 @@ button:hover {
 
 #verificarNumeroContainer input:focus, #verificarCartonContainer input:focus {
     outline: none;
-    border-color: var(--btn-primary);
-    box-shadow: 0 0 10px rgba(14,50,75,0.3);
+    border-color: var(--bingo-success);
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
 }
 
 #verificarNumeroContainer button, #verificarCartonContainer button {
@@ -721,12 +695,7 @@ button:hover {
     transform: scale(0.98) !important;
 }
 
-/* Cartones Guardados Container */
-#cartonesGuardadosContainer {
-    background-color: var(--bg-container) !important;
-    border: 1px solid var(--border-color);
-}
-
+/* Cartones Guardados Container - uses .control-box for layout */
 #cartonesGuardadosContainer h3 {
     color: var(--text-primary);
 }
@@ -767,18 +736,7 @@ button:hover {
     box-shadow: var(--shadow-lg) !important;
 }
 
-/* Voice Settings Container */
-#voiceSettingsContainer {
-    background-color: var(--bg-tertiary);
-    padding: 15px;
-    border-radius: 8px;
-    margin: 15px auto;
-    width: 90%;
-    max-width: 480px;
-    box-shadow: var(--shadow-md);
-    border: 1px solid var(--border-color);
-}
-
+/* Voice Settings Container - uses .control-box for layout */
 #voiceSettingsContainer label {
     color: var(--text-primary);
     font-weight: 500;
@@ -796,13 +754,7 @@ button:hover {
     margin-top: 8px;
 }
 
-/* Cartones Bingo Container */
-#cartonesBingoContainer {
-    background-color: var(--bg-tertiary) !important;
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-md) !important;
-}
-
+/* Cartones Bingo Container - uses .control-box for layout */
 #cartonesBingoContainer h3 {
     color: var(--text-primary);
 }
@@ -814,7 +766,6 @@ button:hover {
 }
 
 @media (max-width: 600px) {
-    #seedDisplayContainer { max-width: 90%; font-size: 0.8em; }
     #numeroContainer { width: 140px; height: 140px; }
     #numerosContainer, #ultimosNumerosContainer { 
         grid-template-columns: repeat(10, 1fr) !important; 
@@ -824,16 +775,6 @@ button:hover {
         padding: 5px !important;
     }
     
-    .numeroCirculo { 
-        /* Removed static overrides to let clamp() handle shrinking */
-    }
-
-    /* ADDED/MODIFIED rule for .ultimoNumeroCirculo in media query */
-    .ultimoNumeroCirculo {
-        /* Removed static overrides to let clamp() handle shrinking */
-        /* Other properties like background-color, border are inherited from main .ultimoNumeroCirculo style */
-    }
-
     button {
         font-size: 1em;
         padding: 12px 14px;
@@ -841,9 +782,10 @@ button:hover {
         min-height: 44px;
     }
 
-    #myCardsTrackerContainer, #verificarNumeroContainer, #verificarCartonContainer {
+    #myCardsTrackerContainer, #verificarNumeroContainer, #verificarCartonContainer, .control-box {
         width: 90%;
-        max-width: none; 
+        max-width: none;
+        box-sizing: border-box;
     }
 
     /* Avoid iOS zoom on focus (>=16px) */
@@ -877,4 +819,97 @@ button:hover {
     #listaCartonesBingo { gap: 5px; }
     .bingo-group { padding: 5px; gap: 4px; }
     .cartonBingo { padding: 5px 10px; font-size: 0.8em; }
+}
+
+/* Modal Styling for Sharing (Web 2) */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.7);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: var(--bg-card);
+    margin: 10vh auto;
+    padding: 25px;
+    border: 1px solid var(--border-color);
+    width: 90%;
+    max-width: 480px;
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.close-modal {
+    color: var(--text-secondary);
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-modal:hover {
+    color: var(--btn-secondary);
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    font-size: 1.5rem;
+}
+
+#qrCodeContainer { 
+    margin: 15px auto; 
+    display: inline-block; 
+    padding: 10px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    line-height: 0;
+}
+
+#qrCodeContainer img {
+    margin: 0 auto;
+}
+
+#modalTokenContainer {
+    margin: 15px auto;
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: var(--shadow-md);
+}
+
+#modalTokenDisplay { 
+    display: block;
+    text-align: center;
+    margin: 5px 0;
+    font-size: 3rem !important;
+    font-weight: 800;
+    color: var(--btn-primary);
+    letter-spacing: 4px;
+}
+
+#modalShareUrl { 
+    word-break: break-all; 
+    margin: 15px 0; 
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    padding: 10px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    max-height: 60px;
+    overflow-y: auto;
 }
