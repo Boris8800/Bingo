@@ -306,6 +306,34 @@
         }
         
         let lastDetectedNumber = null; // Track the last number we saw
+        let detectedNumbers = []; // Track all detected numbers for "Last 10"
+        
+        function updateLastNumbersDisplay() {
+            // Display the last 10 detected numbers (or all if less than 10)
+            const container = document.getElementById('ultimosNumerosContainer');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            const last10 = detectedNumbers.slice(-10); // Get last 10
+            
+            if (last10.length === 0) {
+                container.textContent = '---';
+                return;
+            }
+            
+            last10.forEach((num, index) => {
+                const circulo = document.createElement('div');
+                circulo.className = 'numeroCirculo ultimoNumeroCirculo';
+                
+                // Add pulse animation to most recent number
+                if (index === last10.length - 1) {
+                    circulo.classList.add('pulse-once');
+                }
+                
+                circulo.textContent = num;
+                container.appendChild(circulo);
+            });
+        }
         
         function startAutoSync(initialToken) {
             // Clear any existing interval
@@ -348,10 +376,14 @@
                         // NEW NUMBER DETECTED!
                         lastLoadedToken = urlHash;
                         lastDetectedNumber = currentLastNumber;
+                        detectedNumbers.push(currentLastNumber); // Add to tracking array
                         lastHashSeen = urlHash;
                         lastActivityTimestamp = Date.now();
                         
                         console.log(`✅ DETECTED NEW NUMBER: ${currentLastNumber}`);
+                        
+                        // Update last 10 numbers display
+                        updateLastNumbersDisplay();
                         
                         if (messageDiv) {
                             messageDiv.textContent = `✅ Nuevo número: ${currentLastNumber}`;
