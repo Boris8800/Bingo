@@ -187,6 +187,13 @@
             messageDiv.style.color = "blue";
             
             try {
+                // Validate token format (should be valid base64)
+                try {
+                    atob(token);
+                } catch (e) {
+                    throw new Error("El token no está en formato válido (debe ser Base64)");
+                }
+                
                 // Use the existing loadSharedGame function
                 const success = loadSharedGame(token);
                 
@@ -199,12 +206,12 @@
                     const newUrl = `${window.location.origin}${window.location.pathname}#${token}`;
                     window.history.replaceState(null, null, newUrl);
                 } else {
-                    messageDiv.textContent = "Token inválido o juego no encontrado.";
+                    messageDiv.textContent = "Token inválido o juego no encontrado. Verifica que el token sea correcto.";
                     messageDiv.style.color = "red";
                 }
             } catch (error) {
                 console.error('Error loading game:', error);
-                messageDiv.textContent = "Error al cargar el juego. Verifica el token.";
+                messageDiv.textContent = `Error: ${error.message}`;
                 messageDiv.style.color = "red";
             }
         }
