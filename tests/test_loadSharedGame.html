@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test loadSharedGame</title>
+<style>
+body { font-family: Arial, sans-serif; padding: 20px; }
+button { margin: 6px 0; }
+pre { background: #f4f4f4; padding: 10px; border-radius: 6px; max-width: 900px; overflow: auto; }
+</style>
+</head>
+<body>
+<h1>Pruebas para <code>validateSharedToken</code> / <code>loadSharedGame</code></h1>
+<label>Token: <input id="tokenInput" style="width:60%" placeholder="Pega token base64 aquí o usa los botones de muestra"></label>
+<div style="margin-top:10px">
+    <button id="btnValid">Generar token válido y cargar</button>
+    <button id="btnNull">Token que decodifica a null</button>
+    <button id="btnInvalidBase64">Token inválido (no base64)</button>
+    <button id="btnNumeric">Token Web3 numérico ("47,16,80")</button>
+    <button id="btnValidate">Validar sin cargar</button>
+</div>
+<h3>Resultado:</h3>
+<pre id="output">--</pre>
+
+<script src="/js/script.js"></script>
+<script>
+function log(obj){ document.getElementById('output').textContent = JSON.stringify(obj, null, 2); }
+
+// Helpers to build an example valid snapshot
+function makeSnapshot(){
+    const snapshot = {
+        numerosSalidos: [1,2,3,5,8,13],
+        drawIntervalMs: 3500,
+        myTrackedCardNumbers: [16,42],
+        cartonesConBingo: [16]
+    };
+    return btoa(JSON.stringify(snapshot));
+}
+
+document.getElementById('btnValid').addEventListener('click', () => {
+    const token = makeSnapshot();
+    document.getElementById('tokenInput').value = token;
+    const ok = loadSharedGame(token);
+    const v = validateSharedToken(token);
+    log({ calledLoadSharedGame: ok, validation: v });
+});
+
+document.getElementById('btnNull').addEventListener('click', () => {
+    const token = btoa('null');
+    document.getElementById('tokenInput').value = token;
+    const v = validateSharedToken(token);
+    const ok = loadSharedGame(token);
+    log({ token, calledLoadSharedGame: ok, validation: v });
+});
+
+document.getElementById('btnInvalidBase64').addEventListener('click', () => {
+    const token = 'not-a-base64!!!';
+    document.getElementById('tokenInput').value = token;
+    const v = validateSharedToken(token);
+    const ok = loadSharedGame(token);
+    log({ token, calledLoadSharedGame: ok, validation: v });
+});
+
+document.getElementById('btnNumeric').addEventListener('click', () => {
+    const token = '47,16,80';
+    document.getElementById('tokenInput').value = token;
+    const v = validateSharedToken(token);
+    const ok = loadSharedGame(token);
+    log({ token, calledLoadSharedGame: ok, validation: v, note: 'Numeric tokens are not valid shared snapshots; should be handled by Web3 loader instead.' });
+});
+
+document.getElementById('btnValidate').addEventListener('click', () => {
+    const token = document.getElementById('tokenInput').value;
+    const v = validateSharedToken(token);
+    log(v);
+});
+
+// On load, expose functions existence
+window.addEventListener('DOMContentLoaded', () => {
+    log({ validateSharedToken_exists: typeof validateSharedToken === 'function', loadSharedGame_exists: typeof loadSharedGame === 'function' });
+});
+</script>
+</body>
+</html>

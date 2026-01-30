@@ -480,6 +480,19 @@ body.night-mode {
     box-shadow: 0 4px 12px rgba(175,16,0,0.6);
 }
 
+/* Web3 Unified Ball Sizes */
+body[data-page="web3"] .numeroCirculo {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+}
+
+body[data-page="web3"] .ultimoNumeroCirculo {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+}
+
 /* MODIFIED .ultimoNumeroCirculo */
 .ultimoNumeroCirculo { /* Las últimas 10 bolas */
     background: linear-gradient(135deg, var(--ultimo-numero) 0%, #8b0000 100%);
