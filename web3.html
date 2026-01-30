@@ -100,6 +100,15 @@
 
         <div id="statusMessage" style="margin-top: 20px; font-style: italic; color: var(--text-secondary);"></div>
 
+        <div id="myCardsTrackerContainer" class="control-box">
+            <h3>Seguir Cartones</h3>
+            <label for="myCardNumbersInput">Números de cartón (ej: 7, 15, 23):</label>
+            <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
+            <button onclick="trackMyCards()" style="padding: 8px 16px; background: var(--btn-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 8px;">Añadir</button>
+            <h4>Cartones con Bingo:</h4>
+            <div id="myTrackedBingosList" class="bingo-list-display">---</div>
+        </div>
+
         <div style="margin-top: 30px;">
             <a href="index.html" class="back-btn">Ir a mi Juego</a>
         </div>
@@ -128,6 +137,7 @@
         <input id="myCardNumbersInput">
         <button id="startStopBtn"></button>
         <div id="listaCartonesBingo"></div>
+        <div id="myTrackedBingosList"></div>
         <div id="estadoJuego"></div>
 
         <div id="cartonesContainer">
