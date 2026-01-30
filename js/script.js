@@ -927,14 +927,29 @@ window.onclick = function(event) {
 
 function loadSharedGame(encoded) {
     try {
-        const state = JSON.parse(atob(encoded));
-        if (state.numerosSalidos) {
+        let state = null;
+        let decodedToken = encoded;
+        
+        // Try to decode the token (it might be URL-encoded)
+        try {
+            state = JSON.parse(atob(encoded));
+        } catch (e1) {
+            // If that fails, try URL decoding first
+            try {
+                decodedToken = decodeURIComponent(encoded);
+                state = JSON.parse(atob(decodedToken));
+            } catch (e2) {
+                throw new Error('Token is not in valid Base64 format');
+            }
+        }
+        
+        if (state && state.numerosSalidos) {
             numerosSalidos = state.numerosSalidos;
             drawIntervalMs = state.drawIntervalMs || 3500;
             myTrackedCardNumbers = state.myTrackedCardNumbers || [];
             cartonesConBingo = state.cartonesConBingo || [];
             // Set the current game token to the loaded shared game token
-            currentGameToken = encoded;
+            currentGameToken = decodedToken;
             // Apply the state
             applyGameStateToUI();
             updateShareButton();
