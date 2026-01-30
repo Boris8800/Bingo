@@ -125,7 +125,10 @@
             <h3>Seguir Cartones</h3>
             <label for="myCardNumbersInput">Números de cartón (ej: 7, 15, 23):</label>
             <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
-            <button onclick="trackMyCards()" style="padding: 8px 16px; background: var(--btn-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 8px;">Añadir</button>
+            <div style="margin-top: 8px; display: flex; align-items: center; gap: 12px;">
+                <button onclick="trackMyCards()" style="padding: 8px 16px; background: var(--btn-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Añadir</button>
+                <span id="trackerMsg" style="font-weight: bold; color: var(--text-primary);"></span>
+            </div>
             <h4>Cartones con Bingo:</h4>
             <div id="myTrackedBingosList" class="bingo-list-display">---</div>
         </div>
