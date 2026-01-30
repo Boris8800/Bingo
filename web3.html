@@ -224,22 +224,47 @@
             try {
                 // Try to decode the token to validate format
                 let decodedState = null;
+                let decodingError = null;
+                
+                // Try 1: Direct Base64 decode
                 try {
-                    // First, try to decode directly
                     decodedState = JSON.parse(atob(token));
                 } catch (e1) {
-                    // If that fails, try URL decoding first
+                    decodingError = e1;
+                    
+                    // Try 2: URL decode then Base64 decode
                     try {
                         const decoded = decodeURIComponent(token);
-                        decodedState = JSON.parse(atob(decoded));
-                        token = decoded; // Use the decoded version
+                        if (decoded !== token) {
+                            // Only try if decoding actually changed something
+                            decodedState = JSON.parse(atob(decoded));
+                            token = decoded; // Use the decoded version
+                            decodingError = null;
+                        }
                     } catch (e2) {
-                        throw new Error("El token no está en formato válido. Asegúrate de copiar el token completo sin espacios extras.");
+                        // Try 3: Remove padding and try again
+                        try {
+                            const padded = token + '='.repeat((4 - token.length % 4) % 4);
+                            decodedState = JSON.parse(atob(padded));
+                            decodingError = null;
+                        } catch (e3) {
+                            decodingError = e3;
+                        }
                     }
                 }
                 
+                if (!decodedState) {
+                    console.error('Decoding attempts failed:', {
+                        tokenLength: token.length,
+                        tokenPreview: token.substring(0, 50) + '...',
+                        error: decodingError?.message
+                    });
+                    throw new Error("El token no está en formato válido. Asegúrate de copiar el token completo sin espacios extras.");
+                }
+                
                 // Validate the decoded state has the required structure
-                if (!decodedState || typeof decodedState !== 'object' || !Array.isArray(decodedState.numerosSalidos)) {
+                if (typeof decodedState !== 'object' || !Array.isArray(decodedState.numerosSalidos)) {
+                    console.error('Invalid state structure:', decodedState);
                     throw new Error("El token no contiene un estado de juego válido.");
                 }
                 

@@ -930,20 +930,31 @@ function loadSharedGame(encoded) {
         let state = null;
         let decodedToken = encoded;
         
-        // Try to decode the token (it might be URL-encoded)
+        // Try to decode the token (it might be URL-encoded or have missing padding)
         try {
             state = JSON.parse(atob(encoded));
         } catch (e1) {
             // If that fails, try URL decoding first
             try {
-                decodedToken = decodeURIComponent(encoded);
-                state = JSON.parse(atob(decodedToken));
+                const decoded = decodeURIComponent(encoded);
+                if (decoded !== encoded) {
+                    // Only try if decoding actually changed something
+                    state = JSON.parse(atob(decoded));
+                    decodedToken = decoded;
+                }
             } catch (e2) {
-                throw new Error('Token is not in valid Base64 format');
+                // Try adding padding for Base64
+                try {
+                    const padded = encoded + '='.repeat((4 - encoded.length % 4) % 4);
+                    state = JSON.parse(atob(padded));
+                } catch (e3) {
+                    console.error('All decoding attempts failed:', { e1, e2, e3 });
+                    throw new Error('Token is not in valid Base64 format');
+                }
             }
         }
         
-        if (state && state.numerosSalidos) {
+        if (state && state.numerosSalidos && Array.isArray(state.numerosSalidos)) {
             numerosSalidos = state.numerosSalidos;
             drawIntervalMs = state.drawIntervalMs || 3500;
             myTrackedCardNumbers = state.myTrackedCardNumbers || [];
@@ -954,6 +965,8 @@ function loadSharedGame(encoded) {
             applyGameStateToUI();
             updateShareButton();
             return true;
+        } else {
+            console.error('Invalid state structure:', state);
         }
     } catch (e) {
         console.error('Error loading shared game:', e);
