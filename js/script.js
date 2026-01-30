@@ -849,9 +849,11 @@ function generateGameToken() {
     // Base token is the 2-digit code
     let token = gameCodeFixed.toString();
     
-    // Append draw counter: ,1,2,3...
+    // Append draw counter and last number: ,drawCount,lastNumber
+    // Example: 56,3,45 means game 56, 3 draws, last number was 45
     if (drawCounter > 0) {
-        token += ',' + drawCounter;
+        const lastNumber = numerosSalidos.length > 0 ? numerosSalidos[numerosSalidos.length - 1] : 0;
+        token += ',' + drawCounter + ',' + lastNumber;
     }
     
     currentGameToken = token;
