@@ -1406,3 +1406,9 @@ async function downloadCardsAsPDF() {
         }, 3000);
     }
 }
+
+// ---- Clear token on page unload (reload or navigate) ----
+window.addEventListener('beforeunload', () => {
+    window.location.hash = '';
+    console.log('🧹 Token cleared from address bar');
+});
