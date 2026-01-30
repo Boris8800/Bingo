@@ -163,9 +163,7 @@ function trackMyCards() {
         return;
     }
     const inputText = inputEl.value;
-    myTrackedCardNumbers = inputText.split(',')
-        .map(numStr => parseInt(numStr.trim()))
-        .filter(num => !isNaN(num) && num > 0);
+    myTrackedCardNumbers = validateCardNumbers(inputText);
 
     actualizarMisCartonesBingoDisplay();
     inputEl.value = myTrackedCardNumbers.join(', ');
@@ -179,6 +177,17 @@ function trackMyCards() {
             msgEl.textContent = "";
         }, 1000);
     }
+}
+
+function validateCardNumbers(input) {
+    if (!input || typeof input !== 'string') {
+        console.error('❌ Invalid input: Input is not a string or is empty.');
+        return [];
+    }
+
+    return input.split(',')
+        .map(numStr => parseInt(numStr.trim()))
+        .filter(num => !isNaN(num) && num > 0);
 }
 
 function actualizarMisCartonesBingoDisplay() {

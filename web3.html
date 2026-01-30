@@ -29,7 +29,7 @@
             
             const statusDiv = document.getElementById('statusMessage');
             if (statusDiv) {
-                statusDiv.innerHTML = '<span style="color: #28a745; font-weight: bold;">✅ Conectado a Web1 - Sincronización Activa</span>';
+                statusDiv.innerHTML = '<span style="color: #28a745; font-weight: bold;">✅ Sincronización Activa</span>';
             }
             
             // Change the banner color to indicate connection
@@ -370,13 +370,21 @@
         function updateLastNumbersDisplay() {
             // Display the last 10 detected numbers (or all if less than 10)
             const container = document.getElementById('ultimosNumerosContainer');
-            if (!container) return;
+            if (!container) {
+                console.error('❌ ultimosNumerosContainer not found!');
+                return;
+            }
+            
+            console.log(`🔄 updateLastNumbersDisplay called | detectedNumbers:`, detectedNumbers);
             
             container.innerHTML = '';
             const last10 = detectedNumbers.slice(-10); // Get last 10
             
+            console.log(`📊 Last 10 numbers to display:`, last10);
+            
             if (last10.length === 0) {
                 container.textContent = '---';
+                console.log('⚠️ No numbers to display');
                 return;
             }
             
@@ -391,6 +399,7 @@
                 
                 circulo.textContent = num;
                 container.appendChild(circulo);
+                console.log(`✅ Added number circle: ${num}`);
             });
         }
         
@@ -400,6 +409,8 @@
                 clearInterval(autoSyncInterval);
             }
             
+            console.log(`📥 startAutoSync called with token: "${initialToken}"`);
+            
             lastLoadedToken = initialToken;
             baseGameToken = initialToken.split(',')[0]; // Extract base code "21"
             lastHashSeen = initialToken;
@@ -407,20 +418,46 @@
             lastDetectedNumber = null;
             detectedNumbers = []; // Reset detected numbers
             
-            // Parse initial token: "21" or "21,1,30" (game code, then all numbers)
-            const parts = initialToken.split(',');
-            if (parts.length > 1) {
-                // Extract all numbers except the first part (which is the game code)
+            // Add a validation function for the token
+            function validateToken(token) {
+                if (!token || typeof token !== 'string') {
+                    console.error('❌ Invalid token: Token is not a string or is empty.');
+                    return false;
+                }
+
+                const parts = token.split(',');
                 for (let i = 1; i < parts.length; i++) {
                     const num = parseInt(parts[i]);
-                    if (!isNaN(num)) {
-                        detectedNumbers.push(num);
-                        lastDetectedNumber = num;
+                    if (isNaN(num) || num <= 0) {
+                        console.error(`❌ Invalid number detected in token: ${parts[i]}`);
+                        return false;
                     }
                 }
+
+                return true;
+            }
+
+            if (validateToken(initialToken)) {
+                const parts = initialToken.split(',');
+                console.log(`📊 Token parts:`, parts);
+                console.log(`📊 Parts length: ${parts.length}`);
+
+                if (parts.length > 1) {
+                    for (let i = 1; i < parts.length; i++) {
+                        const num = parseInt(parts[i]);
+                        if (!isNaN(num)) {
+                            detectedNumbers.push(num);
+                            lastDetectedNumber = num;
+                            console.log(`✅ Parsed number: ${num}`);
+                        }
+                    }
+                }
+            } else {
+                console.error('❌ Token validation failed. Parsing aborted.');
             }
             
             console.log(`🎯 Web3 Sync Started | Base: ${baseGameToken} | Numbers: ${detectedNumbers.join(',')}...`);
+            console.log(`📈 Detected numbers array:`, detectedNumbers);
             updateLastNumbersDisplay();
             
             // Signal that connection is established
