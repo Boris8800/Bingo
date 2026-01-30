@@ -338,11 +338,6 @@
         wrapApplyGameState();
         
         const AUTO_SYNC_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
-        let autoSyncInterval = null;
-        let baseGameToken = null; // Store base token (2-digit code like "22")
-        let nextExpectedCounter = 1; // Start expecting +1
-        let lastHashSeen = '';
-        let lastActivityTimestamp = 0;
 
         function isPageReloaded() {
             const navEntries = performance.getEntriesByType('navigation');
