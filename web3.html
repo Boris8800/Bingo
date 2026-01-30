@@ -208,6 +208,7 @@
         let lastLoadedToken = null;
         let autoSyncInterval = null;
         let expectedDrawCount = 0; // Expected next draw counter
+        let baseGameToken = null; // Store base token (2-digit code)
         
         function validateTokenCounter(token) {
             // Token format: "22" or "22+1" or "22+1+2" or "22+1+2+3"
@@ -233,32 +234,60 @@
             return true;
         }
         
-        function startAutoSync(token) {
+        function getNextExpectedToken() {
+            // Build next expected token: base + 1 + 2 + ... + (expectedDrawCount + 1)
+            let token = baseGameToken;
+            for (let i = 1; i <= expectedDrawCount + 1; i++) {
+                token += '+' + i;
+            }
+            return token;
+        }
+        
+        function startAutoSync(initialToken) {
             // Clear any existing interval
             if (autoSyncInterval) {
                 clearInterval(autoSyncInterval);
             }
             
-            lastLoadedToken = token;
-            const messageDiv = document.getElementById('tokenMessage');
-            let lastDisplayedCounter = null;
+            lastLoadedToken = initialToken;
+            baseGameToken = initialToken.split('+')[0]; // Store base code like "22"
+            validateTokenCounter(initialToken); // Set expectedDrawCount
             
-            // Update every 1 second
+            const messageDiv = document.getElementById('tokenMessage');
+            
+            // Update every 1 second to check for new draws
             autoSyncInterval = setInterval(() => {
                 try {
-                    // Fetch current token from web1
+                    // Check if URL hash has been updated (e.g., from web1 QR refresh)
+                    const urlHash = window.location.hash.substring(1);
+                    if (urlHash && urlHash !== lastLoadedToken) {
+                        lastLoadedToken = urlHash;
+                        if (validateTokenCounter(urlHash)) {
+                            console.log('Token updated from URL:', urlHash);
+                        }
+                    }
+                    
                     const parts = lastLoadedToken.split('+');
-                    const baseToken = parts[0];
                     const currentCounter = parts.length - 1;
                     
                     // Show current sync status
                     if (messageDiv) {
                         if (currentCounter === 0) {
-                            messageDiv.textContent = `✅ Token: ${baseToken}`;
+                            messageDiv.textContent = `✅ Token: ${baseGameToken} (Esperando primer número)`;
+                            messageDiv.style.color = "orange";
+                        } else if (currentCounter > expectedDrawCount) {
+                            // Got next expected number!
+                            expectedDrawCount = currentCounter;
+                            messageDiv.textContent = `✅ Token: ${baseGameToken} +${currentCounter} números sincronizados`;
+                            messageDiv.style.color = "green";
+                        } else if (currentCounter === expectedDrawCount) {
+                            // Waiting for next
+                            messageDiv.textContent = `⏳ Token: ${baseGameToken} +${currentCounter} | Esperando +${currentCounter + 1}...`;
+                            messageDiv.style.color = "blue";
                         } else {
-                            messageDiv.textContent = `✅ Token: ${baseToken} +${currentCounter} números`;
+                            messageDiv.textContent = `✅ Token: ${baseGameToken} +${currentCounter} números`;
+                            messageDiv.style.color = "green";
                         }
-                        messageDiv.style.color = "green";
                     }
                 } catch (e) {
                     console.warn('Auto-sync error:', e);
