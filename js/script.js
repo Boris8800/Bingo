@@ -864,7 +864,7 @@ function shareGame() {
                 height: 180,
                 colorDark: "#000000",
                 colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
+                correctLevel: QRCode.CorrectLevel.L  // Use Low error correction to fit longer URLs
             });
         }
         
