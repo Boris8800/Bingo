@@ -13,6 +13,29 @@
         let lastHashSeen = '';
         let lastActivityTimestamp = 0;
         
+        // Sincronización Local (para pestañas en el mismo navegador)
+        const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('bingo_sync') : null;
+        if (syncChannel) {
+            syncChannel.onmessage = (event) => {
+                console.log('Sync received via BroadcastChannel (Web3)');
+                const state = event.data;
+                if (state && state.gameCodeFixed) {
+                    // Rebuild token from state
+                    let token = state.gameCodeFixed.toString();
+                    if (state.numerosSalidos && state.numerosSalidos.length > 0) {
+                        token += ',' + state.numerosSalidos.join(',');
+                    }
+                    
+                    // Update URL and trigger sync if token changed
+                    if (token !== lastLoadedToken) {
+                        const newUrl = `${window.location.origin}${window.location.pathname}#${token}`;
+                        window.history.replaceState(null, null, newUrl);
+                        startAutoSync(token);
+                    }
+                }
+            };
+        }
+        
         function stopAutoSync() {
             if (autoSyncInterval) {
                 clearInterval(autoSyncInterval);
@@ -568,10 +591,10 @@
             messageDiv.style.color = "blue";
             
             try {
-                // Token format: "21" or "21,1" or "21,1,30" or "21,1,30,21,45,..."
+                // Token format: "1234" or "1234,1" or "1234,1,30" or "1234,1,30,21,45,..."
                 // Game code followed by all drawn numbers
-                if (!/^\d{2}(,\d+)*$/.test(token)) {
-                    throw new Error("Token debe ser formato: 'XX' o 'XX,1,30,21' (XX = código 2 dígitos)");
+                if (!/^\d{4}(,\d+)*$/.test(token)) {
+                    throw new Error("Token debe ser formato: 'XXXX' o 'XXXX,1,30,21' (XXXX = código 4 dígitos)");
                 }
                 
                 // Token is valid - start syncing
@@ -579,11 +602,27 @@
                 messageDiv.style.color = "green";
                 tokenInput.value = ""; // Clear the input
                 
+                // Set global variables for script.js
+                const parts = token.split(',');
+                gameCodeFixed = parseInt(parts[0]);
+                numerosSalidos = parts.slice(1).map(Number);
+                numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1).filter(n => !numerosSalidos.includes(n));
+                
                 // Update URL with new token
                 const newUrl = `${window.location.origin}${window.location.pathname}#${token}`;
                 window.history.replaceState(null, null, newUrl);
                 
-                // Start auto-sync to check for new numbers
+                // Start real-time cross-device sync
+                if (typeof initCrossDeviceSync === 'function') {
+                    initCrossDeviceSync();
+                }
+                
+                // Apply UI updates
+                if (typeof applyGameStateToUI === 'function') {
+                    applyGameStateToUI();
+                }
+                
+                // Start local auto-sync for hash changes
                 startAutoSync(token);
             } catch (error) {
                 console.error('Error loading game:', error);

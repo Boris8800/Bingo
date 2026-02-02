@@ -6,10 +6,154 @@ let enEjecucion = false;
 let juegoPausado = false;
 let cartonesConBingo = [];
 
-// ---- Current Game Token (simple 2-digit code + draw counter) ----
+// ---- Sistema de Sindicación y Sincronización (No-Server) ----
+// Permite que múltiples pestañas y múltiples dispositivos se mantengan sincronizados
+// sin necesidad de un backend propio, ideal para hosting estático (GitHub Pages).
+
+// 1. BroadcastChannel: Sincronización instantánea entre pestañas del mismo navegador.
+const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('bingo_sync') : null;
+
+// 2. Variables de Control de Estado de Red
+let isMaster = true;           // Define si esta pestaña controla el juego (Host) o solo escucha (Live)
+let ntfyEventSource = null;    // Fuente de eventos para recibir datos desde otros dispositivos (Cross-Device)
+let lastDrawCounterReceived = -1; // Protege contra mensajes antiguos o fuera de orden
+
+// ---- Identificadores de Juego (Tokens) ----
 let currentGameToken = null;
-let gameCodeFixed = null; // 2-digit code (10-99)
-let drawCounter = 0; // Increments after each number draw
+let gameCodeFixed = null; // Código único de 4 dígitos (1000-9999) para aislar la partida
+let drawCounter = 0;      // Contador secuencial para asegurar que se procesen los sorteos en orden correcto
+
+// ---- Sincronización Logic ----
+if (syncChannel) {
+    syncChannel.onmessage = (event) => {
+        if (!isMaster) {
+            console.log('Sync received via BroadcastChannel');
+            applySharedState(event.data);
+        }
+    };
+}
+
+// Escuchar cambios en otras pestañas vía localStorage (fallback)
+window.addEventListener('storage', (event) => {
+    if (event.key === STORAGE_KEY && !isMaster) {
+        console.log('Sync received via LocalStorage');
+        const state = JSON.parse(event.newValue);
+        applySharedState(state);
+    }
+});
+
+/**
+ * Inicializa la escucha de eventos desde otros dispositivos.
+ * Utiliza ntfy.sh como puente de comunicación redundante y gratuito.
+ */
+function initCrossDeviceSync() {
+    if (isMaster || !gameCodeFixed) return;
+    
+    if (ntfyEventSource) {
+        ntfyEventSource.close();
+    }
+    
+    // El tema es único basado en el código de 4 dígitos para evitar colisiones
+    const topic = `bingo_boris_2026_${gameCodeFixed}`;
+    console.log(`📡 Iniciando escucha Cross-Device en tema: ${topic}`);
+    
+    try {
+        ntfyEventSource = new EventSource(`https://ntfy.sh/${topic}/sse`);
+        
+        ntfyEventSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.message) {
+                    const state = JSON.parse(data.message);
+                    console.log('📲 Actualización recibida de otro dispositivo');
+                    applySharedState(state);
+                }
+            } catch (e) {
+                console.error('Error procesando mensaje Cross-Device', e);
+            }
+        };
+        
+        ntfyEventSource.onerror = (err) => {
+            console.warn('Error en conexión Cross-Device, reconectando...');
+        };
+    } catch (e) {
+        console.error('No se pudo iniciar Cross-Device Sync', e);
+    }
+}
+
+/**
+ * Difunde el estado actual del juego a todos los interesados.
+ * Se ejecuta cada vez que el estado del juego cambia (numero nuevo, pausa, etc.)
+ */
+async function broadcastState() {
+    if (!isMaster) return; // Solo el Master puede dictar el estado del juego
+
+    const state = {
+        numerosSalidos,
+        numerosDisponibles,
+        cartonesConBingo,
+        drawIntervalMs,
+        drawCounter,
+        juegoPausado,
+        enEjecucion,
+        gameCodeFixed
+    };
+    
+    // 1. Sincronización Local: Envía a otras pestañas en el mismo navegador/dispositivo
+    if (syncChannel) {
+        syncChannel.postMessage(state);
+    }
+    
+    // 2. Sincronización Global: Envía a otros dispositivos vía ntfy.sh
+    if (gameCodeFixed) {
+        const topic = `bingo_boris_2026_${gameCodeFixed}`;
+        try {
+            fetch(`https://ntfy.sh/${topic}`, {
+                method: 'POST',
+                body: JSON.stringify(state)
+            });
+        } catch (e) {
+            console.warn('Error al enviar estado a otros dispositivos');
+        }
+    }
+    
+    // Guardar también en persistencia local por seguridad
+    saveGameState();
+}
+
+/**
+ * Aplica un estado de juego recibido externamente.
+ * Filtra por drawCounter para evitar aplicar estados retrasados.
+ */
+function applySharedState(state) {
+    if (!state) return;
+    
+    // Seguridad: Si el número de sorteo recibido es menor al actual, lo ignoramos
+    if (state.drawCounter < lastDrawCounterReceived) return;
+    lastDrawCounterReceived = state.drawCounter;
+    
+    numerosSalidos = state.numerosSalidos || [];
+    numerosDisponibles = state.numerosDisponibles || [];
+    cartonesConBingo = state.cartonesConBingo || [];
+    drawIntervalMs = state.drawIntervalMs || 3500;
+    drawCounter = state.drawCounter || 0;
+    gameCodeFixed = state.gameCodeFixed || gameCodeFixed;
+    
+    // Actualizamos la interfaz con los nuevos datos
+    applyGameStateToUI();
+    
+    // Sincronizamos los botones de control para reflejar el estado del Master
+    const startStopBtn = document.getElementById('startStopBtn');
+    if (startStopBtn) {
+        if (state.enEjecucion) {
+            startStopBtn.textContent = 'Detener';
+            actualizarEstadoJuego("enMarcha");
+        } else {
+            startStopBtn.textContent = 'Empezar';
+            actualizarEstadoJuego(state.juegoPausado ? "pausado" : "listo");
+        }
+    }
+}
 
 // ---- Velocidad del juego (ms) ----
 let drawIntervalMs = 3500;
@@ -226,11 +370,21 @@ function actualizarMisCartonesBingoDisplay() {
 // ---- FIN FUNCIONES "MIS CARTONES" ----
 
 // ---- FUNCIONES PRINCIPALES DEL JUEGO ----
+/**
+ * Reinicia el estado completo del juego.
+ * Solo el Master tiene permiso para realizar un reinicio global.
+ */
 function reiniciarJuego() {
-    // Reset the game code when starting a fresh game
+    if (numerosSalidos.length > 0 && isMaster) {
+        if (!confirm("¿Estás seguro de que quieres reiniciar el juego? Se perderá el progreso actual.")) {
+            return;
+        }
+    }
+    
+    // Reseteo de variables de estado
     gameCodeFixed = null;
     currentGameToken = null;
-    drawCounter = 0; // Reset draw counter for new game
+    drawCounter = 0; 
     
     numerosSalidos = [];
     numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
@@ -252,11 +406,12 @@ function reiniciarJuego() {
     actualizarUltimosNumeros();
     limpiarMensajeVerificacion();
     
-    // Clear the URL hash and generate new token
-    window.location.hash = '';
-    const newToken = generateGameToken();
-    window.location.hash = newToken;
-    console.log(`🎲 Game Restarted! New token: ${newToken}`);
+    // Si somos el Host, generamos un nuevo token único
+    if (isMaster) {
+        window.location.hash = '';
+        const newToken = generateGameToken();
+        window.location.hash = newToken;
+    }
     
     const msgCarton = document.getElementById('mensajeVerificacionCarton');
     if (msgCarton) msgCarton.textContent = "";
@@ -266,11 +421,15 @@ function reiniciarJuego() {
     actualizarEstadoJuego("listo");
     saveGameState();
     
-    // Update share button with new game token
     updateShareButton();
+    broadcastState();
 }
 
 function startStop() {
+    if (!isMaster) {
+        alert("El control del juego está deshabilitado en esta página. Por favor usa la página principal de control.");
+        return;
+    }
     const startStopBtn = document.getElementById('startStopBtn');
     if (!startStopBtn) return;
 
@@ -279,6 +438,7 @@ function startStop() {
         startStopBtn.textContent = 'Empezar';
         enEjecucion = false;
         actualizarEstadoJuego("pausado");
+        broadcastState();
     } else {
         if (numerosDisponibles.length === 0) {
             alert("¡Todos los números han sido llamados! Reinicia el juego.");
@@ -304,6 +464,7 @@ function startStop() {
         setTimeout(() => {
             if (enEjecucion) {
                 intervalo = setInterval(siguienteNumero, drawIntervalMs);
+                broadcastState();
             }
         }, 100);
     }
@@ -340,6 +501,7 @@ function siguienteNumero() {
     anunciarNumero(numero);
     verificarTodosLosCartones(); // This will now handle sound for tracked bingos
     saveGameState();
+    broadcastState();
 }
 
 function anunciarNumero(numero) {
@@ -400,34 +562,42 @@ function verificarNumero() {
     if (numeroVerificar) numeroVerificar.focus();
 }
 
+/**
+ * Verifica manualmente un cartón específico por su número de ID.
+ * Útil para arbitraje en vivo. Muestra números faltantes y confirma Bingos.
+ */
 function verificarCarton() {
     const cartonVerificar = document.getElementById('cartonVerificar');
     const mensajeVerificacionCarton = document.getElementById('mensajeVerificacionCarton');
     const cartonDisplayContainer = document.getElementById('cartonDisplayContainer');
     if (!cartonVerificar || !mensajeVerificacionCarton || !cartonDisplayContainer) return;
 
-    const numeroCartonInput = cartonVerificar.value;
+    let numeroCartonInput = cartonVerificar.value.trim();
+    if (!numeroCartonInput) return;
+
     const numeroCarton = parseInt(numeroCartonInput.replace(/[^0-9]/g, ''));
 
-    cartonDisplayContainer.innerHTML = ''; // Clear previous display
-    mensajeVerificacionCarton.innerHTML = ''; // Clear message
+    cartonDisplayContainer.innerHTML = ''; // Limpiar visualizaciones previas
+    mensajeVerificacionCarton.innerHTML = ''; 
 
-    if (isNaN(numeroCarton)) {
-        // No message displayed for invalid input
+    if (isNaN(numeroCarton) || numeroCarton < 1) {
+        mensajeVerificacionCarton.textContent = "Número de cartón inválido.";
+        mensajeVerificacionCarton.style.color = "red";
     } else {
         const cartonElement = document.getElementById(`carton${numeroCarton}`);
-        if (!cartonElement || !cartonElement.getAttribute('data-numeros')) {
-            // No message displayed for not found carton
+        if (!cartonElement) {
+            mensajeVerificacionCarton.textContent = `No se encontró el cartón ${numeroCarton}.`;
+            mensajeVerificacionCarton.style.color = "red";
         } else {
             const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
             if (!numerosEnCartonAttr || numerosEnCartonAttr.trim() === "") {
-                // No message displayed for empty carton
+                mensajeVerificacionCarton.textContent = "El cartón está vacío.";
+                mensajeVerificacionCarton.style.color = "red";
             } else {
                 const numerosEnCarton = numerosEnCartonAttr.split(',').map(Number).filter(n => n > 0 && !isNaN(n));
                 const faltantes = numerosEnCarton.filter(num => !numerosSalidos.includes(num));
-                const numerosSalidosEnCarton = numerosEnCarton.filter(num => numerosSalidos.includes(num));
-
-                // Create the saved-card style display
+                
+                // Generar mini-tablero visual para inspección rápida
                 const card = document.createElement('div');
                 card.className = 'saved-card';
                 const title = document.createElement('strong');
@@ -437,9 +607,13 @@ function verificarCarton() {
                 card.appendChild(generarMiniTableroParaCarton(numerosEnCartonAttr));
                 cartonDisplayContainer.appendChild(card);
 
-                if (numerosEnCarton.length > 0 && faltantes.length === 0) { // Bingo detected
+                if (numerosEnCarton.length > 0 && faltantes.length === 0) { // ¡Bingo detectado!
+                    mensajeVerificacionCarton.textContent = "¡BINGO CONFIRMADO!";
+                    mensajeVerificacionCarton.style.color = "green";
+                    
+                    // Anuncio vocal del resultado
                     if (window.speechSynthesis) {
-                        const msg = new SpeechSynthesisUtterance(`Bingo. El cartón número ${numeroCarton} tiene bingo`);
+                        const msg = new SpeechSynthesisUtterance(`Bingo confirmado. El cartón número ${numeroCarton} tiene bingo`);
                         if (selectedVoice) {
                             msg.voice = selectedVoice;
                             msg.lang = selectedVoice.lang;
@@ -448,24 +622,23 @@ function verificarCarton() {
                         }
                         window.speechSynthesis.speak(msg);
                     }
-                    // Req 3: Sound for tracked card bingo detected manually
-                    // Check if it's a tracked card AND if it's a "new" bingo in the general list
+                    
+                    // Sonido especial si el cartón está en seguimiento personal
                     if (myTrackedCardNumbers.includes(numeroCarton) && !cartonesConBingo.includes(numeroCarton)) {
                         playBingoSoundEffect();
-                        // Note: verificarCarton does not currently add to cartonesConBingo array.
-                        // For consistent "new" detection, cartonesConBingo should be updated here if a bingo is confirmed.
-                        // However, sticking to "no cambies nada mas" for core logic beyond sound for now.
-                        // This sound will play if it's tracked and not yet in the `cartonesConBingo` array from automatic checks.
                     }
-                    // Req 2: Original sound for manual verification bingo removed from here.
-                    // The original sound was:
-                    // if (!cartonesConBingo.includes(numeroCarton)) {
-                    // try { bingoAudio.currentTime = 0; bingoAudio.play()... } catch ...
-                    // }
-                } else if (numerosEnCarton.length === 0) {
-                    // No message for empty carton
+                    
+                    // Agregar a la lista global de Bingos si es nuevo
+                    if (!cartonesConBingo.includes(numeroCarton)) {
+                        cartonesConBingo.push(numeroCarton);
+                        actualizarListaBingos();
+                        actualizarMisCartonesBingoDisplay();
+                        saveGameState();
+                        broadcastState();
+                    }
                 } else {
-                    // No message for verified carton
+                    // Informar qué números faltan para cantar Bingo
+                    mensajeVerificacionCarton.innerHTML = `Faltan: <span style="color:red">${faltantes.join(', ')}</span>`;
                 }
             }
         }
@@ -611,6 +784,11 @@ function verificarTodosLosCartones(options = {}) {
                         // Req 3: Play sound if this new bingo is for a tracked card
                         if (!silent && myTrackedCardNumbers.includes(numeroCarton)) {
                             playBingoSoundEffect();
+                        }
+                        
+                        // If we are master, we should broadcast that a new bingo was found
+                        if (isMaster) {
+                            broadcastState();
                         }
                     }
                 }
@@ -856,13 +1034,13 @@ function actualizarListaBingos() {
 // ---- Game Sharing Functions ----
 
 function generateGameToken() {
-    // If no game code exists, generate a 2-digit code (10-99)
+    // If no game code exists, generate a 4-digit code (1000-9999)
     if (!gameCodeFixed) {
-        gameCodeFixed = Math.floor(Math.random() * 90) + 10; // 10-99
+        gameCodeFixed = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
         console.log(`🎲 New game code generated: ${gameCodeFixed}`);
     }
     
-    // Base token is the 2-digit code
+    // Base token is the code
     let token = gameCodeFixed.toString();
     
     // Append all drawn numbers: 21,1,30,21,45...
@@ -878,8 +1056,8 @@ function updateShareButton() {
     const token = generateGameToken();
     const btn = document.getElementById('shareGameBtn');
     if (btn) {
-        // Extract just the 2-digit game code for display
-        const gameCode = gameCodeFixed || '---';
+        // Extract the 4-digit game code for display
+        const gameCode = gameCodeFixed || '----';
         btn.textContent = `Compartir (${gameCode})`;
     }
 }
@@ -899,8 +1077,8 @@ function shareGame() {
         const fullTokenDisplay = document.getElementById('fullTokenDisplay');
         const qrContainer = document.getElementById('qrCodeContainer');
         
-        // Display 2-digit game code
-        if (tokenDisplay) tokenDisplay.textContent = gameCodeFixed || '---';
+        // Display 4-digit game code
+        if (tokenDisplay) tokenDisplay.textContent = gameCodeFixed || '----';
         if (shareUrlDisplay) shareUrlDisplay.textContent = shareUrl;
         if (fullTokenDisplay) fullTokenDisplay.textContent = token; // Show token like "22+1+2+3"
         
@@ -1133,6 +1311,18 @@ function loadSharedGame(encoded) {
 }
 // --- INICIALIZACIÓN DEL JUEGO ---
 window.onload = () => {
+    // Detect page mode
+    const path = window.location.pathname;
+    const page = document.body.getAttribute('data-page');
+    
+    if (page === 'web3') {
+        isMaster = false;
+    } else if (path.includes('live_index.html')) {
+        isMaster = false;
+    } else {
+        isMaster = true; // index.html is the master
+    }
+
     const numerosContainer = document.getElementById('numerosContainer');
     if (numerosContainer) {
         for (let i = 1; i <= 90; i++) {
@@ -1198,31 +1388,29 @@ window.onload = () => {
     const restored = loadGameState();
     if (restored) {
         applyGameStateToUI();
+        if (!isMaster) initCrossDeviceSync();
     } else {
         // Check for shared game in URL hash
         const hash = window.location.hash.substring(1);
         if (hash) {
-            // If the hash looks like the numeric game token used by Web3 (e.g., "47" or "47,16,80")
-            if (/^\d{2}(?:,\d+)*$/.test(hash)) {
-                // Load as Web3 token (start auto-sync)
-                const tokenInput = document.getElementById('newTokenInput');
-                if (tokenInput) {
-                    tokenInput.value = hash;
-                    // Trigger the normal loader which validates and starts sync
-                    loadNewGameFromToken();
-                } else {
-                    // Fallback: start auto-sync directly
-                    if (typeof startAutoSync === 'function') {
-                        startAutoSync(hash);
-                    } else {
-                        reiniciarJuego();
-                    }
-                }
+            // Check if it's the numeric format (XXXX,num1,num2...)
+            if (/^\d{4}(?:,\d+)*$/.test(hash)) {
+                console.log("Loading numeric token from hash:", hash);
+                const parts = hash.split(',');
+                gameCodeFixed = parseInt(parts[0]);
+                numerosSalidos = parts.slice(1).map(Number);
+                numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1).filter(n => !numerosSalidos.includes(n));
+                applyGameStateToUI();
+                if (!isMaster) initCrossDeviceSync();
             } else if (loadSharedGame(hash)) {
-                // Shared game loaded
+                // Shared game loaded via Base64
+                if (!isMaster) initCrossDeviceSync();
             } else {
                 reiniciarJuego();
             }
+        } else if (!isMaster) {
+            // If we are on slave page without a hash, just wait for WebSocket or show empty
+            reiniciarJuego();
         } else {
             reiniciarJuego();
         }

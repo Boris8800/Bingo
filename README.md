@@ -24,21 +24,31 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 
 ### 📤 Compartir y Exportar
 - **PDF Export**: Genera y descarga tus cartones en PDF listos para imprimir con un solo clic.
-- **Live Share**: Comparte tu partida en tiempo real mediante un código simple de 1 dígito o un enlace QR.
+- **Sincronización Multi-Dispositivo (No-Server)**: Gracias a la integración con el servicio `ntfy.sh`, puedes conectar tu PC (Host) con móviles (Invitados) sin necesidad de un servidor backend. ¡Ideal para GitHub Pages!
+- **Tokens de 4 Dígitos**: Sistema de seguridad mejorado con códigos de 4 dígitos (ej: 1234) para evitar colisiones entre partidas globales.
 - **Modo Espectador**: Tus amigos pueden seguir el juego sincronizado desde sus propios dispositivos (`web3.html`).
 
 ## 🚀 Guía Rápida
 
-1. **Jugar como Host**:
+1. **Jugar como Host (Máster)**:
    - Abre [https://boris8800.github.io/Bingo/](https://boris8800.github.io/Bingo/).
+   - El sistema detectará automáticamente que eres el administrador.
    - Configura tus preferencias (voz, velocidad).
    - Pulsa **"Comenzar"** para iniciar el sorteo.
-   - Usa **"Compartir"** para generar un código y que otros se unan.
+   - Usa **"Compartir"** para generar el código de 4 dígitos.
 
-2. **Jugar como Invitado**:
-   - Accede al enlace compartido o entra en la sección **Web 3**.
-   - Ingresa el token/enlace proporcionado por el host.
-   - ¡Sigue el juego en tu pantalla!
+2. **Jugar como Invitado (Móvil/Tablet)**:
+   - Abre la web y ve a la sección **Web 3** o escanea el QR generado por el Host.
+   - Ingresa el código de 4 dígitos.
+   - El dispositivo se conectará al canal del Host y recibirás los números en tiempo real conforme vayan saliendo.
+
+## 🛠️ Detalles Técnicos de Sincronización
+
+Este proyecto utiliza tres capas de sincronización para asegurar que nadie se pierda ningún número:
+
+1. **BroadcastChannel API**: Para sincronizar pestañas abiertas en el mismo navegador instantáneamente.
+2. **LocalStorage Events**: Como respaldo (fallback) para navegadores antiguos en el mismo dispositivo.
+3. **ntfy.sh (WebHooks/SSE)**: Para la comunicación entre diferentes dispositivos (ej: PC a Móvil) a través de internet, permitiendo una experiencia de servidor real en un entorno estático.
 
 3. **Descargar Cartones**:
    - Ve a la sección de "Cartones".
