@@ -42,6 +42,11 @@
                 toggleNightMode();
             }
         });
+
+        // Función para avisar que alguien se conectó
+        function onSpectatorJoined() {
+            showToast("¡Un espectador se ha conectado!");
+        }
     </script>
 </head>
 <body>
@@ -274,7 +279,7 @@
     </div>
 </div>
 
-<script src="js/script.js?v=2"></script>
+<script src="js/script.js?v=5"></script>
 <script>
     // Enable audio context on user click to unlock Web Audio API
     function enableAudioOnClick() {
@@ -299,7 +304,7 @@
     <div style="margin-bottom: 10px;">
         <a href="#" onclick="downloadCardsAsPDF(); return false;" style="color: var(--text-secondary); text-decoration: none; font-size: 0.8rem;">Descargar Cartones (PDF)</a>
     </div>
-    © Boris8800 - 2026
+    © Boris8800 - 2026 - v5
 </footer>
 </body>
 </html>

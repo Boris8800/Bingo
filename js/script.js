@@ -18,6 +18,21 @@ let isMaster = (typeof window !== 'undefined' && window.__IS_MASTER === false) ?
 let peer = null;
 let connections = [];         // Solo para Master: lista de conexiones activas
 let connToMaster = null;      // Para Viewer: conexión activa al Master
+
+// --- Función UI Toast Compartida ---
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'connection-toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 500);
+    }, 3000);
+}
 let lastDrawCounterReceived = -1; 
 let drawCounter = 0;
 let gameCodeFixed = null;
@@ -65,49 +80,38 @@ function checkTokenInUse(code, timeout = 1200) {
     });
 }
 
-// Reserve a free game code, trying progressively longer lengths (2 -> 3 -> 4 digits)
+// Reserve a free game code (strictly 2 digits)
 // Best-effort: checks PeerJS for recent activity; not atomic.
-async function reserveGameCode(attempts = 5) {
-    const lengths = [2, 3, 4];
+async function reserveGameCode(attempts = 15) {
+    const len = 2;
+    const min = 10;
+    const max = 99;
 
-    // Vanity patterns per length (repeat digit patterns first)
-    const makeVanity = (len) => {
-        const base = ['8','7','1','2','3','4','5','6','9','0'];
-        return base.map(d => d.repeat(len));
-    };
-
-    for (const len of lengths) {
-        const vanity = makeVanity(len);
-        for (let v of vanity) {
-            const candidate = parseInt(v, 10);
-            if (candidate === gameCodeFixed) continue;
-            const inUse = await checkTokenInUse(candidate, 900);
-            if (!inUse) {
-                gameCodeFixed = candidate;
-                console.log(`🎯 Reserved vanity ${len}-digit game code: ${gameCodeFixed}`);
-                return gameCodeFixed;
-            }
-            console.log(`⚠️ Vanity ${len}-digit candidate ${candidate} in use, trying next...`);
-        }
-
-        // Try a few random candidates for this length
-        const min = Math.pow(10, len - 1);
-        const max = Math.pow(10, len) - 1;
-        for (let i = 0; i < attempts; i++) {
-            const candidate = Math.floor(Math.random() * (max - min + 1)) + min;
-            if (candidate === gameCodeFixed) continue;
-            const inUse = await checkTokenInUse(candidate, 900);
-            if (!inUse) {
-                gameCodeFixed = candidate;
-                console.log(`🎯 Reserved random ${len}-digit game code: ${gameCodeFixed}`);
-                return gameCodeFixed;
-            }
+    // Try random candidates first for true randomness
+    for (let i = 0; i < attempts; i++) {
+        const candidate = Math.floor(Math.random() * (max - min + 1)) + min;
+        if (candidate === gameCodeFixed) continue;
+        const inUse = await checkTokenInUse(candidate, 800);
+        if (!inUse) {
+            gameCodeFixed = candidate;
+            console.log(`🎯 Reserved random 2-digit game code: ${gameCodeFixed}`);
+            return gameCodeFixed;
         }
     }
 
-    // Final fallback: pick a random 2-digit code without confirmation
+    // Fallback: search all 2-digit codes starting from a random point
+    const startPoint = Math.floor(Math.random() * (max - min + 1)) + min;
+    for (let i = 0; i < 90; i++) {
+        const candidate = ((startPoint - min + i) % 90) + min;
+        const inUse = await checkTokenInUse(candidate, 600);
+        if (!inUse) {
+            gameCodeFixed = candidate;
+            return gameCodeFixed;
+        }
+    }
+
+    // Final emergency pick
     gameCodeFixed = Math.floor(Math.random() * 90) + 10;
-    console.warn('⚠️ Could not find unused token after attempts; falling back to', gameCodeFixed);
     return gameCodeFixed;
 }
 
@@ -148,7 +152,19 @@ function setupMasterListeners() {
     peer.on('connection', (conn) => {
         console.log('🤝 Espectador conectado:', conn.peer);
         connections.push(conn);
-        conn.on('open', () => broadcastState());
+        
+        // Notify Master UI if possible
+        if (typeof onSpectatorJoined === 'function') {
+            onSpectatorJoined();
+        }
+        
+        // Enviar estado actual inmediatamente
+        if (conn.open) {
+            broadcastState();
+        } else {
+            conn.on('open', () => broadcastState());
+        }
+        
         conn.on('close', () => connections = connections.filter(c => c !== conn));
         conn.on('error', () => connections = connections.filter(c => c !== conn));
     });
@@ -275,8 +291,17 @@ async function broadcastState() {
 function applySharedState(state) {
     if (!state) return;
     
-    // Seguridad: Si el número de sorteo recibido es menor o igual al local, lo ignoramos
-    if (typeof state.drawCounter === 'number' && state.drawCounter <= drawCounter) return;
+    // Si somos Master, no aplicamos estados de otros (evita conflictos)
+    if (isMaster) return;
+
+    // Control de versión del estado (drawCounter)
+    if (typeof state.drawCounter === 'number') {
+        // Ignoramos si es un estado antiguo
+        if (state.drawCounter < drawCounter) return;
+        // Si es el mismo contador y ya lo procesamos, lo ignoramos (evita loops o doble procesamiento)
+        if (state.drawCounter === drawCounter && lastDrawCounterReceived === state.drawCounter) return;
+    }
+    
     lastDrawCounterReceived = state.drawCounter;
     
     numerosSalidos = state.numerosSalidos || [];
@@ -375,61 +400,10 @@ function playBingoSoundEffect() {
  */
 function announceBingo(cartonId) {
     try {
-        // 1) In-page banner
-        const existing = document.getElementById('bingoBanner');
-        if (existing) existing.remove();
-
-        const banner = document.createElement('div');
-        banner.id = 'bingoBanner';
-        banner.style.position = 'fixed';
-        banner.style.left = '8px';
-        banner.style.right = '8px';
-        banner.style.top = '12px';
-        banner.style.zIndex = 99999;
-        banner.style.backgroundColor = 'rgba(0,128,0,0.95)';
-        banner.style.color = 'white';
-        banner.style.padding = '12px 18px';
-        banner.style.borderRadius = '8px';
-        banner.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-        banner.style.fontSize = '18px';
-        banner.style.textAlign = 'center';
-        banner.textContent = `¡BINGO confirmado: cartón ${cartonId}!`;
-        document.body.appendChild(banner);
-
-        // Auto-hide after 6s
-        setTimeout(() => { try { banner.remove(); } catch (e) {} }, 6000);
-
-        // 2) System Notification (if permission)
-        if ('Notification' in window) {
-            if (Notification.permission === 'granted') {
-                try {
-                    const n = new Notification('¡BINGO!', { body: `Cartón ${cartonId} tiene bingo.`, tag: `bingo-${cartonId}` });
-                    setTimeout(() => n.close(), 5000);
-                } catch (e) {
-                    console.warn('No se pudo crear Notification:', e);
-                }
-            } else if (Notification.permission !== 'denied') {
-                Notification.requestPermission().then(perm => {
-                    if (perm === 'granted') {
-                        try { new Notification('¡BINGO!', { body: `Cartón ${cartonId} tiene bingo.` }); } catch (e) {}
-                    }
-                }).catch(()=>{});
-            }
-        }
-
-        // 3) Vibrate (mobile browsers, secure contexts)
-        if (navigator && navigator.vibrate) {
-            try { navigator.vibrate([200, 100, 200]); } catch (e) {}
-        }
-
         // 4) Tono/voz
         try {
             playBingoSoundEffect();
-            if (window.speechSynthesis) {
-                const msg = new SpeechSynthesisUtterance(`Bingo confirmado. Cartón ${cartonId}.`);
-                if (selectedVoice) { msg.voice = selectedVoice; msg.lang = selectedVoice.lang; } else { msg.lang = 'es-ES'; }
-                window.speechSynthesis.speak(msg);
-            }
+            speakText(`¡Bingo! Cartón ${cartonId}.`);
         } catch (e) {
             console.warn('Error announcing bingo:', e);
         }
@@ -478,31 +452,103 @@ function populateVoiceList() {
     defaultOption.value = '';
     voiceSelect.appendChild(defaultOption);
 
-    voices.forEach((voice) => {
+    // Opción premium gratuita (Google Translate TTS)
+    const googleOption = document.createElement('option');
+    googleOption.textContent = '🌟 Google Premium (Voz fluida)';
+    googleOption.value = 'google-premium';
+    voiceSelect.appendChild(googleOption);
+
+    // Filtrar y ordenar voces en español
+    const spanishVoices = voices.filter(v => v.lang.startsWith('es'));
+    const otherVoices = voices.filter(v => !v.lang.startsWith('es'));
+
+    // Ordenar: Naturales/Google primero
+    spanishVoices.sort((a, b) => {
+        const aIsBetter = /Natural|Google|Premium/i.test(a.name);
+        const bIsBetter = /Natural|Google|Premium/i.test(b.name);
+        if (aIsBetter && !bIsBetter) return -1;
+        if (!aIsBetter && bIsBetter) return 1;
+        return a.name.localeCompare(b.name);
+    });
+
+    spanishVoices.forEach((voice) => {
         const option = document.createElement('option');
-        option.textContent = `${voice.name} (${voice.lang})`;
+        option.textContent = `${voice.name} ${/Natural/i.test(voice.name) ? '✨' : ''} (${voice.lang})`;
         option.value = voice.voiceURI;
         voiceSelect.appendChild(option);
     });
 
-    // Intentamos auto-seleccionar Google Español o Paulina
-    let autoSelectedVoice = voices.find(v => /Google Español/i.test(v.name) || /Paulina/i.test(v.name));
-    if (autoSelectedVoice) {
-        selectedVoice = autoSelectedVoice;
-        const optionToSelect = Array.from(voiceSelect.options).find(opt => opt.value === autoSelectedVoice.voiceURI);
-        if (optionToSelect) optionToSelect.selected = true;
-    } else if (previouslySelectedURI) {
+    // Añadir el resto al final por si acaso
+    if (otherVoices.length > 0) {
+        const separator = document.createElement('option');
+        separator.textContent = '--- Otras Voces ---';
+        separator.disabled = true;
+        voiceSelect.appendChild(separator);
+        otherVoices.forEach((voice) => {
+            const option = document.createElement('option');
+            option.textContent = `${voice.name} (${voice.lang})`;
+            option.value = voice.voiceURI;
+            voiceSelect.appendChild(option);
+        });
+    }
+
+    // Lógica de auto-selección mejorada
+    if (previouslySelectedURI) {
         const optionToSelect = Array.from(voiceSelect.options).find(opt => opt.value === previouslySelectedURI);
         if (optionToSelect) {
             optionToSelect.selected = true;
-            selectedVoice = voices.find(voice => voice.voiceURI === previouslySelectedURI) || null;
-        } else {
-            voiceSelect.options[0].selected = true;
-            selectedVoice = null;
+            if (previouslySelectedURI === 'google-premium') {
+                selectedVoice = { voiceURI: 'google-premium', name: 'Google Premium', lang: 'es-ES' };
+            } else {
+                selectedVoice = voices.find(voice => voice.voiceURI === previouslySelectedURI) || null;
+            }
         }
     } else {
-        voiceSelect.options[0].selected = true;
-        selectedVoice = null;
+        // Preferir Google Premium por defecto si es la primera vez
+        const googlePremiumOpt = Array.from(voiceSelect.options).find(opt => opt.value === 'google-premium');
+        if (googlePremiumOpt) {
+            googlePremiumOpt.selected = true;
+            selectedVoice = { voiceURI: 'google-premium', name: 'Google Premium', lang: 'es-ES' };
+            preferredVoiceURI = 'google-premium';
+        }
+    }
+}
+
+let backgroundAudio = null;
+
+function speakText(text) {
+    if (!text) return;
+
+    if (preferredVoiceURI === 'google-premium') {
+        // Cancelar audio anterior si existe
+        if (backgroundAudio) {
+            backgroundAudio.pause();
+            backgroundAudio = null;
+        }
+        
+        // Usar el truco de Google Translate TTS (Voz de muy alta calidad)
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=es&client=tw-ob`;
+        backgroundAudio = new Audio(url);
+        backgroundAudio.play().catch(e => {
+            console.warn("Error con Google Premium TTS, reintentando con voz normal:", e);
+            speakWithWebSpeechInternal(text);
+        });
+    } else {
+        speakWithWebSpeechInternal(text);
+    }
+}
+
+function speakWithWebSpeechInternal(text) {
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        if (selectedVoice && selectedVoice.voiceURI !== 'google-premium') {
+            msg.voice = selectedVoice;
+            msg.lang = selectedVoice.lang;
+        } else {
+            msg.lang = 'es-ES';
+        }
+        window.speechSynthesis.speak(msg);
     }
 }
 
@@ -514,8 +560,19 @@ function setVoice() {
         saveGameState();
         return;
     }
-    selectedVoice = voices.find(voice => voice.voiceURI === voiceSelect.value) || null;
+    
     preferredVoiceURI = voiceSelect.value;
+    if (preferredVoiceURI === 'google-premium') {
+        selectedVoice = { voiceURI: 'google-premium', name: 'Google Premium', lang: 'es-ES' };
+    } else {
+        selectedVoice = voices.find(voice => voice.voiceURI === preferredVoiceURI) || null;
+    }
+    
+    // Probar la voz seleccionada
+    setTimeout(() => {
+        speakText("Voz seleccionada correctamente");
+    }, 100);
+    
     saveGameState();
 }
 
@@ -535,13 +592,17 @@ function trackMyCards() {
     inputEl.value = myTrackedCardNumbers.join(', ');
     saveGameState();
 
+    // Notificación de guardado
+    showToast("¡Guardado!");
+    
     const msgEl = document.getElementById('trackerMsg');
     if (msgEl) {
-        msgEl.textContent = "Recordado";
-        msgEl.style.color = "red";
+        msgEl.textContent = "✓ Guardado";
+        msgEl.style.color = "#28a745";
+        msgEl.style.fontSize = "0.8em";
         setTimeout(() => {
             msgEl.textContent = "";
-        }, 1000);
+        }, 2000);
     }
 }
 
@@ -682,16 +743,7 @@ function startStop() {
             actualizarEstadoJuego("finalizado");
             return;
         }
-        if (window.speechSynthesis) {
-            const mensaje = new SpeechSynthesisUtterance("Empezamos");
-            if (selectedVoice) {
-                mensaje.voice = selectedVoice;
-                mensaje.lang = selectedVoice.lang;
-            } else {
-                mensaje.lang = 'es-ES';
-            }
-            window.speechSynthesis.speak(mensaje);
-        }
+        speakText("Empezamos");
 
         enEjecucion = true;
         startStopBtn.textContent = 'Detener';
@@ -742,16 +794,8 @@ function siguienteNumero() {
 }
 
 function anunciarNumero(numero) {
-    if (window.speechSynthesis) {
-        const mensaje = new SpeechSynthesisUtterance(numero.toString());
-        if (selectedVoice) {
-            mensaje.voice = selectedVoice;
-            mensaje.lang = selectedVoice.lang;
-        } else {
-            mensaje.lang = 'es-ES';
-        }
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(mensaje);
+    if (numero) {
+        speakText(numero.toString());
     }
 }
 
@@ -845,36 +889,20 @@ function verificarCarton() {
                 cartonDisplayContainer.appendChild(card);
 
                     if (numerosEnCarton.length > 0 && faltantes.length === 0) { // ¡Bingo detectado!
-                    mensajeVerificacionCarton.textContent = "¡BINGO CONFIRMADO!";
+                    mensajeVerificacionCarton.textContent = "¡BINGO!";
                     mensajeVerificacionCarton.style.color = "green";
                     
-                    // Anuncio vocal del resultado
-                    if (window.speechSynthesis) {
-                        const msg = new SpeechSynthesisUtterance(`Bingo confirmado. El cartón número ${numeroCarton} tiene bingo`);
-                        if (selectedVoice) {
-                            msg.voice = selectedVoice;
-                            msg.lang = selectedVoice.lang;
-                        } else {
-                            msg.lang = 'es-ES';
-                        }
-                        window.speechSynthesis.speak(msg);
-                    }
+                    // Anuncio vocal y sonoro del resultado (siempre en verificación manual)
+                    playBingoSoundEffect();
+                    speakText(`¡Bingo! El cartón número ${numeroCarton} tiene bingo`);
+                    announceBingo(numeroCarton);
                     
-                    // Sonido especial si el cartón está en seguimiento personal
-                    if (myTrackedCardNumbers.includes(numeroCarton) && !cartonesConBingo.includes(numeroCarton)) {
-                        playBingoSoundEffect();
-                    }
-                    
-                    // Agregar a la lista global de Bingos si es nuevo
+                    // Agregar a la lista global de Bingos si es nuevo (lógica interna)
                     if (!cartonesConBingo.includes(numeroCarton)) {
                         cartonesConBingo.push(numeroCarton);
                         actualizarListaBingos();
                         actualizarMisCartonesBingoDisplay();
                         saveGameState();
-                        // Host announces all; viewers announce only tracked cards
-                        if (isMaster || myTrackedCardNumbers.includes(numeroCarton)) {
-                            announceBingo(numeroCarton);
-                        }
                         broadcastState();
                     }
                 } else {
@@ -1021,16 +1049,6 @@ function verificarTodosLosCartones(options = {}) {
                     if (!cartonesConBingo.includes(numeroCarton)) {
                         cartonesConBingo.push(numeroCarton);
 
-                        // Play sound for tracked cards
-                        if (!silent && myTrackedCardNumbers.includes(numeroCarton)) {
-                            playBingoSoundEffect();
-                        }
-
-                        // Announce bingo: host announces all bingos; viewers only announce tracked cards
-                        if (isMaster || myTrackedCardNumbers.includes(numeroCarton)) {
-                            announceBingo(numeroCarton);
-                        }
-
                         // If we are master, broadcast new bingo
                         if (isMaster) {
                             broadcastState();
@@ -1173,6 +1191,12 @@ function applyGameStateToUI() {
     const msgCarton = document.getElementById('mensajeVerificacionCarton');
     if (msgCarton) msgCarton.textContent = '';
     actualizarEstadoJuego('listo');
+
+    // Update saved cards if visible
+    const savedCardsContainer = document.getElementById('cartonesGuardadosContainer');
+    if (savedCardsContainer && !savedCardsContainer.hasAttribute('hidden')) {
+        mostrarCartonesGuardados();
+    }
 
     const startStopBtn = document.getElementById('startStopBtn');
     if (startStopBtn) startStopBtn.textContent = 'Empezar';
@@ -1356,8 +1380,8 @@ function updateShareButton() {
     const token = generateGameToken();
     const btn = document.getElementById('shareGameBtn');
     if (btn) {
-        // Extract the 4-digit game code for display
-        const gameCode = gameCodeFixed || '----';
+        // Extract the 2-digit game code for display
+        const gameCode = gameCodeFixed || '--';
         btn.textContent = `Compartir (${gameCode})`;
     }
 }
@@ -1377,10 +1401,10 @@ function shareGame() {
         const fullTokenDisplay = document.getElementById('fullTokenDisplay');
         const qrContainer = document.getElementById('qrCodeContainer');
         
-        // Display 4-digit game code
-        if (tokenDisplay) tokenDisplay.textContent = gameCodeFixed || '----';
+        // Display 2-digit game code
+        if (tokenDisplay) tokenDisplay.textContent = gameCodeFixed || '--';
         if (shareUrlDisplay) shareUrlDisplay.textContent = shareUrl;
-        if (fullTokenDisplay) fullTokenDisplay.textContent = token; // Show token like "22+1+2+3"
+        if (fullTokenDisplay) fullTokenDisplay.textContent = token; // Show token like "21,1,2,3"
         
         // Clear and Generate QR Code
         if (qrContainer) {
@@ -1696,8 +1720,8 @@ window.onload = () => {
         // Check for shared game in URL hash
         const hash = window.location.hash.substring(1);
         if (hash) {
-            // Check if it's the numeric format (XXXX,num1,num2...)
-            if (/^\d{4}(?:,\d+)*$/.test(hash)) {
+            // Check if it's the numeric format (XX,num1,num2...)
+            if (/^\d{2,5}(?:,\d+)*$/.test(hash)) {
                 console.log("Loading numeric token from hash:", hash);
                 const parts = hash.split(',');
                 gameCodeFixed = parseInt(parts[0]);

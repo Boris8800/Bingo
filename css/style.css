@@ -1002,3 +1002,25 @@ body[data-page="web3"] #cartonesContainer > div:hover {
         max-width: 220px;
     }
 }
+
+/* Connection Toast Notification */
+.connection-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: rgba(40, 167, 69, 0.95);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    z-index: 10000;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.connection-toast.show {
+    transform: translateX(-50%) translateY(0);
+}

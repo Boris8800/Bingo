@@ -8,147 +8,50 @@
     <link href="css/style.css" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script>
-        // Stub functions to prevent reference errors during DOMContentLoaded
-        let autoSyncInterval = null;
-        let lastLoadedToken = null;
-        let lastHashSeen = '';
-        let lastActivityTimestamp = 0;
-        
-        // Sincronización Local (para pestañas en el mismo navegador)
-        const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('bingo_sync') : null;
-        if (syncChannel) {
-            syncChannel.onmessage = (event) => {
-                console.log('Sync received via BroadcastChannel (Web3)');
-                const state = event.data;
-                if (state && state.gameCodeFixed) {
-                    // Rebuild token from state
-                    let token = state.gameCodeFixed.toString();
-                    if (state.numerosSalidos && state.numerosSalidos.length > 0) {
-                        token += ',' + state.numerosSalidos.join(',');
-                    }
-                    
-                    // Update URL and trigger sync if token changed
-                    if (token !== lastLoadedToken) {
-                        const newUrl = `${window.location.origin}${window.location.pathname}#${token}`;
-                        window.history.replaceState(null, null, newUrl);
-                        startAutoSync(token);
-                    }
-                }
-            };
-        }
-        
-        function stopAutoSync() {
-            if (autoSyncInterval) {
-                clearInterval(autoSyncInterval);
-                autoSyncInterval = null;
-            }
-            lastLoadedToken = null;
-            lastHashSeen = '';
-            lastActivityTimestamp = 0;
-        }
-        
-        // Function called when Web3 successfully connects to Web1
+        // Funciones esenciales para la interfaz
         function onConnectionCompleted() {
-            console.log('✅ Web3 Connection Completed - Syncing with Web1!');
-            
+            console.log('✅ Web3 Connection Completed!');
             const statusDiv = document.getElementById('statusMessage');
             if (statusDiv) {
                 statusDiv.innerHTML = '<span style="color: #28a745; font-weight: bold;">✅ Sincronización Activa</span>';
             }
+            const syncStatusEl = document.getElementById('syncStatus');
+            if (syncStatusEl) syncStatusEl.textContent = 'Conectado';
             
-            // Change the banner color to indicate connection
+            // Mostrar notificación visual temporal
+            showToast("¡Conectado exitosamente al Master!");
+            
             const banner = document.getElementById('enableSoundBanner');
             if (banner && banner.style.display !== 'none') {
                 banner.style.background = 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)';
             }
         }
-        
-        function loadNewGameFromToken() {
-            // Will be properly defined later
-            console.log('loadNewGameFromToken called');
-        }
-        
-        // Enable audio context on user click to unlock Web Audio API
-        function enableAudioOnClick() {
-            try {
-                if (typeof initAudioContext === 'function') {
-                    initAudioContext();
-                    console.log('✅ Sonido habilitado');
-                    const btn = document.getElementById('enableSoundBtn');
-                    if (btn) {
-                        btn.textContent = '✅ Sonido Habilitado';
-                        btn.disabled = true;
-                        btn.style.opacity = '0.6';
-                    }
-                }
-            } catch (e) {
-                console.warn('Error habilitando sonido:', e);
-            }
-        }
-        
-        // Check if page was reloaded
-        function isPageReloaded() {
-            const navEntries = performance.getEntriesByType('navigation');
-            if (navEntries.length) {
-                return navEntries[0].type === 'reload';
-            }
-            if (performance && performance.navigation) {
-                return performance.navigation.type === 1;
-            }
-            return false;
-        }
-        
-        // Night mode toggle function
+
         function toggleNightMode() {
             const body = document.body;
             const btn = document.getElementById('nightModeToggle');
-            
             if (body.classList.contains('night-mode')) {
                 body.classList.remove('night-mode');
                 localStorage.setItem('nightMode', 'false');
-                if (btn) {
-                    btn.setAttribute('aria-pressed', 'false');
-                    btn.innerHTML = '&#127769;';
-                    btn.style.background = '#0e324b';
-                    btn.style.borderColor = '#a51818';
-                }
+                if (btn) btn.innerHTML = '&#127769;';
             } else {
                 body.classList.add('night-mode');
                 localStorage.setItem('nightMode', 'true');
-                if (btn) {
-                    btn.setAttribute('aria-pressed', 'true');
-                    btn.innerHTML = '&#9728;';
-                    btn.style.background = '#f39c12';
-                    btn.style.borderColor = '#e74c3c';
-                }
+                if (btn) btn.innerHTML = '&#9728;';
             }
         }
         
-        // Check saved preference on load
-        document.addEventListener('DOMContentLoaded', function() {
-            if (localStorage.getItem('nightMode') === 'true') {
-                toggleNightMode();
-            }
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('nightMode') === 'true') toggleNightMode();
             
-            // Auto-load token from URL hash if present
-                const tokenInput = document.getElementById('newTokenInput');
-                const tokenMessage = document.getElementById('tokenMessage');
-                const urlToken = window.location.hash.substring(1);
-
-                if (urlToken) {
-                    if (isPageReloaded()) {
-                        stopAutoSync();
-                        if (tokenMessage) {
-                            tokenMessage.textContent = 'Página recargada: ingresa el token nuevamente para reconectar.';
-                            tokenMessage.style.color = 'purple';
-                        }
-                        window.history.replaceState(null, null, window.location.pathname);
-                    } else if (tokenInput) {
-                        tokenInput.value = urlToken;
-                        setTimeout(() => {
-                            loadNewGameFromToken();
-                        }, 100);
-                    }
+            // Cargar token desde URL si existe
+            const urlToken = window.location.hash.substring(1);
+            if (urlToken) {
+                const input = document.getElementById('newTokenInput');
+                if (input) {
+                    input.value = urlToken;
+                    setTimeout(loadNewGameFromToken, 500);
+                }
             }
         });
     </script>
@@ -198,7 +101,7 @@
         }
     </style>
 </head>
-<body data-page="web3">
+<body data-page="web3" class="preserve-card-sizes">
     <header class="topbar">
         <a class="brand-badge" href="https://boris8800.github.io/Bingo/">
             <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22grad%22%20cx%3D%2230%25%22%20cy%3D%2230%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b8d4e3%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2245%22%20fill%3D%22url%28%23grad%29%22%20stroke%3D%22%234a90e2%22%20stroke-width%3D%223%22/%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%2235%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20fill%3D%22%232c5282%22%3EBINGO%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%2230%22%20cy%3D%2265%22%20r%3D%223%22%20fill%3D%22%234a90e2%22/%3E%0A%20%20%3Ccircle%20cx%3D%2270%22%20cy%3D%2270%22%20r%3D%222%22%20fill%3D%22%234a90e2%22/%3E%0A%3C/svg%3E" width="32" height="32" alt="Logo">
@@ -210,12 +113,21 @@
         <button id="enableSoundBtn" onclick="enableAudioOnClick(); document.getElementById('enableSoundBanner').style.display='none';" style="padding: 12px 30px; background: white; color: #0056b3; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1.1em; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔊 Habilitar Sonido</button>
     </div>
 
-    <div style="text-align: center; margin-top: 100px;">
+    <div style="text-align: center; margin-top: 70px;">
 
-    <div class="token-input-container control-box" style="margin-top: 20px;">
-        <input type="text" id="newTokenInput" placeholder="Pega aquí el token completo (largo)" style="width: 100%; max-width: 300px; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--bg-primary); color: var(--text-primary);" />
+    <!-- Información del Juego Actual -->
+    <div id="gameInfoDisplay" class="control-box" style="margin-bottom: 20px;">
+        <div id="numeroContainer">
+            <div id="numero" style="font-size: 5rem; font-weight: bold; color: var(--numero-marcado);">--</div>
+        </div>
+        <div id="statusMessage" style="margin-top: 10px; font-weight: bold;"></div>
+        <div id="syncStatus" style="font-size: 0.8em; opacity: 0.7;">Desconectado</div>
+    </div>
+
+    <div class="token-input-container control-box" style="margin-top: 0px;">
+        <input type="text" id="newTokenInput" placeholder="Pesta aquí el token o código" style="width: 100%; max-width: 300px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--bg-primary); color: var(--text-primary);" />
         <br>
-        <button onclick="loadNewGameFromToken()" style="padding: 10px 20px; background: var(--btn-primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; max-width: 300px;">Cargar Juego</button>
+        <button onclick="loadNewGameFromToken()" style="padding: 10px 20px; background: var(--btn-primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; max-width: 300px;">Conectar a Juego</button>
         <div id="tokenMessage" style="margin-top: 10px; font-size: 0.9em;"></div>
     </div>
 
@@ -225,39 +137,41 @@
             <div id="ultimosNumerosContainer"></div>
         </div>
 
-        <div id="statusMessage" style="margin-top: 20px; font-style: italic; color: var(--text-secondary);"></div>
-        <div id="syncStatus" style="margin-top:8px; font-size:0.9em; color:var(--text-secondary);">Desconectado</div>
+        <div id="historial" style="margin-top: 20px;">
+            <h3>Panel de Números</h3>
+            <div id="numerosContainer"></div>
+        </div>
 
-        <div id="myCardsTrackerContainer" class="control-box">
-            <h3>Seguir Cartones</h3>
+        <div id="myCardsTrackerContainer" class="control-box" style="margin-top: 20px;">
+            <h3>Seguir Mis Cartones</h3>
             <label for="myCardNumbersInput">Números de cartón (ej: 7, 15, 23):</label>
             <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
-            <div style="margin-top: 8px; display: flex; align-items: center; gap: 12px;">
+            <div style="margin-top: 8px; display: flex; align-items: center; gap: 12px; justify-content: center;">
                 <button onclick="trackMyCards()" style="padding: 8px 16px; background: var(--btn-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Añadir</button>
                 <span id="trackerMsg" style="font-weight: bold; color: var(--text-primary);"></span>
             </div>
             <h4>Cartones con Bingo:</h4>
             <div id="myTrackedBingosList" class="bingo-list-display">---</div>
         </div>
-    </div>
 
-    <!-- Botón para abrir la sección de cartones guardados -->
-    <div class="center">
-        <button id="toggleCartonesBtn" class="btn-secondary" type="button">Ver Cartones Guardados</button>
+        <!-- Botón para abrir la sección de cartones guardados -->
+        <div style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+            <button id="toggleCartonesBtn" class="btn-secondary" type="button" style="width: 100%; max-width: 300px;">Ver Todos los Cartones</button>
+        </div>
     </div>
 
     <!-- Sección oculta de cartones guardados -->
     <div id="cartonesGuardadosContainer" class="control-box" hidden>
-        <h3>Cartones Guardados</h3>
+        <h3>Todos los Cartones</h3>
         <div id="listaCartonesGuardados" class="saved-cards-grid">
             <!-- Aquí se generarán los mini-tableros -->
         </div>
     </div>
 
-    <!-- Hidden elements required by script.js to function -->
+    </div> <!-- Fin del wrapper principal -->
+
+    <!-- Elementos técnicos ocultos requeridos por script.js -->
     <div style="display:none">
-        <div id="numeroContainer"><div id="numero"></div></div>
-        <div id="historial"><div id="numerosContainer"></div></div>
         <select id="voiceSelect"></select>
         <div id="speedValue"></div>
         <input id="speedSlider" type="range">
@@ -338,354 +252,77 @@
         </div>
     </div>
 
-    <script>
-        // Mark this page as a viewer (not the Host) before loading main script
-        window.__IS_MASTER = false;
-    </script>
     <script>window.__IS_MASTER = false;</script>
-    <script src="js/script.js?v=2"></script>
+    <script src="js/script.js?v=5"></script>
     <script>
-        // Enable audio context on user click to unlock Web Audio API
         function enableAudioOnClick() {
             try {
                 if (typeof initAudioContext === 'function') {
                     initAudioContext();
-                    console.log('✅ Sonido habilitado');
                     const btn = document.getElementById('enableSoundBtn');
                     if (btn) {
                         btn.textContent = '✅ Sonido Habilitado';
                         btn.disabled = true;
-                        btn.style.opacity = '0.6';
                     }
                 }
             } catch (e) {
-                console.warn('Error habilitando sonido:', e);
+                console.warn('Error audio:', e);
             }
         }
 
-        // Wait for applyGameStateToUI to be defined
-        let maxRetries = 50;
-        let retries = 0;
-        
-        function wrapApplyGameState() {
-            if (typeof applyGameStateToUI !== 'function') {
-                if (retries++ < maxRetries) {
-                    setTimeout(wrapApplyGameState, 100);
-                }
-                return;
-            }
-            
-            // Function is now defined, wrap it
-            const originalApply = applyGameStateToUI;
-            applyGameStateToUI = function() {
-                originalApply();
-                // After applying state, ensure the last 10 container is visible and styled
-                const ultimos = document.getElementById('ultimosNumerosContainer');
-                if (ultimos && ultimos.children.length === 0) {
-                    document.getElementById('statusMessage').textContent = "Esperando números...";
-                } else {
-                    document.getElementById('statusMessage').textContent = "";
-                }
-            };
-        }
-        
-        // Start the retry loop
-        wrapApplyGameState();
-        
-        const AUTO_SYNC_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
-
-        function isPageReloaded() {
-            const navEntries = performance.getEntriesByType('navigation');
-            if (navEntries.length) {
-                return navEntries[0].type === 'reload';
-            }
-            if (performance && performance.navigation) {
-                return performance.navigation.type === 1;
-            }
-            return false;
-        }
-        
-        let lastDetectedNumber = null; // Track the last number we saw
-        let detectedNumbers = []; // Track all detected numbers for "Last 10"
-        
-        function updateLastNumbersDisplay() {
-            // Display the last 10 detected numbers (or all if less than 10)
-            const container = document.getElementById('ultimosNumerosContainer');
-            if (!container) {
-                console.error('❌ ultimosNumerosContainer not found!');
-                return;
-            }
-            
-            console.log(`🔄 updateLastNumbersDisplay called | detectedNumbers:`, detectedNumbers);
-            
-            container.innerHTML = '';
-            const last10 = detectedNumbers.slice(-10); // Get last 10
-            
-            console.log(`📊 Last 10 numbers to display:`, last10);
-            
-            if (last10.length === 0) {
-                container.textContent = '---';
-                console.log('⚠️ No numbers to display');
-                return;
-            }
-            
-            last10.forEach((num, index) => {
-                const circulo = document.createElement('div');
-                circulo.className = 'numeroCirculo ultimoNumeroCirculo';
-                
-                // Add pulse animation to most recent number
-                if (index === last10.length - 1) {
-                    circulo.classList.add('pulse-once');
-                }
-                
-                circulo.textContent = num;
-                container.appendChild(circulo);
-                console.log(`✅ Added number circle: ${num}`);
-            });
-        }
-        
-        function startAutoSync(initialToken) {
-            // Clear any existing interval
-            if (autoSyncInterval) {
-                clearInterval(autoSyncInterval);
-            }
-            
-            console.log(`📥 startAutoSync called with token: "${initialToken}"`);
-            
-            lastLoadedToken = initialToken;
-            baseGameToken = initialToken.split(',')[0]; // Extract base code "21"
-            lastHashSeen = initialToken;
-            lastActivityTimestamp = Date.now();
-            lastDetectedNumber = null;
-            detectedNumbers = []; // Reset detected numbers
-            
-            // Add a validation function for the token
-            function validateToken(token) {
-                if (!token || typeof token !== 'string') {
-                    console.error('❌ Invalid token: Token is not a string or is empty.');
-                    return false;
-                }
-
-                const parts = token.split(',');
-                for (let i = 1; i < parts.length; i++) {
-                    const num = parseInt(parts[i]);
-                    if (isNaN(num) || num <= 0) {
-                        console.error(`❌ Invalid number detected in token: ${parts[i]}`);
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            if (validateToken(initialToken)) {
-                const parts = initialToken.split(',');
-                console.log(`📊 Token parts:`, parts);
-                console.log(`📊 Parts length: ${parts.length}`);
-
-                if (parts.length > 1) {
-                    for (let i = 1; i < parts.length; i++) {
-                        const num = parseInt(parts[i]);
-                        if (!isNaN(num)) {
-                            detectedNumbers.push(num);
-                            lastDetectedNumber = num;
-                            console.log(`✅ Parsed number: ${num}`);
-                        }
-                    }
-                }
-            } else {
-                console.error('❌ Token validation failed. Parsing aborted.');
-            }
-            
-            console.log(`🎯 Web3 Sync Started | Base: ${baseGameToken} | Numbers: ${detectedNumbers.join(',')}...`);
-            console.log(`📈 Detected numbers array:`, detectedNumbers);
-            updateLastNumbersDisplay();
-            
-            // Signal that connection is established
-            onConnectionCompleted();
-            
-            const messageDiv = document.getElementById('tokenMessage');
-            
-            // Update every 1 second to check for new numbers
-            autoSyncInterval = setInterval(() => {
-                try {
-                    const urlHash = window.location.hash.substring(1);
-                    const parts = urlHash.split(',');
-                    
-                    if (urlHash && urlHash !== lastHashSeen) {
-                        lastHashSeen = urlHash;
-                        lastActivityTimestamp = Date.now();
-                    }
-                    
-                    console.log(`🔍 Check: URL="${urlHash}" | Detected so far: ${detectedNumbers.length}`);
-                    
-                    // Check if new numbers were added (token got longer)
-                    if (parts.length - 1 > detectedNumbers.length) {
-                        // NEW NUMBERS DETECTED!
-                        lastLoadedToken = urlHash;
-                        
-                        // Add new numbers to our array
-                        for (let i = detectedNumbers.length + 1; i < parts.length; i++) {
-                            const num = parseInt(parts[i]);
-                            if (!isNaN(num)) {
-                                detectedNumbers.push(num);
-                                lastDetectedNumber = num;
-                                
-                                console.log(`✅ DETECTED NEW NUMBER: ${num}`);
-                                
-                                // Update display for each new number
-                                updateLastNumbersDisplay();
-                                
-                                if (messageDiv) {
-                                    messageDiv.textContent = `✅ Nuevo número: ${num}`;
-                                    messageDiv.style.color = "green";
-                                    setTimeout(() => {
-                                        if (messageDiv.textContent.startsWith('✅')) {
-                                            messageDiv.textContent = '';
-                                        }
-                                    }, 3000);
-                                }
-                            }
-                        }
-                    } else if (urlHash.startsWith(baseGameToken)) {
-                        // Token valid but no new numbers yet
-                        if (messageDiv && !messageDiv.textContent.startsWith('✅')) {
-                            messageDiv.textContent = `⏳ Sincronizando... | Código: ${baseGameToken} | Números: ${detectedNumbers.length}`;
-                            messageDiv.style.color = "orange";
-                        }
-                    } else {
-                        // Still waiting for sync
-                        if (messageDiv) {
-                            messageDiv.textContent = `⏳ Esperando números... | Código: ${baseGameToken}`;
-                            messageDiv.style.color = "blue";
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Auto-sync error:', e);
-                }
-
-                const now = Date.now();
-                if (now - lastActivityTimestamp >= AUTO_SYNC_TIMEOUT_MS) {
-                    stopAutoSync();
-                    if (messageDiv) {
-                        messageDiv.textContent = 'Sincronización pausada (sin conexión por 15 min). Ingresa el token nuevamente.';
-                        messageDiv.style.color = 'red';
-                    }
-                }
-            }, 1000);
-        }
-        
-        function stopAutoSync() {
-            if (autoSyncInterval) {
-                clearInterval(autoSyncInterval);
-                autoSyncInterval = null;
-            }
-            lastLoadedToken = null;
-            lastHashSeen = '';
-            lastActivityTimestamp = 0;
-        }
-        
         function loadNewGameFromToken() {
-            const tokenInput = document.getElementById('newTokenInput');
-            const messageDiv = document.getElementById('tokenMessage');
-            
-            if (!tokenInput || !messageDiv) return;
-            
-            let token = tokenInput.value.trim();
+            const input = document.getElementById('newTokenInput');
+            const msg = document.getElementById('tokenMessage');
+            if (!input || !msg) return;
+
+            const token = input.value.trim();
             if (!token) {
-                messageDiv.textContent = "Por favor ingresa un token válido.";
-                messageDiv.style.color = "red";
-                stopAutoSync();
+                msg.textContent = "Ingresa un token válido.";
+                msg.style.color = "red";
                 return;
             }
-            
-            // Check if token is different from the last loaded one
-            if (lastLoadedToken && token !== lastLoadedToken) {
-                stopAutoSync();
-            }
-            
-            // Clear previous message
-            messageDiv.textContent = "Validando token...";
-            messageDiv.style.color = "blue";
-            
+
             try {
-                // Token format: "1234" or "1234,1" or "1234,1,30" or "1234,1,30,21,45,..."
-                // Game code followed by all drawn numbers
-                if (!/^\d{2,4}(,\d+)*$/.test(token)) {
-                    throw new Error("Token debe ser formato: 'XX' o 'XX,1,30,21' (XX = código 2-4 dígitos)");
+                if (!/^\d{1,5}(,\d+)*$/.test(token)) {
+                    throw new Error("Formato inválido (Ej: 21 o 21,5,10)");
                 }
-                
-                // Token is valid - start syncing
-                messageDiv.textContent = `✅ Iniciando sincronización...`;
-                messageDiv.style.color = "green";
-                tokenInput.value = ""; // Clear the input
-                
-                // Set global variables for script.js
+
                 const parts = token.split(',');
                 gameCodeFixed = parseInt(parts[0]);
                 numerosSalidos = parts.slice(1).map(Number);
-                numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1).filter(n => !numerosSalidos.includes(n));
+                drawCounter = numerosSalidos.length;
                 
-                // Update URL with new token
-                const newUrl = `${window.location.origin}${window.location.pathname}#${token}`;
-                window.history.replaceState(null, null, newUrl);
-                
-                // Preserve card sizes briefly to avoid layout jumps when syncing
-                try {
-                    document.body.classList.add('preserve-card-sizes');
-                } catch (e) {}
-
-                // Start real-time cross-device sync
+                // Trigger P2P Sync
                 if (typeof initCrossDeviceSync === 'function') {
                     initCrossDeviceSync();
                 }
-                
-                // Apply UI updates
+
+                // Update UI immediately with token data
                 if (typeof applyGameStateToUI === 'function') {
                     applyGameStateToUI();
                 }
 
-                // Remove preservation class after a short delay
-                setTimeout(() => {
-                    try { document.body.classList.remove('preserve-card-sizes'); } catch (e) {}
-                }, 600);
+                msg.textContent = `✅ Cargado código ${gameCodeFixed}. Conectando...`;
+                msg.style.color = "green";
                 
-                // Start local auto-sync for hash changes
-                startAutoSync(token);
-            } catch (error) {
-                console.error('Error loading game:', error);
-                messageDiv.textContent = `Error: ${error.message}`;
-                messageDiv.style.color = "red";
-                stopAutoSync();
+                // Importante: resetear el contador de P2P para aceptar el primer estado del Master
+                lastDrawCounterReceived = -1; 
+                
+                window.location.hash = token;
+            } catch (e) {
+                msg.textContent = "Error: " + e.message;
+                msg.style.color = "red";
             }
         }
-        
-        // Allow pressing Enter in the input field
-        document.getElementById('newTokenInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                loadNewGameFromToken();
-            }
-        });
-        
-        // Stop sync when user starts typing a new token
-        document.getElementById('newTokenInput').addEventListener('input', function(e) {
-            if (lastLoadedToken && e.target.value.trim() !== lastLoadedToken) {
-                stopAutoSync();
-                const messageDiv = document.getElementById('tokenMessage');
-                if (messageDiv) {
-                    messageDiv.textContent = '';
-                }
-            }
-        });
 
-        window.addEventListener('beforeunload', () => {
-            stopAutoSync();
-            window.history.replaceState(null, null, window.location.pathname);
+        // Enter listener for input
+        document.getElementById('newTokenInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loadNewGameFromToken();
         });
     </script>
 
     <footer style="text-align: center; margin-top: 20px; padding: 10px; font-size: 0.9em; color: var(--text-secondary);">
-        © Boris8800 - 2026
+        © Boris8800 - 2026 - v5
     </footer>
 </body>
 </html>
