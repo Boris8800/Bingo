@@ -18,6 +18,7 @@ let isMaster = (typeof window !== 'undefined' && window.__IS_MASTER === false) ?
 let peer = null;
 let connections = [];         // Solo para Master: lista de conexiones activas
 let connToMaster = null;      // Para Viewer: conexión activa al Master
+const PEER_PREFIX = 'bingo-v5-sync'; // Prefijo único actualizado para evitar sesiones colgadas en PeerJS
 
 // --- Función UI Toast Compartida ---
 function showToast(message) {
@@ -41,7 +42,7 @@ let gameCodeFixed = null;
  * Verifica si un código de juego está siendo usado por un Master.
  * Intenta conectar al PeerID correspondiente.
  */
-function checkTokenInUse(code, timeout = 1200) {
+function checkTokenInUse(code, timeout = 1500) {
     return new Promise((resolve) => {
         if (!code) return resolve(false);
         const tempPeer = new Peer();
@@ -50,7 +51,7 @@ function checkTokenInUse(code, timeout = 1200) {
         const cleanup = () => {
             if (finished) return;
             finished = true;
-            tempPeer.destroy();
+            try { tempPeer.destroy(); } catch (e) {}
         };
 
         const timer = setTimeout(() => {
@@ -59,7 +60,8 @@ function checkTokenInUse(code, timeout = 1200) {
         }, timeout);
 
         tempPeer.on('open', () => {
-            const conn = tempPeer.connect(`bingo-boris-2026-${code}`);
+            const peerId = `${PEER_PREFIX}-${code}`;
+            const conn = tempPeer.connect(peerId);
             conn.on('open', () => {
                 clearTimeout(timer);
                 cleanup();
@@ -80,17 +82,21 @@ function checkTokenInUse(code, timeout = 1200) {
     });
 }
 
-// Reserve a free game code (strictly 2 digits)
-// Best-effort: checks PeerJS for recent activity; not atomic.
-async function reserveGameCode(attempts = 15) {
-    const min = 10;
-    const max = 99;
+// Reserve a free game code (strictly 2 digits: 10-99)
+// Uses a shuffled list for true "high randomness"
+async function reserveGameCode() {
+    // Generate a random pool of 20 unique candidates
+    const candidates = [];
+    while (candidates.length < 20) {
+        const num = Math.floor(Math.random() * 90) + 10;
+        if (!candidates.includes(num)) candidates.push(num);
+    }
 
-    // Try random candidates first for true randomness
-    for (let i = 0; i < attempts; i++) {
-        const candidate = Math.floor(Math.random() * (max - min + 1)) + min;
+    // Try at most 10 of them to find a clean ID
+    for (let i = 0; i < 10; i++) {
+        const candidate = candidates[i];
         if (candidate === gameCodeFixed) continue;
-        const inUse = await checkTokenInUse(candidate, 800);
+        const inUse = await checkTokenInUse(candidate, 1200);
         if (!inUse) {
             gameCodeFixed = candidate;
             console.log(`🎯 Reserved random 2-digit game code: ${gameCodeFixed}`);
@@ -98,19 +104,8 @@ async function reserveGameCode(attempts = 15) {
         }
     }
 
-    // Fallback: search all 2-digit codes starting from a random point
-    const startPoint = Math.floor(Math.random() * (max - min + 1)) + min;
-    for (let i = 0; i < 90; i++) {
-        const candidate = ((startPoint - min + i) % 90) + min;
-        const inUse = await checkTokenInUse(candidate, 600);
-        if (!inUse) {
-            gameCodeFixed = candidate;
-            return gameCodeFixed;
-        }
-    }
-
-    // Final emergency pick
-    gameCodeFixed = Math.floor(Math.random() * 90) + 10;
+    // Final random pick if all checked are busy (collisions are 2-digits so it's possible)
+    gameCodeFixed = candidates[Math.floor(Math.random() * candidates.length)];
     return gameCodeFixed;
 }
 
@@ -123,7 +118,7 @@ function claimToken(code) {
     return new Promise((resolve) => {
         if (peer) { try { peer.destroy(); } catch (e) {} }
         
-        const peerId = `bingo-boris-2026-${code}`;
+        const peerId = `${PEER_PREFIX}-${code}`;
         console.log(`📡 Intentando reclamar ID P2P: ${peerId}`);
         
         peer = new Peer(peerId);
@@ -220,29 +215,40 @@ function initCrossDeviceSync() {
 
 function intentarConectarConMaster() {
     if (!gameCodeFixed) return;
-    const masterId = `bingo-boris-2026-${gameCodeFixed}`;
+    const masterId = `${PEER_PREFIX}-${gameCodeFixed}`;
     console.log(`🔗 Conectando al Master: ${masterId}`);
     
     // Si ya existe una conexión, no la duplicamos
-    if (connToMaster && (connToMaster.open || connToMaster.connecting)) return;
+    if (connToMaster && (connToMaster.open || connToMaster.connecting)) {
+        console.log("Ya hay una conexión en curso...");
+        return;
+    }
     
-    connToMaster = peer.connect(masterId, { reliable: true });
+    connToMaster = peer.connect(masterId);
     
-    // Safety timeout for connection
+    // Safety timeout for connection (increased to 12s)
     const connectionTimeout = setTimeout(() => {
         if (connToMaster && !connToMaster.open) {
             console.warn('⌛ Tiempo de espera agotado conectando al Master.');
             const syncStatusEl = document.getElementById('syncStatus');
-            if (syncStatusEl) syncStatusEl.textContent = 'Sin respuesta del Host...';
+            if (syncStatusEl) {
+                syncStatusEl.textContent = 'Sin respuesta del Host (Reintentando...)';
+                syncStatusEl.style.color = '#dc3545';
+            }
             connToMaster.close();
+            // Optional: trigger a retry faster
+            setTimeout(intentarConectarConMaster, 4000);
         }
-    }, 8000);
+    }, 12000);
 
     connToMaster.on('open', () => {
         clearTimeout(connectionTimeout);
         console.log('✅ Conexión establecida con el Master');
         const syncStatusEl = document.getElementById('syncStatus');
-        if (syncStatusEl) syncStatusEl.textContent = 'Conectado';
+        if (syncStatusEl) {
+            syncStatusEl.textContent = 'Conectado';
+            syncStatusEl.style.color = '#28a745';
+        }
         
         // Notify web3.html if function exists
         if (typeof onConnectionCompleted === 'function') {
@@ -571,7 +577,8 @@ function speakWithWebSpeechInternal(text) {
     }
 }
 
-function setVoice(options = { silent: false }) {
+function setVoice(options) {
+    const silent = (options && options.silent === true);
     const voiceSelect = document.getElementById('voiceSelect');
     if (!voiceSelect || !voiceSelect.value) {
         selectedVoice = null;
@@ -587,11 +594,11 @@ function setVoice(options = { silent: false }) {
         selectedVoice = voices.find(voice => voice.voiceURI === preferredVoiceURI) || null;
     }
     
-    // Probar la voz seleccionada solo si no es silencioso y no somos espectador (web3)
-    if (!options.silent && isMaster) {
+    // Probar la voz seleccionada solo si no es silencioso y somos el Host
+    if (!silent && isMaster) {
         setTimeout(() => {
             speakText("Voz seleccionada correctamente");
-        }, 100);
+        }, 150);
     }
     
     saveGameState();
