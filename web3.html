@@ -129,15 +129,7 @@
             <div id="tokenMessage" style="margin-top: 8px; font-size: 0.8em; font-weight: bold;"></div>
         </div>
 
-        <div id="myCardsTrackerContainer" class="control-box">
-            <h3>Seguir mis Cartones</h3>
-            <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 12px;">
-                <input id="myCardNumbersInput" placeholder="Ej: 5, 23, 41" type="text" />
-                <button onclick="trackMyCards()" class="btn">Seguir</button>
-            </div>
-            <div id="myTrackedBingosList">---</div>
-            <div id="trackerMsg" style="margin-top: 8px; font-weight: bold; font-size: 0.8rem;"></div>
-        </div>
+        <!-- 'Seguir mis Cartones' movido más abajo (debajo de Últimos 10 números) -->
 
         <div id="historial">
             <div id="numerosContainer"></div>
@@ -149,6 +141,16 @@
             <div id="estadoJuego"></div>
         </div>
 
+        <div id="myCardsTrackerContainer" class="control-box">
+            <h3>Seguir mis Cartones</h3>
+            <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 12px;">
+                <input id="myCardNumbersInput" placeholder="Ej: 5, 23, 41" type="text" />
+                <button onclick="trackMyCards()" class="btn">Seguir</button>
+            </div>
+            <div id="myTrackedBingosList">---</div>
+            <div id="trackerMsg" style="margin-top: 8px; font-weight: bold; font-size: 0.8rem;"></div>
+        </div>
+
         <div style="margin: 30px auto; max-width: 480px;">
             <button id="toggleCartonesBtn" class="btn-secondary" style="width: 100%; padding: 12px; border-radius: 25px;">Ver Todos los Cartones</button>
         </div>
@@ -158,9 +160,7 @@
             <div id="listaCartonesGuardados" class="saved-cards-grid"></div>
         </section>
 
-        <div style="margin: 40px auto; padding-bottom: 30px;">
-            <a href="index.html" style="color: var(--numero-marcado); text-decoration: none; font-size: 0.9rem;">← Volver al Panel de Control</a>
-        </div>
+        <!-- enlace de volver eliminado en Web 3 (espectador) -->
     </main>
 
     <!-- RECURSOS OCULTOS PARA SCRIPT.JS -->
