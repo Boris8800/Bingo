@@ -5,6 +5,8 @@ let intervalo;
 let enEjecucion = false;
 let juegoPausado = false;
 let cartonesConBingo = [];
+let lastActivityTime = Date.now(); // Rastreo de inactividad
+const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutos en ms
 
 // ---- Sistema de Sindicación y Sincronización (No-Server) ----
 // Permite que múltiples pestañas y múltiples dispositivos se mantengan sincronizados
@@ -26,6 +28,19 @@ function updateP2PStatus(status, color = "inherit") {
     if (el) {
         el.textContent = status;
         if (color) el.style.color = color;
+    }
+    updateSpectatorCount();
+}
+
+/**
+ * Actualiza el contador de espectadores en el Master
+ */
+function updateSpectatorCount() {
+    if (!isMaster) return;
+    const el = document.getElementById('spectatorCountDisplay');
+    if (el) {
+        const activeConns = connections.filter(c => c && c.open).length;
+        el.textContent = `Espectadores: ${activeConns}`;
     }
 }
 
@@ -93,31 +108,66 @@ function checkTokenInUse(code, timeout = 1200) {
 }
 
 // Reserve a free game code (strictly 2 digits: 10-99)
-// Uses a shuffled list for true "high randomness"
+// Systematic check of all tokens to ensure we find a free one
 async function reserveGameCode() {
-    // Generate a random pool of 30 unique candidates
-    const candidates = [];
-    while (candidates.length < 30) {
-        const num = Math.floor(Math.random() * 90) + 10;
-        if (!candidates.includes(num)) candidates.push(num);
+    updateP2PStatus("Buscando canal libre...", "#ffc107");
+    
+    // Crear lista de todos los códigos (10-99) y barajarlos
+    let candidates = [];
+    for (let i = 10; i <= 99; i++) candidates.push(i);
+    for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
     }
 
-    // Try finding a clean ID
-    for (let i = 0; i < candidates.length; i++) {
-        const candidate = candidates[i];
+    // Probar systematically todos los candidatos
+    for (const candidate of candidates) {
         if (candidate === gameCodeFixed) continue;
-        const inUse = await checkTokenInUse(candidate, 1000);
+        const inUse = await checkTokenInUse(candidate, 600); // 600ms is enough for a quick check
         if (!inUse) {
             gameCodeFixed = candidate;
-            console.log(`🎯 Reserved high-random 2-digit game code: ${gameCodeFixed}`);
+            lastActivityTime = Date.now(); // Reiniciar reloj al obtener nuevo código
+            console.log(`🎯 Canal libre encontrado y reservado: ${gameCodeFixed}`);
             return gameCodeFixed;
         }
     }
 
-    // fallback
+    // fallback extremademente raro
     gameCodeFixed = Math.floor(Math.random() * 90) + 10;
+    lastActivityTime = Date.now();
     return gameCodeFixed;
 }
+
+// --- Liberación por Inactividad ---
+function checkInactivity() {
+    if (!isMaster || !gameCodeFixed) return;
+    
+    const now = Date.now();
+    if (now - lastActivityTime > INACTIVITY_LIMIT_MS) {
+        console.warn("⚠️ Sesión expirada por inactividad de 15 minutos.");
+        
+        // Detener si estaba en marcha
+        if (enEjecucion) {
+            clearInterval(intervalo);
+            enEjecucion = false;
+        }
+
+        const expiredCode = gameCodeFixed;
+        gameCodeFixed = null;
+        releaseClaim(); // Liberar el peer
+        
+        showToast(`Sesión ${expiredCode} cerrada por inactividad`);
+        updateP2PStatus(`Expirado (${expiredCode})`, "#dc3545");
+        
+        const startStopBtn = document.getElementById('startStopBtn');
+        if (startStopBtn) startStopBtn.textContent = 'Empezar';
+        
+        saveGameState();
+    }
+}
+
+// Iniciar vigilante
+setInterval(checkInactivity, 30000);
 
 // --- Claiming protocol (P2P using PeerJS) ---
 /**
@@ -176,15 +226,26 @@ function setupMasterListeners() {
             onSpectatorJoined();
         }
         
+        updateSpectatorCount();
+        
         // Enviar estado actual inmediatamente
         if (conn.open) {
             broadcastState();
         } else {
-            conn.on('open', () => broadcastState());
+            conn.on('open', () => {
+                broadcastState();
+                updateSpectatorCount();
+            });
         }
         
-        conn.on('close', () => connections = connections.filter(c => c !== conn));
-        conn.on('error', () => connections = connections.filter(c => c !== conn));
+        conn.on('close', () => {
+            connections = connections.filter(c => c !== conn);
+            updateSpectatorCount();
+        });
+        conn.on('error', () => {
+            connections = connections.filter(c => c !== conn);
+            updateSpectatorCount();
+        });
     });
 }
 
@@ -380,13 +441,25 @@ function applySharedState(state) {
     
     lastDrawCounterReceived = state.drawCounter;
     
+    // Guardamos los bingos anteriores para detectar nuevos en Web3
+    const oldBingos = [...cartonesConBingo];
+    
     numerosSalidos = state.numerosSalidos || [];
     numerosDisponibles = state.numerosDisponibles || [];
     cartonesConBingo = state.cartonesConBingo || [];
-    // Apply tracked cards from master only on viewer pages (web3). The host keeps its local tracking.
-    if (!isMaster && Array.isArray(state.myTrackedCardNumbers)) {
-        myTrackedCardNumbers = state.myTrackedCardNumbers.filter(n => Number.isInteger(n) && n > 0);
+
+    // Detectar si hay un nuevo bingo en nuestros cartones seguidos (Para Web3)
+    if (!isMaster) {
+        const nuevosBingos = cartonesConBingo.filter(id => !oldBingos.includes(id));
+        const trackedBingoGanador = nuevosBingos.find(id => myTrackedCardNumbers.includes(id));
+        
+        if (trackedBingoGanador) {
+            console.log("🔊 ¡BINGO detectado en Web3 para cartón seguido:", trackedBingoGanador);
+            playBingoSoundEffect();
+            speakText(`¡Bingo en tu cartón número ${trackedBingoGanador}!`);
+        }
     }
+    
     drawIntervalMs = state.drawIntervalMs || 3500;
     // Aseguramos que drawCounter avance al mayor conocido
     if (typeof state.drawCounter === 'number') {
@@ -667,12 +740,15 @@ function trackMyCards() {
     const inputText = inputEl.value;
     myTrackedCardNumbers = validateCardNumbers(inputText);
 
+    // Permitir añadir incluso en marcha: verificamos estado actual
+    verificarTodosLosCartones({ silent: true });
+    
     actualizarMisCartonesBingoDisplay();
     inputEl.value = myTrackedCardNumbers.join(', ');
     saveGameState();
 
     // Notificación de guardado
-    showToast("¡Guardado!");
+    showToast("¡Guardado y Verificado!");
     
     const msgEl = document.getElementById('trackerMsg');
     if (msgEl) {
@@ -701,30 +777,67 @@ function actualizarMisCartonesBingoDisplay() {
     if (!myTrackedListDiv) return;
     myTrackedListDiv.innerHTML = '';
 
-    const misBingosEnJuego = cartonesConBingo.filter(cartonId => myTrackedCardNumbers.includes(cartonId));
-
-    if (misBingosEnJuego.length === 0) {
+    if (myTrackedCardNumbers.length === 0) {
         myTrackedListDiv.textContent = "---";
         return;
     }
 
-    misBingosEnJuego.sort((a, b) => a - b);
-    
     const container = document.createElement('div');
+    container.className = 'tracked-cards-container';
     container.style.display = 'flex';
     container.style.flexWrap = 'wrap';
     container.style.justifyContent = 'center';
-    container.style.gap = '10px';
+    container.style.gap = '8px';
     container.style.marginTop = '10px';
 
-    misBingosEnJuego.forEach(cartonId => {
-        const elemento = document.createElement('div');
-        elemento.className = 'numeroCirculo ultimoNumeroCirculo';
-        elemento.style.backgroundColor = 'var(--bingo-success)';
-        elemento.style.color = 'white';
-        // Removed hardcoded dimensions to match "Last 10 Numbers" style
-        elemento.textContent = cartonId;
-        container.appendChild(elemento);
+    myTrackedCardNumbers.forEach(cartonId => {
+        const cartonElement = document.getElementById(`carton${cartonId}`);
+        let hits = 0;
+        let total = 15;
+        let isBingo = cartonesConBingo.includes(cartonId);
+
+        if (cartonElement) {
+            const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
+            if (numerosEnCartonAttr) {
+                const nums = numerosEnCartonAttr.split(',').map(Number);
+                total = nums.length;
+                hits = nums.filter(n => numerosSalidos.includes(n)).length;
+            }
+        }
+
+        const pill = document.createElement('div');
+        pill.className = 'tracked-card-pill';
+        pill.style.padding = '5px 12px';
+        pill.style.borderRadius = '20px';
+        pill.style.fontSize = '0.9rem';
+        pill.style.fontWeight = 'bold';
+        pill.style.display = 'flex';
+        pill.style.flexDirection = 'column';
+        pill.style.alignItems = 'center';
+        pill.style.minWidth = '60px';
+        pill.style.transition = 'all 0.3s ease';
+
+        if (isBingo) {
+            pill.style.background = 'var(--bingo-success)';
+            pill.style.color = 'white';
+            pill.style.boxShadow = '0 0 10px rgba(40, 167, 69, 0.5)';
+        } else {
+            pill.style.background = 'var(--bg-secondary)';
+            pill.style.color = 'var(--text-primary)';
+            pill.style.border = '1px solid var(--border-color)';
+        }
+
+        const idSpan = document.createElement('span');
+        idSpan.textContent = `Nº ${cartonId}`;
+        idSpan.style.fontSize = '0.7rem';
+        idSpan.style.opacity = '0.8';
+
+        const progressSpan = document.createElement('span');
+        progressSpan.textContent = isBingo ? "¡BINGO!" : `${hits}/${total}`;
+
+        pill.appendChild(idSpan);
+        pill.appendChild(progressSpan);
+        container.appendChild(pill);
     });
     
     myTrackedListDiv.appendChild(container);
@@ -737,6 +850,7 @@ function actualizarMisCartonesBingoDisplay() {
  * Solo el Master tiene permiso para realizar un reinicio global.
  */
 async function reiniciarJuego() {
+    lastActivityTime = Date.now(); // Resetear reloj de actividad
     if (numerosSalidos.length > 0 && isMaster) {
         if (!confirm("¿Estás seguro de que quieres reiniciar el juego? Se perderá el progreso actual.")) {
             return;
@@ -803,6 +917,7 @@ async function reiniciarJuego() {
 }
 
 function startStop() {
+    lastActivityTime = Date.now(); // Resetear reloj de actividad
     if (!isMaster) {
         alert("El control del juego está deshabilitado en esta página. Por favor usa la página principal de control.");
         return;
@@ -839,6 +954,8 @@ function startStop() {
 }
 
 function siguienteNumero() {
+    lastActivityTime = Date.now(); // Actualizar pulso de actividad
+    
     if (numerosDisponibles.length === 0) {
         alert("¡Todos los números han sido llamados!");
         clearInterval(intervalo);

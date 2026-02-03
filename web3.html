@@ -68,10 +68,27 @@
             padding: 0; 
             margin: 0;
             font-family: Arial, sans-serif;
+            overflow-x: hidden;
         }
+        
+        /* Z-Fold / Tablet / Mobile Optimization Wrapper */
+        .web3-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
         .web3-card {
-            margin-top: 20px;
+            margin-top: 15px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+            box-sizing: border-box; /* Asegurar que el padding no desborde */
+            width: 100%;
         }
+
         h1 { font-size: 1.5rem; margin-bottom: 20px; }
         
         /* Matching Web 1 Style (The History Section) */
@@ -80,9 +97,27 @@
             background-color: var(--bg-secondary) !important;
             border-radius: 12px;
             padding: 15px;
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-sm);
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            box-sizing: border-box; /* Prevenir desborde */
+            width: 100%;
         }
         
+        #numerosContainer .numeroCirculo {
+            width: 100%; /* Ajustar al grid */
+            max-width: 45px;
+            aspect-ratio: 1/1;
+            height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            border-radius: 50%;
+            margin: 0 auto;
+        }
+
         .back-btn {
             display: inline-block;
             margin-top: 20px;
@@ -93,21 +128,25 @@
             border-radius: 8px;
             font-weight: bold;
         }
-        
+
+        /* Mis Cartones Pill Styling */
+        .tracked-cards-container {
+            min-height: 50px;
+        }
+
         /* Mobile improvements for Web 3 */
         @media (max-width: 600px) {
+            .web3-wrapper {
+                padding: 10px;
+            }
             #numero {
-                font-size: 6.5rem !important; /* Larger number for visibility */
+                font-size: 6.5rem !important;
                 margin-top: -10px;
                 margin-bottom: 5px;
             }
             .web3-card {
-                padding: 10px !important;
-                margin-top: 10px;
-            }
-            .token-input-container {
-                margin: 10px !important;
                 padding: 15px !important;
+                border-radius: 12px;
             }
             #ultimosNumerosContainer {
                 display: flex !important;
@@ -117,31 +156,36 @@
                 gap: 8px !important;
                 padding: 10px !important;
                 -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
-            }
-            #ultimosNumerosContainer::-webkit-scrollbar { display: none; }
-            #ultimosNumerosContainer .numeroCirculo {
-                flex: 0 0 45px;
-                height: 45px;
-                font-size: 1.2rem;
             }
             #numerosContainer {
-                grid-template-columns: repeat(9, 1fr) !important; /* 9 columns fit better for 90 numbers (10 rows) */
+                grid-template-columns: repeat(9, 1fr) !important;
                 gap: 3px !important;
-                padding: 8px !important;
+                padding: 5px !important;
             }
             #numerosContainer .numeroCirculo {
-                width: 32px;
-                height: 32px;
-                font-size: 0.85rem;
-                line-height: 32px;
+                font-size: 0.8rem;
             }
-            .control-box h3 {
-                font-size: 1.1rem;
+        }
+
+        /* Z-Fold Inner Screen / Tablet optimization */
+        @media (min-width: 601px) and (max-width: 1024px) {
+            .web3-wrapper {
+                display: grid;
+                grid-template-columns: 1fr 1.2fr;
+                gap: 20px;
+                align-items: start;
+            }
+            .web3-wrapper > h1, 
+            .web3-wrapper > .token-input-container,
+            .web3-wrapper > #statusMessage,
+            .web3-wrapper > div:last-child {
+                grid-column: span 2;
+            }
+            #numerosContainer {
+                margin: 0;
+            }
+            .web3-card {
                 margin-top: 0;
-            }
-            input[type="text"] {
-                font-size: 16px !important; /* Prevent iOS zoom */
             }
         }
         
@@ -170,51 +214,52 @@
         <button id="enableSoundBtn" onclick="enableAudioOnClick(); document.getElementById('enableSoundBanner').style.display='none';" style="padding: 12px 30px; background: white; color: #0056b3; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1.1em; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔊 Habilitar Sonido</button>
     </div>
 
-    <div style="text-align: center; margin-top: 70px;">
+    <div class="web3-wrapper" style="margin-top: 60px;">
 
     <!-- Información del Juego Actual -->
-    <div id="gameInfoDisplay" class="control-box" style="margin-bottom: 20px;">
+    <div id="gameInfoDisplay" class="web3-card" style="margin-bottom: 20px;">
         <div id="numeroContainer">
             <div id="numero" style="font-size: 5rem; font-weight: bold; color: var(--numero-marcado);">--</div>
         </div>
         <div id="statusMessage" style="margin-top: 10px; font-weight: bold;"></div>
         <div id="syncStatus" style="font-size: 0.8em; opacity: 0.7;">Desconectado</div>
-        <button id="retrySyncBtn" onclick="initCrossDeviceSync()" style="margin-top: 10px; padding: 5px 12px; font-size: 0.75em; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer;">🔄 Reintentar Conexión</button>
+        <button id="retrySyncBtn" onclick="initCrossDeviceSync()" style="margin-top: 10px; padding: 6px 15px; font-size: 0.8em; border-radius: 20px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer;">🔄 Reintentar Conexión</button>
     </div>
 
-    <div class="token-input-container control-box" style="margin-top: 0px;">
-        <input type="text" id="newTokenInput" placeholder="Pesta aquí el token o código" style="width: 100%; max-width: 300px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--bg-primary); color: var(--text-primary);" />
-        <br>
-        <button onclick="loadNewGameFromToken()" style="padding: 10px 20px; background: var(--btn-primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; max-width: 300px;">Conectar a Juego</button>
+    <div class="token-input-container web3-card" style="margin-top: 0px;">
+        <p style="margin-top:0; font-weight: bold;">Unirse a una partida</p>
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;">
+            <input type="text" id="newTokenInput" placeholder="Código de 2 cifras" style="flex: 1; min-width: 120px; max-width: 250px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-primary); color: var(--text-primary); font-size: 1.1rem; text-align: center; box-sizing: border-box;" />
+            <button onclick="loadNewGameFromToken()" style="padding: 12px 24px; background: var(--btn-primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex-shrink: 0;">Conectar</button>
+        </div>
         <div id="tokenMessage" style="margin-top: 10px; font-size: 0.9em;"></div>
     </div>
 
-    <div class="web3-card control-box">
+    <div id="myCardsTrackerContainer" class="web3-card" style="margin-top: 15px;">
+        <h3 style="margin-top: 0;">Mis Cartones</h3>
+        <p style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 10px;">Añade tus números de cartón para seguimiento automático:</p>
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
+            <input type="text" id="myCardNumbersInput" placeholder="Ej: 5, 23, 112" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-primary); color: var(--text-primary);">
+            <button onclick="trackMyCards()" style="padding: 10px 20px; background: var(--btn-primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Añadir</button>
+        </div>
+        <div id="trackerMsg" style="font-weight: bold; font-size: 0.8rem; min-height: 1.2em;"></div>
+        <div id="myTrackedBingosList" class="tracked-cards-container">---</div>
+    </div>
+
+    <div class="web3-card">
         <div id="ultimosNumeros">
-            <p>Últimos 10 números:</p>
+            <p style="font-weight: bold; margin-top: 0;">Últimos 10 números:</p>
             <div id="ultimosNumerosContainer"></div>
         </div>
 
-        <div id="historial" style="margin-top: 20px;">
+        <div id="historial" style="margin-top: 25px;">
             <h3>Panel de Números</h3>
             <div id="numerosContainer"></div>
         </div>
 
-        <div id="myCardsTrackerContainer" class="control-box" style="margin-top: 20px;">
-            <h3>Seguir Mis Cartones</h3>
-            <label for="myCardNumbersInput">Números de cartón (ej: 7, 15, 23):</label>
-            <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
-            <div style="margin-top: 8px; display: flex; align-items: center; gap: 12px; justify-content: center;">
-                <button onclick="trackMyCards()" style="padding: 8px 16px; background: var(--btn-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Añadir</button>
-                <span id="trackerMsg" style="font-weight: bold; color: var(--text-primary);"></span>
-            </div>
-            <h4>Cartones con Bingo:</h4>
-            <div id="myTrackedBingosList" class="bingo-list-display">---</div>
-        </div>
-
         <!-- Botón para abrir la sección de cartones guardados -->
         <div style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-            <button id="toggleCartonesBtn" class="btn-secondary" type="button" style="width: 100%; max-width: 300px;">Ver Todos los Cartones</button>
+            <button id="toggleCartonesBtn" class="btn-secondary" type="button" style="width: 100%; max-width: 300px; padding: 12px; border-radius: 25px;">Ver Todos los Cartones</button>
         </div>
     </div>
 
