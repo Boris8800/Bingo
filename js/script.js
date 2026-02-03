@@ -214,8 +214,8 @@ function applySharedState(state) {
     numerosSalidos = state.numerosSalidos || [];
     numerosDisponibles = state.numerosDisponibles || [];
     cartonesConBingo = state.cartonesConBingo || [];
-    // Apply tracked cards from master if provided (allows viewers to be notified only for tracked cards)
-    if (Array.isArray(state.myTrackedCardNumbers)) {
+    // Apply tracked cards from master only on viewer pages (web3). The host keeps its local tracking.
+    if (!isMaster && Array.isArray(state.myTrackedCardNumbers)) {
         myTrackedCardNumbers = state.myTrackedCardNumbers.filter(n => Number.isInteger(n) && n > 0);
     }
     drawIntervalMs = state.drawIntervalMs || 3500;
@@ -788,8 +788,8 @@ function verificarCarton() {
                         actualizarListaBingos();
                         actualizarMisCartonesBingoDisplay();
                         saveGameState();
-                        // Announce to user only if tracked locally
-                        if (myTrackedCardNumbers.includes(numeroCarton)) {
+                        // Host announces all; viewers announce only tracked cards
+                        if (isMaster || myTrackedCardNumbers.includes(numeroCarton)) {
                             announceBingo(numeroCarton);
                         }
                         broadcastState();
@@ -943,8 +943,8 @@ function verificarTodosLosCartones(options = {}) {
                             playBingoSoundEffect();
                         }
 
-                        // Announce bingo only if this card is being tracked by the user
-                        if (myTrackedCardNumbers.includes(numeroCarton)) {
+                        // Announce bingo: host announces all bingos; viewers only announce tracked cards
+                        if (isMaster || myTrackedCardNumbers.includes(numeroCarton)) {
                             announceBingo(numeroCarton);
                         }
 
