@@ -8,34 +8,27 @@
     <link href="css/style.css" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script>
-        function onConnectionCompleted() {
-            console.log('✅ Web3 Connection Completed!');
-            const statusDiv = document.getElementById('statusMessage');
-            if (statusDiv) {
-                statusDiv.innerHTML = '<span style="color: #28a745; font-weight: bold;">✅ Sincronización Activa</span>';
-            }
-            const syncStatusEl = document.getElementById('syncStatus');
-            if (syncStatusEl) {
-                syncStatusEl.textContent = 'Conectado';
-                syncStatusEl.style.color = '#28a745';
-            }
-            const banner = document.getElementById('enableSoundBanner');
-            if (banner && banner.style.display !== 'none') {
-                banner.style.background = 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)';
-            }
-        }
-
         function toggleNightMode() {
             const body = document.body;
             const btn = document.getElementById('nightModeToggle');
             if (body.classList.contains('night-mode')) {
                 body.classList.remove('night-mode');
                 localStorage.setItem('nightMode', 'false');
-                if (btn) btn.innerHTML = '&#127769;';
+                if (btn) {
+                    btn.setAttribute('aria-pressed', 'false');
+                    btn.innerHTML = '&#127769;';
+                    btn.style.background = '#0e324b';
+                    btn.style.borderColor = '#a51818';
+                }
             } else {
                 body.classList.add('night-mode');
                 localStorage.setItem('nightMode', 'true');
-                if (btn) btn.innerHTML = '&#9728;';
+                if (btn) {
+                    btn.setAttribute('aria-pressed', 'true');
+                    btn.innerHTML = '&#9728;';
+                    btn.style.background = '#f39c12';
+                    btn.style.borderColor = '#e74c3c';
+                }
             }
         }
         
@@ -50,67 +43,63 @@
                 }
             }
         });
+
+        function onConnectionCompleted() {
+            const statusText = document.getElementById('p2pStatusText');
+            if (statusText) {
+                statusText.textContent = 'Activo';
+                statusText.style.color = 'var(--bingo-success)';
+            }
+        }
     </script>
     <style>
-        body { 
-            background-color: var(--bg-primary); 
-            color: var(--text-primary); 
-            text-align: center; 
-            padding: 0; 
-            margin: 0;
-            font-family: Arial, sans-serif;
-            overflow-x: hidden;
-        }
+        /* Exact layout matching Web 1 */
+        body { padding-top: 50px; }
         
-        .main-content {
-            margin: 0 auto;
-            padding: 0 15px;
-            box-sizing: border-box;
-            width: 100%;
+        #numeroContainer {
+            margin: 30px auto !important;
         }
 
-        .token-input-container input {
-            width: 100%;
-            max-width: 250px;
+        .view-mode-badge {
+            margin: 10px auto;
+            font-size: 0.75rem;
+            font-weight: bold;
+            opacity: 0.6;
+            letter-spacing: 1px;
+        }
+
+        #newTokenInput, #myCardNumbersInput {
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        #newTokenInput {
+            width: 120px;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        #myCardNumbersInput {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px;
+            border-radius: 6px;
         }
 
         @media (max-width: 600px) {
-            #numero {
-                font-size: 5rem !important;
-            }
-            .control-box {
-                margin: 10px auto;
-                padding: 12px;
-            }
             #numerosContainer, #ultimosNumerosContainer {
                 padding: 10px !important;
-                gap: 4px !important;
+                gap: 5px !important;
             }
-        }
-
-        .preserve-card-sizes .saved-card,
-        .preserve-card-sizes .mini-board,
-        .preserve-card-sizes .mini-cell {
-            transition: none !important;
-            max-width: 260px !important;
-            width: auto !important;
-            font-size: inherit !important;
-            padding: 6px !important;
-        }
-
-        input[type='text'] {
-            border: 1px solid var(--border-color);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 1.1rem;
-            text-align: center;
         }
     </style>
 </head>
-<body data-page="web3" class="preserve-card-sizes">
+<body data-page="web3">
     <header class="topbar">
         <a class="brand-badge" href="https://boris8800.github.io/Bingo/">
-            <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22grad%22%20cx%3D%2230%25%22%20cy%3D%2230%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b8d4e3%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2245%22%20fill%3D%22url%28%23grad%29%22%20stroke%3D%22%234a90e2%22%20stroke-width%3D%223%22/%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%2235%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20fill%3D%22%232c5282%22%3EBINGO%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%2230%22%20cy%3D%2265%22%20r%3D%223%22%20fill%3D%22%234a90e2%22/%3E%0A%20%20%3Ccircle%20cx%3D%2270%22%20cy%3D%2270%22%20r%3D%222%22%20fill%3D%22%234a90e2%22/%3E%0A%3C/svg%3E" width="32" height="32" alt="Logo">
+            <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22grad%22%20cx%3D%2230%25%22%20cy%3D%2230%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b8d4e3%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2245%22%20fill%3D%22url%28%23grad%29%22%20stroke%3D%22%234a90e2%22%20stroke-width%3D%223%22/%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%2235%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20fill%3D%22%232c5282%22%3EBINGO%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%2230%22%20cy%3D%2265%22%20r%3D%223%22%0A%20%20fill%3D%22%234a90e2%22/%3E%0A%20%20%3Ccircle%20cx%3D%2270%22%20cy%3D%2270%22%20r%3D%222%22%20fill%3D%22%234a90e2%22/%3E%0A%3C/svg%3E" width="32" height="32" alt="Logo">
         </a>
         <button id="nightModeToggle" class="icon-btn" onclick="toggleNightMode()" aria-label="Cambiar modo noche" aria-pressed="false">&#127769;</button>
     </header>
@@ -119,71 +108,64 @@
         <button id="enableSoundBtn" onclick="enableAudioOnClick(); document.getElementById('enableSoundBanner').style.display='none';" style="padding: 12px 30px; background: white; color: #0056b3; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1.1em; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.2s;">🔊 Habilitar Sonido</button>
     </div>
 
-    <div class="main-content" style="margin-top: 60px;">
-        <h1 style="font-size: 1.8rem; margin-bottom: 20px;">Bingo en Vivo <span style="font-size: 0.9rem; opacity: 0.7;">(Espectador)</span></h1>
+    <main class="center">
+        <div class="view-mode-badge">ESPECTADOR</div>
 
-        <div id="tokenSection" class="control-box">
-            <p style="margin-top:0; font-weight: bold;">Unirse a una partida</p>
-            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;">
-                <input type="text" id="newTokenInput" placeholder="Código de 2 cifras" style="flex: 1; min-width: 100px; max-width: 200px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-primary); color: var(--text-primary); font-size: 1.1rem; text-align: center; box-sizing: border-box;" />
-                <button onclick="loadNewGameFromToken()" class="btn">Conectar</button>
-            </div>
-            <div id="tokenMessage" style="margin-top: 10px; font-size: 0.9em; font-weight: bold;"></div>
+        <div id="numeroContainer" role="status" aria-live="polite">
+            <div id="numero">--</div>
         </div>
 
-        <div id="gameInfoDisplay" class="control-box">
-            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Número en pantalla:</label>
-            <div id="numeroContainer">
-                <div id="numero" style="font-size: 5rem; font-weight: bold; color: var(--numero-marcado);">--</div>
+        <div id="p2pStatusMaster" style="font-size: 0.85em; margin: 15px 0; font-weight: bold; color: var(--text-secondary);">
+            Sincronización: <span id="p2pStatusText">Inactivo</span>
+            <button onclick="initCrossDeviceSync()" class="btn-secondary" style="margin-left: 10px; padding: 4px 10px; font-size: 0.7rem; border-radius: 12px;">Reconectar</button>
+        </div>
+
+        <div id="tokenSection" class="control-box">
+            <p style="margin:0 0 10px 0; font-weight: bold;">Unirse a Sorteo</p>
+            <div style="display: flex; gap: 10px; justify-content: center; align-items: center;">
+                <input id="newTokenInput" placeholder="Código" maxlength="6" type="text" />
+                <button onclick="loadNewGameFromToken()" class="btn">Unirse</button>
             </div>
-            <div id="statusMessage" style="margin-top: 10px; font-weight: bold;"></div>
-            <div id="syncStatus" style="font-size: 0.8em; opacity: 0.7;">Desconectado</div>
-            <button id="retrySyncBtn" onclick="initCrossDeviceSync()" class="btn-secondary" style="margin-top: 10px; padding: 6px 15px; font-size: 0.8em; border-radius: 20px;">🔄 Reintentar Conexión</button>
+            <div id="tokenMessage" style="margin-top: 8px; font-size: 0.8em; font-weight: bold;"></div>
         </div>
 
         <div id="myCardsTrackerContainer" class="control-box">
-            <h3 style="margin-top: 0;">Mis Cartones</h3>
-            <p style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 10px;">Añade tus números de cartón para seguimiento automático:</p>
-            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
-                <input type="text" id="myCardNumbersInput" placeholder="Ej: 5, 23" style="flex: 1; min-width: 120px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-primary); color: var(--text-primary);">
-                <button onclick="trackMyCards()" class="btn">Añadir</button>
+            <h3>Seguir mis Cartones</h3>
+            <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 12px;">
+                <input id="myCardNumbersInput" placeholder="Ej: 5, 23, 41" type="text" />
+                <button onclick="trackMyCards()" class="btn">Seguir</button>
             </div>
-            <div id="trackerMsg" style="font-weight: bold; font-size: 0.8rem; min-height: 1.2em; margin-bottom: 10px;"></div>
-            <div id="myTrackedBingosList" class="tracked-cards-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">---</div>
+            <div id="myTrackedBingosList">---</div>
+            <div id="trackerMsg" style="margin-top: 8px; font-weight: bold; font-size: 0.8rem;"></div>
         </div>
 
-        <div id="ultimosNumeros">
-            <p style="font-weight: bold; margin-top: 30px;">Últimos 10 números:</p>
-            <div id="ultimosNumerosContainer"></div>
-        </div>
-
-        <div id="historial" style="margin-top: 25px;">
-            <h3>Panel de Números</h3>
+        <div id="historial">
             <div id="numerosContainer"></div>
         </div>
 
-        <div style="margin: 40px auto; padding-bottom: 40px; max-width: 480px;">
-            <a href="index.html" style="color: var(--numero-marcado); text-decoration: none; font-weight: bold; font-size: 1.1rem;">← Volver a Web Uno</a>
+        <div id="ultimosNumeros">
+            <p>Últimos 10 números:</p>
+            <div id="ultimosNumerosContainer"></div>
+            <div id="estadoJuego"></div>
         </div>
 
-        <div class="control-box" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-            <button id="toggleCartonesBtn" class="btn-secondary" type="button" style="width: 100%; padding: 12px; border-radius: 25px;">Ver Todos los Cartones</button>
+        <div style="margin: 30px auto; max-width: 480px;">
+            <button id="toggleCartonesBtn" class="btn-secondary" style="width: 100%; padding: 12px; border-radius: 25px;">Ver Todos los Cartones</button>
         </div>
 
-        <div id="cartonesGuardadosContainer" class="main-content" style="margin-top: 30px;" hidden>
-            <h3>Todos los Cartones</h3>
+        <section id="cartonesGuardadosContainer" hidden>
+            <h3 style="margin-bottom: 20px;">Tabla de Cartones</h3>
             <div id="listaCartonesGuardados" class="saved-cards-grid"></div>
-        </div>
-    </div>
+        </section>
 
-    <!-- Elementos técnicos ocultos requeridos por script.js -->
+        <div style="margin: 40px auto; padding-bottom: 30px;">
+            <a href="index.html" style="color: var(--numero-marcado); text-decoration: none; font-size: 0.9rem;">← Volver al Panel de Control</a>
+        </div>
+    </main>
+
+    <!-- RECURSOS OCULTOS PARA SCRIPT.JS -->
     <div style="display:none">
-        <select id="voiceSelect"></select>
-        <div id="speedValue"></div>
-        <input id="speedSlider" type="range">
-        <button id="startStopBtn"></button>
-        <div id="listaCartonesBingo"></div>
-        <div id="estadoJuego"></div>
+        <select id="voiceSelect"></select><div id="speedValue"></div><input id="speedSlider" type="range"><button id="startStopBtn"></button><div id="listaCartonesBingo"></div>
         <div id="cartonesContainer">
             <div data-numeros="41, 73, 53, 24, 1, 61, 35, 27, 10, 4, 62, 67, 46, 29, 16" id="carton16"></div>
             <div data-numeros="9, 18, 36, 61, 77, 13, 24, 46, 65, 90, 28, 32, 50, 75, 89" id="carton42"></div>
@@ -212,21 +194,16 @@
     </div>
 
     <script>window.__IS_MASTER = false;</script>
-    <script src="js/script.js?v=6"></script>
+    <script src="js/script.js?v=8"></script>
     <script>
         function enableAudioOnClick() {
             try {
                 if (typeof initAudioContext === 'function') {
                     initAudioContext();
                     const btn = document.getElementById('enableSoundBtn');
-                    if (btn) {
-                        btn.textContent = '✅ Sonido Habilitado';
-                        btn.disabled = true;
-                    }
+                    if (btn) { btn.textContent = '✅ Sonido Habilitado'; btn.disabled = true; }
                 }
-            } catch (e) {
-                console.warn('Error audio:', e);
-            }
+            } catch (e) { console.warn('Error audio:', e); }
         }
 
         function loadNewGameFromToken() {
@@ -240,16 +217,11 @@
                 return;
             }
             try {
-                if (!/^\d{1,6}(,\d+)*$/.test(token)) {
-                    throw new Error("Formato inválido (Ej: 21)");
-                }
-                const parts = token.split(',');
-                gameCodeFixed = parseInt(parts[0]);
+                if (!/^\d{0,6}(,\d+)*$/.test(token)) throw new Error("Formato inválido");
+                gameCodeFixed = parseInt(token.split(',')[0]);
                 msg.textContent = `📡 Conectando a juego ${gameCodeFixed}...`;
                 msg.style.color = "var(--text-secondary)";
-                if (typeof initCrossDeviceSync === 'function') {
-                    initCrossDeviceSync();
-                }
+                if (typeof initCrossDeviceSync === 'function') initCrossDeviceSync();
                 window.location.hash = token;
             } catch (e) {
                 msg.textContent = "Error: " + e.message;
@@ -260,8 +232,8 @@
             if (e.key === 'Enter') loadNewGameFromToken();
         });
     </script>
-    <footer style="text-align: center; margin-top: 20px; padding: 10px; font-size: 0.9em; color: var(--text-secondary);">
-        © Boris8800 - 2026 - v6
+    <footer style="text-align: center; margin-top: 40px; padding: 20px; font-size: 0.85em; opacity: 0.6;">
+        © Boris8800 - v8
     </footer>
 </body>
 </html>
