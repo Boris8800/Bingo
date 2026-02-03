@@ -93,6 +93,58 @@
             border-radius: 8px;
             font-weight: bold;
         }
+        
+        /* Mobile improvements for Web 3 */
+        @media (max-width: 600px) {
+            #numero {
+                font-size: 6.5rem !important; /* Larger number for visibility */
+                margin-top: -10px;
+                margin-bottom: 5px;
+            }
+            .web3-card {
+                padding: 10px !important;
+                margin-top: 10px;
+            }
+            .token-input-container {
+                margin: 10px !important;
+                padding: 15px !important;
+            }
+            #ultimosNumerosContainer {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                justify-content: flex-start !important;
+                gap: 8px !important;
+                padding: 10px !important;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            #ultimosNumerosContainer::-webkit-scrollbar { display: none; }
+            #ultimosNumerosContainer .numeroCirculo {
+                flex: 0 0 45px;
+                height: 45px;
+                font-size: 1.2rem;
+            }
+            #numerosContainer {
+                grid-template-columns: repeat(9, 1fr) !important; /* 9 columns fit better for 90 numbers (10 rows) */
+                gap: 3px !important;
+                padding: 8px !important;
+            }
+            #numerosContainer .numeroCirculo {
+                width: 32px;
+                height: 32px;
+                font-size: 0.85rem;
+                line-height: 32px;
+            }
+            .control-box h3 {
+                font-size: 1.1rem;
+                margin-top: 0;
+            }
+            input[type="text"] {
+                font-size: 16px !important; /* Prevent iOS zoom */
+            }
+        }
+        
         /* Prevent saved-card/mini-board resize flashes during sync in web3 */
         .preserve-card-sizes .saved-card,
         .preserve-card-sizes .mini-board,

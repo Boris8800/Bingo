@@ -1107,7 +1107,7 @@ function limpiarMensajeVerificacion() {
 function verificarTodosLosCartones(options = {}) {
     const { silent = false } = options;
     const elementosCartones = document.querySelectorAll('#cartonesContainer > div[id^="carton"]');
-    // let algunBingoNuevoEsteTurno = false; // Variable no longer used for sound here
+    let algunBingoTrackeadoNuevo = false;
 
     elementosCartones.forEach(cartonElement => {
         const idCompleto = cartonElement.id;
@@ -1127,6 +1127,11 @@ function verificarTodosLosCartones(options = {}) {
                 if (faltantes.length === 0) { // Bingo detected
                     if (!cartonesConBingo.includes(numeroCarton)) {
                         cartonesConBingo.push(numeroCarton);
+                        
+                        // Si el cartón está en la lista de seguimiento, activamos sonido
+                        if (myTrackedCardNumbers.includes(numeroCarton)) {
+                            algunBingoTrackeadoNuevo = true;
+                        }
 
                         // If we are master, broadcast new bingo
                         if (isMaster) {
@@ -1137,6 +1142,11 @@ function verificarTodosLosCartones(options = {}) {
             }
         }
     });
+
+    if (algunBingoTrackeadoNuevo && !silent) {
+        playBingoSoundEffect();
+        speakText("¡Bingo detectado en uno de tus cartones!");
+    }
 
     actualizarListaBingos();
     actualizarMisCartonesBingoDisplay();
