@@ -57,31 +57,27 @@ function checkTokenInUse(code, timeout = 1200) {
     });
 }
 
-// Reserve a free 4-digit game code using an ordered vanity list first, then random fallback
+// Reserve a random free 4-digit game code (best-effort, limited retries)
 async function reserveGameCode(attempts = 5) {
-    // Ordered candidate list (4-digit tokens). The host will try these in order.
-    const orderedCandidates = [8888, 7777, 1111, 2222, 3333, 4444, 5555, 6666, 9999, 1234];
-
-    for (const candidate of orderedCandidates) {
+    // Try a small vanity ordered list first to provide predictable tokens
+    const vanity = ['8888','7777','1111','2222','3333','4444','5555','6666','9999','0000'];
+    for (let v of vanity) {
+        const candidate = parseInt(v, 10);
         if (candidate === gameCodeFixed) continue;
-        try {
-            const inUse = await checkTokenInUse(candidate, 900);
-            if (!inUse) {
-                gameCodeFixed = candidate;
-                console.log(`🎯 Reserved vanity game code: ${gameCodeFixed}`);
-                return gameCodeFixed;
-            }
-            console.log(`⚠️ Vanity candidate ${candidate} appears in use, trying next...`);
-        } catch (e) {
-            console.warn('Error checking candidate', candidate, e);
+        const inUse = await checkTokenInUse(candidate, 900);
+        if (!inUse) {
+            gameCodeFixed = candidate;
+            console.log(`🎯 Reserved vanity game code: ${gameCodeFixed}`);
+            return gameCodeFixed;
         }
+        console.log(`⚠️ Vanity candidate ${candidate} appears in use, trying next...`);
     }
 
-    // If all ordered candidates are busy, fall back to random probing (best-effort)
+    // If vanity candidates are busy, fallback to random attempts
     for (let i = 0; i < attempts; i++) {
         const candidate = Math.floor(Math.random() * 9000) + 1000;
         if (candidate === gameCodeFixed) continue;
-        const inUse = await checkTokenInUse(candidate, 700);
+        const inUse = await checkTokenInUse(candidate, 900);
         if (!inUse) {
             gameCodeFixed = candidate;
             console.log(`🎯 Reserved random game code: ${gameCodeFixed}`);
@@ -89,11 +85,106 @@ async function reserveGameCode(attempts = 5) {
         }
     }
 
-    // Last resort: choose a random code without checking
+    // Final fallback: pick a random code without confirmation
     gameCodeFixed = Math.floor(Math.random() * 9000) + 1000;
-    console.warn('⚠️ Could not reliably reserve token after attempts; using', gameCodeFixed);
+    console.warn('⚠️ Could not find unused token after attempts; using', gameCodeFixed);
     return gameCodeFixed;
 }
+
+// --- Claiming protocol (best-effort using ntfy) ---
+let hostSessionId = null;
+let claimHeartbeat = null;
+let currentClaim = null; // { code, hostId, ts }
+const CLAIM_TTL = 2 * 60 * 1000; // 2 minutes
+const CLAIM_HEARTBEAT_MS = 20 * 1000; // 20s
+
+function generateHostId() {
+    if (!hostSessionId) hostSessionId = 'h-' + Math.random().toString(36).substring(2, 10);
+    return hostSessionId;
+}
+
+async function postNtfyMessage(code, payload) {
+    try {
+        const topic = `bingo_boris_2026_${code}`;
+        await fetch(`https://ntfy.sh/${topic}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+    } catch (e) {
+        console.warn('postNtfyMessage error', e);
+    }
+}
+
+function parseNtfyEventData(raw) {
+    try {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.message) {
+            try { return JSON.parse(parsed.message); } catch (e) { return parsed.message; }
+        }
+        return parsed;
+    } catch (e) {
+        try { return JSON.parse(String(raw)); } catch (e2) { return raw; }
+    }
+}
+
+async function claimToken(code, listenMs = 900) {
+    generateHostId();
+    if (!code) return false;
+    // Listen briefly for existing claims on this topic
+    const topic = `bingo_boris_2026_${code}`;
+    let es = null;
+    let occupied = false;
+    try {
+        es = new EventSource(`https://ntfy.sh/${topic}/sse`);
+        es.onmessage = (e) => {
+            try {
+                const msg = parseNtfyEventData(e.data);
+                if (msg && typeof msg === 'object' && msg.type === 'claim' && msg.hostId && msg.ts) {
+                    const age = Date.now() - (msg.ts || 0);
+                    if (msg.hostId !== hostSessionId && age < CLAIM_TTL) {
+                        occupied = true;
+                    }
+                }
+            } catch (err) {}
+        };
+    } catch (e) {
+        // ignore
+    }
+
+    await new Promise(r => setTimeout(r, listenMs));
+    try { if (es) es.close(); } catch (e) {}
+
+    if (occupied) return false;
+
+    // Post claim
+    const payload = { type: 'claim', hostId: hostSessionId, ts: Date.now() };
+    await postNtfyMessage(code, payload);
+
+    // Start heartbeat
+    if (claimHeartbeat) clearInterval(claimHeartbeat);
+    claimHeartbeat = setInterval(() => postNtfyMessage(code, { type: 'claim', hostId: hostSessionId, ts: Date.now() }), CLAIM_HEARTBEAT_MS);
+    currentClaim = { code, hostId: hostSessionId, ts: Date.now() };
+    console.log('✅ Claimed token', code);
+    return true;
+}
+
+async function releaseClaim() {
+    if (!currentClaim) return;
+    try {
+        await postNtfyMessage(currentClaim.code, { type: 'release', hostId: currentClaim.hostId, ts: Date.now() });
+    } catch (e) {}
+    if (claimHeartbeat) {
+        clearInterval(claimHeartbeat);
+        claimHeartbeat = null;
+    }
+    console.log('🧹 Released claim for', currentClaim.code);
+    currentClaim = null;
+}
+
+window.addEventListener('beforeunload', () => {
+    try { releaseClaim(); } catch (e) {}
+});
 
 // ---- Sincronización Logic ----
 if (syncChannel) {
@@ -631,9 +722,24 @@ async function reiniciarJuego() {
     
     // Si somos el Host, generamos un nuevo token único
     if (isMaster) {
+        // Release any previous claim first
+        try { await releaseClaim(); } catch (e) {}
         window.location.hash = '';
         // Reserve a code first to avoid collisions with existing live games (best-effort)
         await reserveGameCode();
+
+        // Attempt to actively claim the reserved code. If claim fails, try reserve again.
+        let claimed = false;
+        try {
+            claimed = await claimToken(gameCodeFixed);
+        } catch (e) { claimed = false; }
+
+        if (!claimed) {
+            console.warn('Initial claim failed for', gameCodeFixed, '— trying reserve again');
+            await reserveGameCode();
+            try { claimed = await claimToken(gameCodeFixed); } catch (e) { claimed = false; }
+        }
+
         const newToken = generateGameToken();
         window.location.hash = newToken;
     }
