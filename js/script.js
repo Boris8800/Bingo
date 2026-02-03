@@ -26,6 +26,57 @@ let currentGameToken = null;
 let gameCodeFixed = null; // Código único de 4 dígitos (1000-9999) para aislar la partida
 let drawCounter = 0;      // Contador secuencial para asegurar que se procesen los sorteos en orden correcto
 
+// Helper: check whether a game code topic already has recent traffic on ntfy (best-effort)
+function checkTokenInUse(code, timeout = 1200) {
+    return new Promise((resolve) => {
+        if (!code) return resolve(false);
+        const topic = `bingo_boris_2026_${code}`;
+        let es = null;
+        let heard = false;
+        try {
+            es = new EventSource(`https://ntfy.sh/${topic}/sse`);
+            es.onmessage = (e) => {
+                heard = true;
+                try { es.close(); } catch (e) {}
+                resolve(true);
+            };
+            es.onerror = () => {
+                // ignore intermediate errors
+            };
+        } catch (err) {
+            resolve(false);
+            return;
+        }
+
+        setTimeout(() => {
+            if (!heard) {
+                try { es.close(); } catch (e) {}
+                resolve(false);
+            }
+        }, timeout);
+    });
+}
+
+// Reserve a random free 4-digit game code (best-effort, limited retries)
+async function reserveGameCode(attempts = 5) {
+    for (let i = 0; i < attempts; i++) {
+        const candidate = Math.floor(Math.random() * 9000) + 1000;
+        // Quick check: avoid repeating same candidate
+        if (candidate === gameCodeFixed) continue;
+        const inUse = await checkTokenInUse(candidate, 900);
+        if (!inUse) {
+            gameCodeFixed = candidate;
+            console.log(`🎯 Reserved game code: ${gameCodeFixed}`);
+            return gameCodeFixed;
+        }
+        console.log(`⚠️ Candidate ${candidate} appears in use, trying next...`);
+    }
+    // Fallback: take a random code (last resort)
+    gameCodeFixed = Math.floor(Math.random() * 9000) + 1000;
+    console.warn('⚠️ Could not find unused token after attempts; using', gameCodeFixed);
+    return gameCodeFixed;
+}
+
 // ---- Sincronización Logic ----
 if (syncChannel) {
     syncChannel.onmessage = (event) => {
@@ -528,7 +579,7 @@ function actualizarMisCartonesBingoDisplay() {
  * Reinicia el estado completo del juego.
  * Solo el Master tiene permiso para realizar un reinicio global.
  */
-function reiniciarJuego() {
+async function reiniciarJuego() {
     if (numerosSalidos.length > 0 && isMaster) {
         if (!confirm("¿Estás seguro de que quieres reiniciar el juego? Se perderá el progreso actual.")) {
             return;
@@ -563,6 +614,8 @@ function reiniciarJuego() {
     // Si somos el Host, generamos un nuevo token único
     if (isMaster) {
         window.location.hash = '';
+        // Reserve a code first to avoid collisions with existing live games (best-effort)
+        await reserveGameCode();
         const newToken = generateGameToken();
         window.location.hash = newToken;
     }
@@ -1616,12 +1669,6 @@ window.onload = () => {
 };
 
 async function downloadCardsAsPDF() {
-    // Prevent viewers from triggering PDF generation which may alter layout.
-    if (!isMaster) {
-        alert('Descarga de cartones solo disponible en la página de control.');
-        return;
-    }
-
     const originalText = "Descargar Cartones (PDF)";
     const links = document.querySelectorAll('a[onclick*="downloadCardsAsPDF"]');
     links.forEach(l => l.textContent = "Generando PDF...");

@@ -184,6 +184,17 @@
             border-radius: 8px;
             font-weight: bold;
         }
+        /* Prevent saved-card/mini-board resize flashes during sync in web3 */
+        .preserve-card-sizes .saved-card,
+        .preserve-card-sizes .mini-board,
+        .preserve-card-sizes .mini-cell {
+            transition: none !important;
+            /* keep size stable */
+            max-width: 260px !important;
+            width: auto !important;
+            font-size: inherit !important;
+            padding: 6px !important;
+        }
     </style>
 </head>
 <body data-page="web3">
@@ -612,6 +623,11 @@
                 const newUrl = `${window.location.origin}${window.location.pathname}#${token}`;
                 window.history.replaceState(null, null, newUrl);
                 
+                // Preserve card sizes briefly to avoid layout jumps when syncing
+                try {
+                    document.body.classList.add('preserve-card-sizes');
+                } catch (e) {}
+
                 // Start real-time cross-device sync
                 if (typeof initCrossDeviceSync === 'function') {
                     initCrossDeviceSync();
@@ -621,6 +637,11 @@
                 if (typeof applyGameStateToUI === 'function') {
                     applyGameStateToUI();
                 }
+
+                // Remove preservation class after a short delay
+                setTimeout(() => {
+                    try { document.body.classList.remove('preserve-card-sizes'); } catch (e) {}
+                }, 600);
                 
                 // Start local auto-sync for hash changes
                 startAutoSync(token);
