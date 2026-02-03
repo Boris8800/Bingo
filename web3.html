@@ -3,12 +3,11 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>� BINGO - Web 3</title>
+    <title> BINGO - Web 3</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22grad%22%20cx%3D%2230%25%22%20cy%3D%2230%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b8d4e3%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2245%22%20fill%3D%22url%28%23grad%29%22%20stroke%3D%22%234a90e2%22%20stroke-width%3D%223%22/%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%2235%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20fill%3D%22%232c5282%22%3EBINGO%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%2230%22%20cy%3D%2265%22%20r%3D%223%22%20fill%3D%22%234a90e2%22/%3E%0A%20%20%3Ccircle%20cx%3D%2270%22%20cy%3D%2270%22%20r%3D%222%22%20fill%3D%22%234a90e2%22/%3E%0A%3C/svg%3E">
     <link href="css/style.css" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script>
-        // Funciones esenciales para la interfaz
         function onConnectionCompleted() {
             console.log('✅ Web3 Connection Completed!');
             const statusDiv = document.getElementById('statusMessage');
@@ -20,10 +19,6 @@
                 syncStatusEl.textContent = 'Conectado';
                 syncStatusEl.style.color = '#28a745';
             }
-            
-            // Mostrar notificación visual temporal
-            showToast("¡Conectado exitosamente al Master!");
-            
             const banner = document.getElementById('enableSoundBanner');
             if (banner && banner.style.display !== 'none') {
                 banner.style.background = 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)';
@@ -46,19 +41,15 @@
         
         document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('nightMode') === 'true') toggleNightMode();
-            
-            // Cargar token desde URL si existe
             const urlToken = window.location.hash.substring(1);
             if (urlToken) {
                 const input = document.getElementById('newTokenInput');
                 if (input) {
                     input.value = urlToken;
-                    setTimeout(loadNewGameFromToken, 800); // Dar un poco de tiempo extra al peer para inicializar
+                    setTimeout(loadNewGameFromToken, 800);
                 }
             }
         });
-
-        // La función loadNewGameFromToken se define solo una vez al final del body para asegurar acceso a script.js
     </script>
     <style>
         body { 
@@ -71,134 +62,48 @@
             overflow-x: hidden;
         }
         
-        /* Z-Fold / Tablet / Mobile Optimization Wrapper */
-        .web3-wrapper {
-            max-width: 800px;
+        .main-content {
             margin: 0 auto;
-            padding: 15px;
+            padding: 0 15px;
             box-sizing: border-box;
-        }
-
-        .web3-card {
-            margin-top: 15px;
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: var(--shadow-md);
-            box-sizing: border-box; /* Asegurar que el padding no desborde */
             width: 100%;
         }
 
-        h1 { font-size: 1.5rem; margin-bottom: 20px; }
-        
-        /* Matching Web 1 Style (The History Section) */
-        #numerosContainer {
-            margin: 20px auto;
-            background-color: var(--bg-secondary) !important;
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: var(--shadow-sm);
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 5px;
-            box-sizing: border-box; /* Prevenir desborde */
+        .token-input-container input {
             width: 100%;
-        }
-        
-        #numerosContainer .numeroCirculo {
-            width: 100%; /* Ajustar al grid */
-            max-width: 45px;
-            aspect-ratio: 1/1;
-            height: auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            border-radius: 50%;
-            margin: 0 auto;
+            max-width: 250px;
         }
 
-        .back-btn {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: var(--btn-primary);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-        }
-
-        /* Mis Cartones Pill Styling */
-        .tracked-cards-container {
-            min-height: 50px;
-        }
-
-        /* Mobile improvements for Web 3 */
         @media (max-width: 600px) {
-            .web3-wrapper {
-                padding: 10px;
-            }
             #numero {
-                font-size: 6.5rem !important;
-                margin-top: -10px;
-                margin-bottom: 5px;
+                font-size: 5rem !important;
             }
-            .web3-card {
-                padding: 15px !important;
-                border-radius: 12px;
+            .control-box {
+                margin: 10px auto;
+                padding: 12px;
             }
-            #ultimosNumerosContainer {
-                display: flex !important;
-                flex-wrap: nowrap !important;
-                overflow-x: auto !important;
-                justify-content: flex-start !important;
-                gap: 8px !important;
+            #numerosContainer, #ultimosNumerosContainer {
                 padding: 10px !important;
-                -webkit-overflow-scrolling: touch;
-            }
-            #numerosContainer {
-                grid-template-columns: repeat(9, 1fr) !important;
-                gap: 3px !important;
-                padding: 5px !important;
-            }
-            #numerosContainer .numeroCirculo {
-                font-size: 0.8rem;
+                gap: 4px !important;
             }
         }
 
-        /* Z-Fold Inner Screen / Tablet optimization */
-        @media (min-width: 601px) and (max-width: 1024px) {
-            .web3-wrapper {
-                display: grid;
-                grid-template-columns: 1fr 1.2fr;
-                gap: 20px;
-                align-items: start;
-            }
-            .web3-wrapper > h1, 
-            .web3-wrapper > .token-input-container,
-            .web3-wrapper > #statusMessage,
-            .web3-wrapper > div:last-child {
-                grid-column: span 2;
-            }
-            #numerosContainer {
-                margin: 0;
-            }
-            .web3-card {
-                margin-top: 0;
-            }
-        }
-        
-        /* Prevent saved-card/mini-board resize flashes during sync in web3 */
         .preserve-card-sizes .saved-card,
         .preserve-card-sizes .mini-board,
         .preserve-card-sizes .mini-cell {
             transition: none !important;
-            /* keep size stable */
             max-width: 260px !important;
             width: auto !important;
             font-size: inherit !important;
             padding: 6px !important;
+        }
+
+        input[type='text'] {
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            text-align: center;
         }
     </style>
 </head>
@@ -211,44 +116,44 @@
     </header>
 
     <div id="enableSoundBanner" style="position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, var(--btn-primary) 0%, #0056b3 100%); padding: 20px; text-align: center; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <button id="enableSoundBtn" onclick="enableAudioOnClick(); document.getElementById('enableSoundBanner').style.display='none';" style="padding: 12px 30px; background: white; color: #0056b3; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1.1em; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔊 Habilitar Sonido</button>
+        <button id="enableSoundBtn" onclick="enableAudioOnClick(); document.getElementById('enableSoundBanner').style.display='none';" style="padding: 12px 30px; background: white; color: #0056b3; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1.1em; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.2s;">🔊 Habilitar Sonido</button>
     </div>
 
-    <div class="web3-wrapper" style="margin-top: 60px;">
+    <div class="main-content" style="margin-top: 60px;">
+        <h1 style="font-size: 1.8rem; margin-bottom: 20px;">Bingo en Vivo <span style="font-size: 0.9rem; opacity: 0.7;">(Espectador)</span></h1>
 
-    <!-- Información del Juego Actual -->
-    <div id="gameInfoDisplay" class="web3-card" style="margin-bottom: 20px;">
-        <div id="numeroContainer">
-            <div id="numero" style="font-size: 5rem; font-weight: bold; color: var(--numero-marcado);">--</div>
+        <div id="tokenSection" class="control-box">
+            <p style="margin-top:0; font-weight: bold;">Unirse a una partida</p>
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;">
+                <input type="text" id="newTokenInput" placeholder="Código de 2 cifras" style="flex: 1; min-width: 100px; max-width: 200px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-primary); color: var(--text-primary); font-size: 1.1rem; text-align: center; box-sizing: border-box;" />
+                <button onclick="loadNewGameFromToken()" class="btn">Conectar</button>
+            </div>
+            <div id="tokenMessage" style="margin-top: 10px; font-size: 0.9em; font-weight: bold;"></div>
         </div>
-        <div id="statusMessage" style="margin-top: 10px; font-weight: bold;"></div>
-        <div id="syncStatus" style="font-size: 0.8em; opacity: 0.7;">Desconectado</div>
-        <button id="retrySyncBtn" onclick="initCrossDeviceSync()" style="margin-top: 10px; padding: 6px 15px; font-size: 0.8em; border-radius: 20px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer;">🔄 Reintentar Conexión</button>
-    </div>
 
-    <div class="token-input-container web3-card" style="margin-top: 0px;">
-        <p style="margin-top:0; font-weight: bold;">Unirse a una partida</p>
-        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%;">
-            <input type="text" id="newTokenInput" placeholder="Código de 2 cifras" style="flex: 1; min-width: 120px; max-width: 250px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-primary); color: var(--text-primary); font-size: 1.1rem; text-align: center; box-sizing: border-box;" />
-            <button onclick="loadNewGameFromToken()" style="padding: 12px 24px; background: var(--btn-primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex-shrink: 0;">Conectar</button>
+        <div id="gameInfoDisplay" class="control-box">
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Número en pantalla:</label>
+            <div id="numeroContainer">
+                <div id="numero" style="font-size: 5rem; font-weight: bold; color: var(--numero-marcado);">--</div>
+            </div>
+            <div id="statusMessage" style="margin-top: 10px; font-weight: bold;"></div>
+            <div id="syncStatus" style="font-size: 0.8em; opacity: 0.7;">Desconectado</div>
+            <button id="retrySyncBtn" onclick="initCrossDeviceSync()" class="btn-secondary" style="margin-top: 10px; padding: 6px 15px; font-size: 0.8em; border-radius: 20px;">🔄 Reintentar Conexión</button>
         </div>
-        <div id="tokenMessage" style="margin-top: 10px; font-size: 0.9em;"></div>
-    </div>
 
-    <div id="myCardsTrackerContainer" class="web3-card" style="margin-top: 15px;">
-        <h3 style="margin-top: 0;">Mis Cartones</h3>
-        <p style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 10px;">Añade tus números de cartón para seguimiento automático:</p>
-        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
-            <input type="text" id="myCardNumbersInput" placeholder="Ej: 5, 23, 112" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-primary); color: var(--text-primary);">
-            <button onclick="trackMyCards()" style="padding: 10px 20px; background: var(--btn-primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Añadir</button>
+        <div id="myCardsTrackerContainer" class="control-box">
+            <h3 style="margin-top: 0;">Mis Cartones</h3>
+            <p style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 10px;">Añade tus números de cartón para seguimiento automático:</p>
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
+                <input type="text" id="myCardNumbersInput" placeholder="Ej: 5, 23" style="flex: 1; min-width: 120px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-primary); color: var(--text-primary);">
+                <button onclick="trackMyCards()" class="btn">Añadir</button>
+            </div>
+            <div id="trackerMsg" style="font-weight: bold; font-size: 0.8rem; min-height: 1.2em; margin-bottom: 10px;"></div>
+            <div id="myTrackedBingosList" class="tracked-cards-container" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">---</div>
         </div>
-        <div id="trackerMsg" style="font-weight: bold; font-size: 0.8rem; min-height: 1.2em;"></div>
-        <div id="myTrackedBingosList" class="tracked-cards-container">---</div>
-    </div>
 
-    <div class="web3-card">
         <div id="ultimosNumeros">
-            <p style="font-weight: bold; margin-top: 0;">Últimos 10 números:</p>
+            <p style="font-weight: bold; margin-top: 30px;">Últimos 10 números:</p>
             <div id="ultimosNumerosContainer"></div>
         </div>
 
@@ -257,21 +162,19 @@
             <div id="numerosContainer"></div>
         </div>
 
-        <!-- Botón para abrir la sección de cartones guardados -->
-        <div style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-            <button id="toggleCartonesBtn" class="btn-secondary" type="button" style="width: 100%; max-width: 300px; padding: 12px; border-radius: 25px;">Ver Todos los Cartones</button>
+        <div style="margin: 40px auto; padding-bottom: 40px; max-width: 480px;">
+            <a href="index.html" style="color: var(--numero-marcado); text-decoration: none; font-weight: bold; font-size: 1.1rem;">← Volver a Web Uno</a>
+        </div>
+
+        <div class="control-box" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+            <button id="toggleCartonesBtn" class="btn-secondary" type="button" style="width: 100%; padding: 12px; border-radius: 25px;">Ver Todos los Cartones</button>
+        </div>
+
+        <div id="cartonesGuardadosContainer" class="main-content" style="margin-top: 30px;" hidden>
+            <h3>Todos los Cartones</h3>
+            <div id="listaCartonesGuardados" class="saved-cards-grid"></div>
         </div>
     </div>
-
-    <!-- Sección oculta de cartones guardados -->
-    <div id="cartonesGuardadosContainer" class="control-box" hidden>
-        <h3>Todos los Cartones</h3>
-        <div id="listaCartonesGuardados" class="saved-cards-grid">
-            <!-- Aquí se generarán los mini-tableros -->
-        </div>
-    </div>
-
-    </div> <!-- Fin del wrapper principal -->
 
     <!-- Elementos técnicos ocultos requeridos por script.js -->
     <div style="display:none">
@@ -281,7 +184,6 @@
         <button id="startStopBtn"></button>
         <div id="listaCartonesBingo"></div>
         <div id="estadoJuego"></div>
-
         <div id="cartonesContainer">
             <div data-numeros="41, 73, 53, 24, 1, 61, 35, 27, 10, 4, 62, 67, 46, 29, 16" id="carton16"></div>
             <div data-numeros="9, 18, 36, 61, 77, 13, 24, 46, 65, 90, 28, 32, 50, 75, 89" id="carton42"></div>
@@ -306,57 +208,11 @@
             <div data-numeros="7, 12, 39, 52, 66, 83, 31, 57, 74, 90, 69, 77, 5, 28, 45" id="carton15"></div>
             <div data-numeros="2, 13, 48, 62, 81, 17, 30, 43, 70, 86, 22, 34, 54, 76, 88" id="carton17"></div>
             <div data-numeros="1, 13, 21, 42, 60, 90, 18, 29, 48, 54, 71, 30, 56, 65, 79" id="carton4"></div>
-            <div data-numeros="8, 9, 14, 28, 43, 61, 82, 31, 50, 63, 77, 10, 37, 72, 84" id="carton3"></div>
-            <div data-numeros="15, 7, 34, 45, 75, 70, 81, 68, 49, 27, 89, 53, 66, 21, 6" id="carton28"></div>
-            <div data-numeros="15, 29, 49, 68, 75, 13, 35, 51, 70, 83, 26, 54, 63, 86, 5" id="carton44"></div>
-            <div data-numeros="15, 24, 40, 58, 73, 27, 45, 67, 76, 89, 38, 52, 69, 80, 6" id="carton5"></div>
-            <div data-numeros="38, 52, 2, 69, 79, 87, 71, 44, 30, 19, 82, 53, 67, 27, 6" id="carton37"></div>
-            <div data-numeros="14, 37, 43, 78, 17, 29, 60, 88, 23, 38, 54, 65, 85, 8, 9" id="carton29"></div>
-            <div data-numeros="27, 44, 56, 70, 6, 18, 37, 59, 83, 36, 48, 61, 76, 87, 3" id="carton9"></div>
-            <div data-numeros="26, 34, 47, 66, 83, 12, 22, 39, 51, 87, 3, 19, 44, 55, 70" id="carton2"></div>
-            <div data-numeros="1, 12, 24, 35, 49, 18, 31, 52, 60, 86, 26, 3, 42, 63, 81" id="carton24"></div>
-            <div data-numeros="16, 33, 55, 71, 80, 21, 40, 77, 84, 19, 37, 65, 76, 88, 8" id="carton20"></div>
-            <div data-numeros="15, 27, 42, 59, 73, 21, 9, 19, 46, 63, 84, 20, 36, 54, 88" id="carton32"></div>
-            <div data-numeros="12, 38, 52, 78, 85, 7, 29, 46, 75, 88, 19, 23, 57, 60, 90" id="carton11"></div>
-            <div data-numeros="18, 24, 47, 62, 50, 70, 83, 26, 31, 6, 13, 69, 56, 48, 37" id="carton34"></div>
-            <div data-numeros="12, 33, 44, 51, 63, 16, 39, 57, 71, 90, 22, 50, 74, 87, 1" id="carton27"></div>
-            <div data-numeros="13, 42, 58, 65, 89, 15, 33, 49, 72, 86, 26, 53, 69, 82, 5" id="carton10"></div>
-            <div data-numeros="17, 30, 53, 72, 81, 4, 10, 44, 75, 66, 22, 34, 57, 68, 90" id="carton36"></div>
-            <div data-numeros="23, 41, 62, 78, 85, 5, 16, 33, 59, 88, 7, 11, 35, 49, 74" id="carton6"></div>
-            <div data-numeros="7, 62, 70, 41, 23, 87, 66, 53, 32, 10, 44, 89, 59, 28, 13" id="carton21"></div>
-            <div data-numeros="14, 64, 77, 50, 1, 21, 80, 67, 35, 54, 40, 17, 73, 28, 39" id="carton7"></div>
-            <div data-numeros="2, 25, 36, 57, 81, 17, 20, 64, 4, 86, 32, 46, 53, 68, 75" id="carton1"></div>
-            <div data-numeros="11, 26, 42, 62, 83, 4, 31, 48, 56, 72, 20, 36, 59, 67, 84" id="carton26"></div>
-            <div data-numeros="22, 39, 57, 16, 31, 40, 23, 5, 11, 3, 85, 62, 81, 45, 64" id="carton38"></div>
-            <div data-numeros="85, 32, 19, 51, 6, 78, 65, 23, 37, 11, 89, 58, 71, 25, 44" id="carton18"></div>
-            <div data-numeros="10, 35, 54, 86, 72, 14, 43, 66, 74, 88, 25, 47, 58, 78, 37" id="carton39"></div>
-            <div data-numeros="2, 3, 18, 10, 24, 28, 35, 40, 46, 55, 61, 69, 77, 79, 82" id="carton25"></div>
-            <div data-numeros="10, 5, 3, 20, 26, 36, 41, 46, 52, 66, 65, 79, 81, 90, 80" id="carton100"></div>
-            <div data-numeros="3, 8, 16, 26, 29, 35, 44, 42, 54, 56, 66, 60, 70, 88, 87" id="carton101"></div>
-            <div data-numeros="9, 2, 19, 29, 27, 32, 38, 44, 51, 56, 68, 71, 78, 84, 86" id="carton102"></div>
-            <div data-numeros="5, 1, 14, 24, 21, 37, 33, 48, 49, 59, 65, 67, 77, 78, 81" id="carton103"></div>
-            <div data-numeros="6, 11, 14, 15, 21, 34, 43, 48, 55, 54, 63, 64, 75, 82, 88" id="carton104"></div>
-            <div data-numeros="12, 16, 22, 31, 30, 39, 45, 42, 57, 59, 60, 62, 77, 76, 89" id="carton105"></div>
-            <div data-numeros="7, 10, 13, 23, 36, 38, 47, 45, 57, 62, 69, 75, 79, 84, 89" id="carton106"></div>
-            <div data-numeros="5, 18, 15, 27, 34, 37, 43, 42, 52, 60, 61, 70, 72, 84, 89" id="carton107"></div>
-            <div data-numeros="3, 16, 17, 24, 30, 45, 40, 57, 50, 67, 63, 76, 75, 83, 87" id="carton108"></div>
-            <div data-numeros="7, 2, 11, 13, 21, 28, 32, 36, 46, 58, 62, 79, 78, 81, 80" id="carton109"></div>
-            <div data-numeros="8, 10, 19, 23, 29, 39, 31, 48, 41, 55, 51, 66, 77, 82, 90" id="carton110"></div>
-            <div data-numeros="3, 8, 10, 20, 31, 35, 41, 43, 58, 54, 66, 60, 77, 71, 90" id="carton111"></div>
-            <div data-numeros="1, 6, 12, 25, 26, 35, 44, 49, 56, 59, 69, 68, 74, 88, 73" id="carton112"></div>
-            <div data-numeros="4, 6, 19, 15, 27, 28, 34, 42, 56, 55, 64, 70, 88, 87, 85" id="carton113"></div>
-            <div data-numeros="9, 12, 18, 24, 23, 39, 36, 51, 50, 63, 68, 74, 76, 82, 86" id="carton114"></div>
-            <div data-numeros="3, 15, 11, 22, 25, 33, 37, 46, 58, 68, 62, 78, 79, 88, 80" id="carton115"></div>
-            <div data-numeros="7, 16, 13, 25, 38, 32, 47, 45, 57, 69, 62, 79, 75, 84, 89" id="carton116"></div>
-            <div data-numeros="2, 5, 17, 13, 28, 35, 38, 41, 48, 54, 55, 72, 73, 82, 87" id="carton117"></div>
-            <div data-numeros="1, 5, 14, 22, 26, 37, 33, 46, 49, 59, 65, 61, 72, 73, 83" id="carton118"></div>
-            <div data-numeros="2, 11, 17, 29, 21, 30, 40, 44, 48, 53, 52, 67, 78, 80, 81" id="carton119"></div>
-            <div data-numeros="8, 14, 18, 29, 23, 36, 44, 49, 52, 69, 67, 70, 75, 85, 89" id="carton120"></div>
         </div>
     </div>
 
     <script>window.__IS_MASTER = false;</script>
-    <script src="js/script.js?v=5"></script>
+    <script src="js/script.js?v=6"></script>
     <script>
         function enableAudioOnClick() {
             try {
@@ -377,56 +233,35 @@
             const input = document.getElementById('newTokenInput');
             const msg = document.getElementById('tokenMessage');
             if (!input || !msg) return;
-
             const token = input.value.trim();
             if (!token) {
                 msg.textContent = "Ingresa un token válido.";
                 msg.style.color = "red";
                 return;
             }
-
             try {
-                // Support both legacy 2-digit and new codes
                 if (!/^\d{1,6}(,\d+)*$/.test(token)) {
-                    throw new Error("Formato inválido (Ej: 21 o 21,5,10)");
+                    throw new Error("Formato inválido (Ej: 21)");
                 }
-
                 const parts = token.split(',');
                 gameCodeFixed = parseInt(parts[0]);
-                numerosSalidos = parts.slice(1).map(Number);
-                drawCounter = numerosSalidos.length;
-                
                 msg.textContent = `📡 Conectando a juego ${gameCodeFixed}...`;
                 msg.style.color = "var(--text-secondary)";
-                
-                // Trigger P2P Sync
                 if (typeof initCrossDeviceSync === 'function') {
                     initCrossDeviceSync();
                 }
-
-                // Update UI immediately with token data
-                if (typeof applyGameStateToUI === 'function') {
-                    applyGameStateToUI();
-                }
-                
-                // Importante: resetear el contador de P2P para aceptar el primer estado del Master
-                lastDrawCounterReceived = -1; 
-                
                 window.location.hash = token;
             } catch (e) {
                 msg.textContent = "Error: " + e.message;
                 msg.style.color = "#dc3545";
             }
         }
-
-        // Enter listener for input
         document.getElementById('newTokenInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') loadNewGameFromToken();
         });
     </script>
-
     <footer style="text-align: center; margin-top: 20px; padding: 10px; font-size: 0.9em; color: var(--text-secondary);">
-        © Boris8800 - 2026 - v5
+        © Boris8800 - 2026 - v6
     </footer>
 </body>
 </html>
