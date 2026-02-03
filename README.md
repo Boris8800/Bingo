@@ -24,8 +24,8 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 
 ### 📤 Compartir y Exportar
 - **PDF Export**: Genera y descarga tus cartones en PDF listos para imprimir con un solo clic.
-- **Sincronización Multi-Dispositivo (No-Server)**: Gracias a la integración con el servicio `ntfy.sh`, puedes conectar tu PC (Host) con móviles (Invitados) sin necesidad de un servidor backend. ¡Ideal para GitHub Pages!
-- **Tokens de 4 Dígitos**: Sistema de seguridad mejorado con códigos de 4 dígitos (ej: 1234) para evitar colisiones entre partidas globales.
+- **Sincronización Multi-Dispositivo (P2P)**: Gracias a la integración con **PeerJS (WebRTC)**, puedes conectar tu PC (Host) con móviles (Invitados) de forma directa (Peer-to-Peer) sin necesidad de un servidor backend. ¡Ideal para GitHub Pages!
+- **Tokens 2–4 Dígitos (progresivo)**: El sistema intentará reservar códigos cortos (2 dígitos) y, si están ocupados, escalará automáticamente a códigos más largos (3 o 4 dígitos) para reducir colisiones globales.
 - **Modo Espectador**: Tus amigos pueden seguir el juego sincronizado desde sus propios dispositivos (`web3.html`).
 
 ## 🚀 Guía Rápida
@@ -35,12 +35,12 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
    - El sistema detectará automáticamente que eres el administrador.
    - Configura tus preferencias (voz, velocidad).
    - Pulsa **"Comenzar"** para iniciar el sorteo.
-   - Usa **"Compartir"** para generar el código de 4 dígitos.
+   - Usa **"Compartir"** para generar el código de juego (2–4 dígitos según disponibilidad).
 
 2. **Jugar como Invitado (Móvil/Tablet)**:
    - Abre la web y ve a la sección **Web 3** o escanea el QR generado por el Host.
-   - Ingresa el código de 4 dígitos.
-   - El dispositivo se conectará al canal del Host y recibirás los números en tiempo real conforme vayan saliendo.
+   -   - Ingresa el código de 2–4 dígitos o escanea el QR.
+   -   - El dispositivo se conectará al canal del Host y recibirá los números en tiempo real conforme vayan saliendo.
 
 ## 🛠️ Detalles Técnicos de Sincronización
 
@@ -48,7 +48,7 @@ Este proyecto utiliza tres capas de sincronización para asegurar que nadie se p
 
 1. **BroadcastChannel API**: Para sincronizar pestañas abiertas en el mismo navegador instantáneamente.
 2. **LocalStorage Events**: Como respaldo (fallback) para navegadores antiguos en el mismo dispositivo.
-3. **ntfy.sh (WebHooks/SSE)**: Para la comunicación entre diferentes dispositivos (ej: PC a Móvil) a través de internet, permitiendo una experiencia de servidor real en un entorno estático.
+3. **PeerJS (WebRTC)**: Para la comunicación directa entre dispositivos a través de internet, permitiendo una experiencia de servidor real en un entorno estático sin registros ni costes.
 
 3. **Descargar Cartones**:
    - Ve a la sección de "Cartones".
@@ -85,15 +85,15 @@ python3 -m http.server 8000
 ### Token Inteligente
 El juego utiliza un sistema de token automático para sincronizar el estado entre el host (Web1) y los espectadores (Web3):
 
-**Formato del Token:**
+**Formato del Token (hash URL):**
 ```
-[2-dígit código de juego] + [contador de sorteo]
+[Código de juego (2-4 dígitos)], [lista de números separados por comas]
 
-Ejemplo: 22+1+2+3+4
+Ejemplo: 22,1,2,3,4
 ```
 
-- **Código de Juego** (2 dígitos, 10-99): Se genera automáticamente al compartir y permanece constante durante toda la sesión de juego.
-- **Contador de Sorteo**: Se incrementa automáticamente (+1, +2, +3...) cada vez que el host sorteó un número.
+- **Código de Juego** (2-4 dígitos): Se genera automáticamente al compartir; el host intentará códigos cortos primero y escalará si están ocupados.
+- **Lista de Números**: Los números sorteados se anexan al token en orden (separados por comas) y Web3 los procesa para marcar cartones.
 
 ### Cómo Funciona la Sincronización
 1. El host (Web1) **genera un token** que contiene el código de juego + el contador actual.

@@ -13,172 +13,154 @@ let cartonesConBingo = [];
 // 1. BroadcastChannel: Sincronización instantánea entre pestañas del mismo navegador.
 const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('bingo_sync') : null;
 
-// 2. Variables de Control de Estado de Red
-let isMaster = true;           // Define si esta pestaña controla el juego (Host) o solo escucha (Live)
-let ntfyEventSource = null;    // Fuente de eventos para recibir datos desde otros dispositivos (Cross-Device)
-let lastDrawCounterReceived = -1; // Protege contra mensajes antiguos o fuera de orden
-let ntfyReconnectAttempt = 0;
-let ntfyBackoffTimer = null;
-let ntfyConnected = false;
+// 2. Variables de Control de Estado de Red (P2P via PeerJS)
+let isMaster = (typeof window !== 'undefined' && window.__IS_MASTER === false) ? false : true;
+let peer = null;
+let connections = [];         // Solo para Master: lista de conexiones activas
+let connToMaster = null;      // Para Viewer: conexión activa al Master
+let lastDrawCounterReceived = -1; 
+let drawCounter = 0;
+let gameCodeFixed = null;
 
-// ---- Identificadores de Juego (Tokens) ----
-let currentGameToken = null;
-let gameCodeFixed = null; // Código único de 4 dígitos (1000-9999) para aislar la partida
-let drawCounter = 0;      // Contador secuencial para asegurar que se procesen los sorteos en orden correcto
-
-// Helper: check whether a game code topic already has recent traffic on ntfy (best-effort)
+/**
+ * Verifica si un código de juego está siendo usado por un Master.
+ * Intenta conectar al PeerID correspondiente.
+ */
 function checkTokenInUse(code, timeout = 1200) {
     return new Promise((resolve) => {
         if (!code) return resolve(false);
-        const topic = `bingo_boris_2026_${code}`;
-        let es = null;
-        let heard = false;
-        try {
-            es = new EventSource(`https://ntfy.sh/${topic}/sse`);
-            es.onmessage = (e) => {
-                heard = true;
-                try { es.close(); } catch (e) {}
-                resolve(true);
-            };
-            es.onerror = () => {
-                // ignore intermediate errors
-            };
-        } catch (err) {
-            resolve(false);
-            return;
-        }
+        const tempPeer = new Peer();
+        let finished = false;
+        
+        const cleanup = () => {
+            if (finished) return;
+            finished = true;
+            tempPeer.destroy();
+        };
 
-        setTimeout(() => {
-            if (!heard) {
-                try { es.close(); } catch (e) {}
-                resolve(false);
-            }
+        const timer = setTimeout(() => {
+            cleanup();
+            resolve(false);
         }, timeout);
+
+        tempPeer.on('open', () => {
+            const conn = tempPeer.connect(`bingo-boris-2026-${code}`);
+            conn.on('open', () => {
+                clearTimeout(timer);
+                cleanup();
+                resolve(true); // Alguien respondió
+            });
+            conn.on('error', () => {
+                clearTimeout(timer);
+                cleanup();
+                resolve(false);
+            });
+        });
+
+        tempPeer.on('error', () => {
+            clearTimeout(timer);
+            cleanup();
+            resolve(false);
+        });
     });
 }
 
-// Reserve a random free 4-digit game code (best-effort, limited retries)
+// Reserve a free game code, trying progressively longer lengths (2 -> 3 -> 4 digits)
+// Best-effort: checks PeerJS for recent activity; not atomic.
 async function reserveGameCode(attempts = 5) {
-    // Try a small vanity ordered list first to provide predictable tokens
-    const vanity = ['88','77','11','22','33','44','55','66','99','00'];
-    for (let v of vanity) {
-        const candidate = parseInt(v, 10);
-        if (candidate === gameCodeFixed) continue;
-        const inUse = await checkTokenInUse(candidate, 900);
-        if (!inUse) {
-            gameCodeFixed = candidate;
-            console.log(`🎯 Reserved vanity game code: ${gameCodeFixed}`);
-            return gameCodeFixed;
+    const lengths = [2, 3, 4];
+
+    // Vanity patterns per length (repeat digit patterns first)
+    const makeVanity = (len) => {
+        const base = ['8','7','1','2','3','4','5','6','9','0'];
+        return base.map(d => d.repeat(len));
+    };
+
+    for (const len of lengths) {
+        const vanity = makeVanity(len);
+        for (let v of vanity) {
+            const candidate = parseInt(v, 10);
+            if (candidate === gameCodeFixed) continue;
+            const inUse = await checkTokenInUse(candidate, 900);
+            if (!inUse) {
+                gameCodeFixed = candidate;
+                console.log(`🎯 Reserved vanity ${len}-digit game code: ${gameCodeFixed}`);
+                return gameCodeFixed;
+            }
+            console.log(`⚠️ Vanity ${len}-digit candidate ${candidate} in use, trying next...`);
         }
-        console.log(`⚠️ Vanity candidate ${candidate} appears in use, trying next...`);
+
+        // Try a few random candidates for this length
+        const min = Math.pow(10, len - 1);
+        const max = Math.pow(10, len) - 1;
+        for (let i = 0; i < attempts; i++) {
+            const candidate = Math.floor(Math.random() * (max - min + 1)) + min;
+            if (candidate === gameCodeFixed) continue;
+            const inUse = await checkTokenInUse(candidate, 900);
+            if (!inUse) {
+                gameCodeFixed = candidate;
+                console.log(`🎯 Reserved random ${len}-digit game code: ${gameCodeFixed}`);
+                return gameCodeFixed;
+            }
+        }
     }
 
-    // If vanity candidates are busy, fallback to random attempts
-    for (let i = 0; i < attempts; i++) {
-        const candidate = Math.floor(Math.random() * 90) + 10; // 10-99
-        if (candidate === gameCodeFixed) continue;
-        const inUse = await checkTokenInUse(candidate, 900);
-        if (!inUse) {
-            gameCodeFixed = candidate;
-            console.log(`🎯 Reserved random game code: ${gameCodeFixed}`);
-            return gameCodeFixed;
-        }
-    }
     // Final fallback: pick a random 2-digit code without confirmation
     gameCodeFixed = Math.floor(Math.random() * 90) + 10;
-    console.warn('⚠️ Could not find unused token after attempts; using', gameCodeFixed);
+    console.warn('⚠️ Could not find unused token after attempts; falling back to', gameCodeFixed);
     return gameCodeFixed;
 }
 
-// --- Claiming protocol (best-effort using ntfy) ---
-let hostSessionId = null;
-let claimHeartbeat = null;
-let currentClaim = null; // { code, hostId, ts }
-const CLAIM_TTL = 2 * 60 * 1000; // 2 minutes
-const CLAIM_HEARTBEAT_MS = 20 * 1000; // 20s
-
-function generateHostId() {
-    if (!hostSessionId) hostSessionId = 'h-' + Math.random().toString(36).substring(2, 10);
-    return hostSessionId;
-}
-
-async function postNtfyMessage(code, payload) {
-    try {
-        const topic = `bingo_boris_2026_${code}`;
-        await fetch(`https://ntfy.sh/${topic}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+// --- Claiming protocol (P2P using PeerJS) ---
+/**
+ * Lógica de PeerJS para Sincronización P2P
+ */
+function claimToken(code) {
+    if (!code) return Promise.resolve(false);
+    return new Promise((resolve) => {
+        if (peer) { try { peer.destroy(); } catch (e) {} }
+        
+        const peerId = `bingo-boris-2026-${code}`;
+        console.log(`📡 Intentando reclamar ID P2P: ${peerId}`);
+        
+        peer = new Peer(peerId);
+        
+        peer.on('open', (id) => {
+            console.log('✅ Master Peer activo:', id);
+            gameCodeFixed = code;
+            setupMasterListeners();
+            resolve(true);
         });
-    } catch (e) {
-        console.warn('postNtfyMessage error', e);
-    }
+        
+        peer.on('error', (err) => {
+            if (err.type === 'unavailable-id') {
+                console.warn('ID de Peer ocupado:', code);
+                resolve(false);
+            } else {
+                console.error('Error al abrir Peer Master:', err);
+                resolve(false);
+            }
+        });
+    });
 }
 
-function parseNtfyEventData(raw) {
-    try {
-        const parsed = JSON.parse(raw);
-        if (parsed && parsed.message) {
-            try { return JSON.parse(parsed.message); } catch (e) { return parsed.message; }
-        }
-        return parsed;
-    } catch (e) {
-        try { return JSON.parse(String(raw)); } catch (e2) { return raw; }
-    }
+function setupMasterListeners() {
+    peer.on('connection', (conn) => {
+        console.log('🤝 Espectador conectado:', conn.peer);
+        connections.push(conn);
+        conn.on('open', () => broadcastState());
+        conn.on('close', () => connections = connections.filter(c => c !== conn));
+        conn.on('error', () => connections = connections.filter(c => c !== conn));
+    });
 }
 
-async function claimToken(code, listenMs = 900) {
-    generateHostId();
-    if (!code) return false;
-    // Listen briefly for existing claims on this topic
-    const topic = `bingo_boris_2026_${code}`;
-    let es = null;
-    let occupied = false;
-    try {
-        es = new EventSource(`https://ntfy.sh/${topic}/sse`);
-        es.onmessage = (e) => {
-            try {
-                const msg = parseNtfyEventData(e.data);
-                if (msg && typeof msg === 'object' && msg.type === 'claim' && msg.hostId && msg.ts) {
-                    const age = Date.now() - (msg.ts || 0);
-                    if (msg.hostId !== hostSessionId && age < CLAIM_TTL) {
-                        occupied = true;
-                    }
-                }
-            } catch (err) {}
-        };
-    } catch (e) {
-        // ignore
+function releaseClaim() {
+    if (peer) {
+        try { peer.destroy(); } catch (e) {}
+        peer = null;
     }
-
-    await new Promise(r => setTimeout(r, listenMs));
-    try { if (es) es.close(); } catch (e) {}
-
-    if (occupied) return false;
-
-    // Post claim
-    const payload = { type: 'claim', hostId: hostSessionId, ts: Date.now() };
-    await postNtfyMessage(code, payload);
-
-    // Start heartbeat
-    if (claimHeartbeat) clearInterval(claimHeartbeat);
-    claimHeartbeat = setInterval(() => postNtfyMessage(code, { type: 'claim', hostId: hostSessionId, ts: Date.now() }), CLAIM_HEARTBEAT_MS);
-    currentClaim = { code, hostId: hostSessionId, ts: Date.now() };
-    console.log('✅ Claimed token', code);
-    return true;
-}
-
-async function releaseClaim() {
-    if (!currentClaim) return;
-    try {
-        await postNtfyMessage(currentClaim.code, { type: 'release', hostId: currentClaim.hostId, ts: Date.now() });
-    } catch (e) {}
-    if (claimHeartbeat) {
-        clearInterval(claimHeartbeat);
-        claimHeartbeat = null;
-    }
-    console.log('🧹 Released claim for', currentClaim.code);
-    currentClaim = null;
+    connections = [];
+    console.log('🧹 Peer liberado');
 }
 
 window.addEventListener('beforeunload', () => {
@@ -199,121 +181,62 @@ if (syncChannel) {
 window.addEventListener('storage', (event) => {
     if (event.key === STORAGE_KEY && !isMaster) {
         console.log('Sync received via LocalStorage');
-        const state = JSON.parse(event.newValue);
-        applySharedState(state);
+        try {
+            const state = JSON.parse(event.newValue);
+            applySharedState(state);
+        } catch (e) {}
     }
 });
 
 /**
- * Inicializa la escucha de eventos desde otros dispositivos.
- * Utiliza ntfy.sh como puente de comunicación redundante y gratuito.
+ * Inicializa la escucha de eventos desde otros dispositivos (P2P).
  */
 function initCrossDeviceSync() {
     if (isMaster || !gameCodeFixed) return;
+    if (peer) { try { peer.destroy(); } catch (e) {} }
     
-    if (ntfyEventSource) {
-        ntfyEventSource.close();
-    }
+    peer = new Peer();
+    peer.on('open', (id) => {
+        console.log('📡 Mi ID de Espectador:', id);
+        intentarConectarConMaster();
+    });
+    peer.on('error', (err) => console.error('Error Peer Espectador:', err));
+}
+
+function intentarConectarConMaster() {
+    if (!gameCodeFixed) return;
+    const masterId = `bingo-boris-2026-${gameCodeFixed}`;
+    console.log(`🔗 Conectando al Master: ${masterId}`);
     
-    // El tema es único basado en el código de 4 dígitos para evitar colisiones
-        const topic = `bingo_boris_2026_${gameCodeFixed}`; // Unique topic based on the 4-digit code to avoid collisions
-    console.log(`📡 Iniciando escucha Cross-Device en tema: ${topic}`);
+    // Si ya existe una conexión, no la duplicamos
+    if (connToMaster && connToMaster.open) return;
     
-    try {
-        // Reset attempts when (re)starting
-        ntfyReconnectAttempt = 0;
-        if (ntfyBackoffTimer) {
-            clearTimeout(ntfyBackoffTimer);
-            ntfyBackoffTimer = null;
-        }
-
-        ntfyEventSource = new EventSource(`https://ntfy.sh/${topic}/sse`);
-
-        ntfyEventSource.onopen = () => {
-            ntfyConnected = true;
-            ntfyReconnectAttempt = 0;
-            console.log('📶 SSE conectado a ntfy.sh');
-            const syncStatusEl = document.getElementById('syncStatus');
-            if (syncStatusEl) syncStatusEl.textContent = 'Conectado';
-        };
-
-        // Manejo robusto del mensaje SSE: ntfy puede enviar distintos formatos.
-        ntfyEventSource.onmessage = (event) => {
-            try {
-                // event.data puede ser: "{\"message\":\"...\"}" o bien directamente el cuerpo enviado.
-                let parsed = null;
-                try {
-                    parsed = JSON.parse(event.data);
-                } catch (e) {
-                    // No JSON, trataremos el texto tal cual
-                    parsed = event.data;
-                }
-
-                // Si ntfy nos envía un wrapper con "message", usemos su contenido
-                if (parsed && typeof parsed === 'object' && parsed.message) {
-                    try {
-                        const state = JSON.parse(parsed.message);
-                        console.log('📲 Actualización recibida de otro dispositivo (wrapper.message)');
-                        applySharedState(state);
-                        return;
-                    } catch (e) {
-                        console.warn('Mensaje wrapper no es JSON:', e);
-                    }
-                }
-
-                // Si el body ya es el JSON del estado
-                if (typeof parsed === 'object') {
-                    console.log('📲 Actualización recibida de otro dispositivo (direct JSON)');
-                    applySharedState(parsed);
-                    return;
-                }
-
-                // Si recibimos texto plano, intentamos parsearlo como JSON
-                try {
-                    const maybeState = JSON.parse(String(parsed));
-                    console.log('📲 Actualización recibida (texto -> JSON)');
-                    applySharedState(maybeState);
-                    return;
-                } catch (e) {
-                    console.warn('No se pudo interpretar el mensaje SSE como JSON:', e);
-                }
-            } catch (e) {
-                console.error('Error procesando mensaje Cross-Device', e);
-            }
-        };
-
-        ntfyEventSource.onerror = (err) => {
-            console.warn('Error en conexión Cross-Device. Intentando reconectar...', err);
-            ntfyConnected = false;
-            const syncStatusEl = document.getElementById('syncStatus');
-            if (syncStatusEl) syncStatusEl.textContent = 'Reconectando...';
-
-            try {
-                ntfyEventSource.close();
-            } catch (e) {}
-
-            // Backoff exponencial (1s,2s,4s,8s...) hasta 30s max
-            ntfyReconnectAttempt = Math.min(10, ntfyReconnectAttempt + 1);
-            const delay = Math.min(30000, 1000 * Math.pow(2, ntfyReconnectAttempt - 1));
-            if (ntfyBackoffTimer) clearTimeout(ntfyBackoffTimer);
-            ntfyBackoffTimer = setTimeout(() => {
-                ntfyBackoffTimer = null;
-                console.log(`Reintentando SSE (intento ${ntfyReconnectAttempt}) en ${delay}ms`);
-                initCrossDeviceSync();
-            }, delay);
-        };
-    } catch (e) {
-        console.error('No se pudo iniciar Cross-Device Sync', e);
-    }
+    connToMaster = peer.connect(masterId, { reliable: true });
+    
+    connToMaster.on('open', () => {
+        console.log('✅ Conexión establecida con el Master');
+        const syncStatusEl = document.getElementById('syncStatus');
+        if (syncStatusEl) syncStatusEl.textContent = 'Conectado';
+        // Limpiar reintentos si los hubiera
+    });
+    
+    connToMaster.on('data', (data) => {
+        console.log('📲 Actualización P2P recibida');
+        applySharedState(data);
+    });
+    
+    connToMaster.on('close', () => {
+        console.warn('Conexión perdida. Reintentando en 3s...');
+        const syncStatusEl = document.getElementById('syncStatus');
+        if (syncStatusEl) syncStatusEl.textContent = 'Reconectando...';
+        setTimeout(intentarConectarConMaster, 3000);
+    });
 }
 
 /**
- * Difunde el estado actual del juego a todos los interesados.
- * Se ejecuta cada vez que el estado del juego cambia (numero nuevo, pausa, etc.)
+ * Difunde el estado actual del juego vía P2P.
  */
 async function broadcastState() {
-    if (!isMaster) return; // Solo el Master puede dictar el estado del juego
-
     const state = {
         numerosSalidos,
         numerosDisponibles,
@@ -325,43 +248,25 @@ async function broadcastState() {
         gameCodeFixed,
         myTrackedCardNumbers
     };
-    
-    // 1. Sincronización Local: Envía a otras pestañas en el mismo navegador/dispositivo
+
+    if (isMaster && peer) {
+        connections.forEach(conn => {
+            if (conn && conn.open) {
+                conn.send(state);
+            }
+        });
+    }
+
+    // Sincronización Local (BroadcastChannel)
     if (syncChannel) {
         syncChannel.postMessage(state);
     }
     
-    // 2. Sincronización Global: Envía a otros dispositivos vía ntfy.sh
-    if (gameCodeFixed) {
-        const topic = `bingo_boris_2026_${gameCodeFixed}`;
-
-        // Intentamos con reintentos limitados en caso de fallo de red
-        const postState = async (attempt = 0) => {
-            try {
-                await fetch(`https://ntfy.sh/${topic}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(state)
-                });
-            } catch (err) {
-                console.warn('Error al enviar estado a otros dispositivos (ntfy), intento:', attempt, err);
-                if (attempt < 3) {
-                    const delay = 500 * Math.pow(2, attempt); // 500ms, 1000ms, 2000ms
-                    setTimeout(() => postState(attempt + 1), delay);
-                }
-            }
-        };
-
-        postState(0);
-    }
-    
-    // Guardar también en persistencia local por seguridad
     saveGameState();
 }
 
 /**
  * Aplica un estado de juego recibido externamente.
- * Filtra por drawCounter para evitar aplicar estados retrasados.
  */
 function applySharedState(state) {
     if (!state) return;
@@ -371,6 +276,34 @@ function applySharedState(state) {
     lastDrawCounterReceived = state.drawCounter;
     
     numerosSalidos = state.numerosSalidos || [];
+    numerosDisponibles = state.numerosDisponibles || [];
+    cartonesConBingo = state.cartonesConBingo || [];
+    // Apply tracked cards from master only on viewer pages (web3). The host keeps its local tracking.
+    if (!isMaster && Array.isArray(state.myTrackedCardNumbers)) {
+        myTrackedCardNumbers = state.myTrackedCardNumbers.filter(n => Number.isInteger(n) && n > 0);
+    }
+    drawIntervalMs = state.drawIntervalMs || 3500;
+    // Aseguramos que drawCounter avance al mayor conocido
+    if (typeof state.drawCounter === 'number') {
+        drawCounter = Math.max(drawCounter, state.drawCounter);
+    }
+    gameCodeFixed = state.gameCodeFixed || gameCodeFixed;
+    
+    // Actualizamos la interfaz con los nuevos datos
+    applyGameStateToUI();
+    
+    // Sincronizamos los botones de control para reflejar el estado del Master
+    const startStopBtn = document.getElementById('startStopBtn');
+    if (startStopBtn) {
+        if (state.enEjecucion) {
+            startStopBtn.textContent = 'Detener';
+            actualizarEstadoJuego("enMarcha");
+        } else {
+            startStopBtn.textContent = 'Empezar';
+            actualizarEstadoJuego(state.juegoPausado ? "pausado" : "listo");
+        }
+    }
+}
     numerosDisponibles = state.numerosDisponibles || [];
     cartonesConBingo = state.cartonesConBingo || [];
     // Apply tracked cards from master only on viewer pages (web3). The host keeps its local tracking.
@@ -721,22 +654,20 @@ async function reiniciarJuego() {
     
     // Si somos el Host, generamos un nuevo token único
     if (isMaster) {
-        // Release any previous claim first
-        try { await releaseClaim(); } catch (e) {}
+        // Liberar cualquier peer anterior
+        try { releaseClaim(); } catch (e) {}
         window.location.hash = '';
-        // Reserve a code first to avoid collisions with existing live games (best-effort)
+        
+        // Reservar un código (busca uno libre en PeerJS)
         await reserveGameCode();
 
-        // Attempt to actively claim the reserved code. If claim fails, try reserve again.
-        let claimed = false;
-        try {
-            claimed = await claimToken(gameCodeFixed);
-        } catch (e) { claimed = false; }
+        // Reclamar el código en PeerJS
+        let claimed = await claimToken(gameCodeFixed);
 
         if (!claimed) {
             console.warn('Initial claim failed for', gameCodeFixed, '— trying reserve again');
             await reserveGameCode();
-            try { claimed = await claimToken(gameCodeFixed); } catch (e) { claimed = false; }
+            claimed = await claimToken(gameCodeFixed);
         }
 
         const newToken = generateGameToken();
@@ -1161,6 +1092,16 @@ function saveGameState() {
             updatedAt: Date.now()
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        // Also persist the saved cartones (if present in DOM) so Web3 can load them
+        try {
+            const cartDivs = document.querySelectorAll('#cartonesContainer > div[data-numeros]');
+            if (cartDivs && cartDivs.length > 0) {
+                const toSave = Array.from(cartDivs).map(d => ({ id: d.id || null, numeros: d.getAttribute('data-numeros') || '' }));
+                localStorage.setItem('bingo_savedCardsV1', JSON.stringify(toSave));
+            }
+        } catch (e) {
+            console.warn('Could not persist saved cartones:', e);
+        }
     } catch (e) {
         // localStorage puede fallar (modo privado / cuota / permisos)
         console.warn('No se pudo guardar el estado del juego:', e);
@@ -1293,8 +1234,29 @@ function mostrarCartonesGuardados() {
     if (!contenedor) return;
     contenedor.innerHTML = '';
 
-    const cartonesNodeList = document.querySelectorAll('#cartonesContainer > div[data-numeros]');
-    const cartonesArray = Array.from(cartonesNodeList);
+    // First try to read cartones present in the DOM (index.html embeds them)
+    let cartonesNodeList = document.querySelectorAll('#cartonesContainer > div[data-numeros]');
+    let cartonesArray = Array.from(cartonesNodeList);
+
+    // If none in DOM (web3 on some deployments), fall back to saved cartones in localStorage
+    if (cartonesArray.length === 0) {
+        try {
+            const raw = localStorage.getItem('bingo_savedCardsV1');
+            if (raw) {
+                const saved = JSON.parse(raw);
+                if (Array.isArray(saved) && saved.length > 0) {
+                    cartonesArray = saved.map(s => {
+                        const el = document.createElement('div');
+                        el.id = s.id || ('carton_saved_' + (s.id || Math.random().toString(36).slice(2,7)));
+                        el.setAttribute('data-numeros', (s.numeros || '').toString());
+                        return el;
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn('Could not load saved cartones from localStorage:', e);
+        }
+    }
 
     cartonesArray.sort((a, b) => {
         const numA = parseInt(a.id.replace('carton', ''), 10) || 0;
@@ -1720,6 +1682,9 @@ window.onload = () => {
     }
 
     setupCartonesGuardadosToggle();
+
+    // Persist current DOM cartones so web3 viewers can load them
+    try { if (isMaster) saveGameState(); } catch (e) {}
 
     // Speed slider
     const speedSlider = document.getElementById('speedSlider');
