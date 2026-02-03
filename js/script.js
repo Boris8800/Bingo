@@ -217,7 +217,11 @@ function intentarConectarConMaster() {
         console.log('✅ Conexión establecida con el Master');
         const syncStatusEl = document.getElementById('syncStatus');
         if (syncStatusEl) syncStatusEl.textContent = 'Conectado';
-        // Limpiar reintentos si los hubiera
+        
+        // Notify web3.html if function exists
+        if (typeof onConnectionCompleted === 'function') {
+            onConnectionCompleted();
+        }
     });
     
     connToMaster.on('data', (data) => {
@@ -276,34 +280,6 @@ function applySharedState(state) {
     lastDrawCounterReceived = state.drawCounter;
     
     numerosSalidos = state.numerosSalidos || [];
-    numerosDisponibles = state.numerosDisponibles || [];
-    cartonesConBingo = state.cartonesConBingo || [];
-    // Apply tracked cards from master only on viewer pages (web3). The host keeps its local tracking.
-    if (!isMaster && Array.isArray(state.myTrackedCardNumbers)) {
-        myTrackedCardNumbers = state.myTrackedCardNumbers.filter(n => Number.isInteger(n) && n > 0);
-    }
-    drawIntervalMs = state.drawIntervalMs || 3500;
-    // Aseguramos que drawCounter avance al mayor conocido
-    if (typeof state.drawCounter === 'number') {
-        drawCounter = Math.max(drawCounter, state.drawCounter);
-    }
-    gameCodeFixed = state.gameCodeFixed || gameCodeFixed;
-    
-    // Actualizamos la interfaz con los nuevos datos
-    applyGameStateToUI();
-    
-    // Sincronizamos los botones de control para reflejar el estado del Master
-    const startStopBtn = document.getElementById('startStopBtn');
-    if (startStopBtn) {
-        if (state.enEjecucion) {
-            startStopBtn.textContent = 'Detener';
-            actualizarEstadoJuego("enMarcha");
-        } else {
-            startStopBtn.textContent = 'Empezar';
-            actualizarEstadoJuego(state.juegoPausado ? "pausado" : "listo");
-        }
-    }
-}
     numerosDisponibles = state.numerosDisponibles || [];
     cartonesConBingo = state.cartonesConBingo || [];
     // Apply tracked cards from master only on viewer pages (web3). The host keeps its local tracking.
