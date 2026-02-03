@@ -1616,6 +1616,12 @@ window.onload = () => {
 };
 
 async function downloadCardsAsPDF() {
+    // Prevent viewers from triggering PDF generation which may alter layout.
+    if (!isMaster) {
+        alert('Descarga de cartones solo disponible en la página de control.');
+        return;
+    }
+
     const originalText = "Descargar Cartones (PDF)";
     const links = document.querySelectorAll('a[onclick*="downloadCardsAsPDF"]');
     links.forEach(l => l.textContent = "Generando PDF...");
