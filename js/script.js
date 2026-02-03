@@ -18,7 +18,16 @@ let isMaster = (typeof window !== 'undefined' && window.__IS_MASTER === false) ?
 let peer = null;
 let connections = [];         // Solo para Master: lista de conexiones activas
 let connToMaster = null;      // Para Viewer: conexión activa al Master
-const PEER_PREFIX = 'bingo-v5-pro'; // Prefijo único actualizado para evitar sesiones colgadas en PeerJS
+const PEER_PREFIX = 'bingo-v6-live'; // Prefijo actualizado para forzar limpieza de sesiones
+
+// --- Función UI Status Master ---
+function updateP2PStatus(status, color = "inherit") {
+    const el = document.getElementById('p2pStatusText');
+    if (el) {
+        el.textContent = status;
+        if (color) el.style.color = color;
+    }
+}
 
 // --- Función UI Toast Compartida ---
 function showToast(message) {
@@ -116,6 +125,8 @@ async function reserveGameCode() {
  */
 function claimToken(code) {
     if (!code) return Promise.resolve(false);
+    updateP2PStatus("Conectando...", "#ffc107");
+    
     return new Promise((resolve) => {
         if (peer) { try { peer.destroy(); } catch (e) {} }
         
@@ -128,23 +139,27 @@ function claimToken(code) {
             console.log('✅ Master Peer activo:', id);
             gameCodeFixed = code;
             setupMasterListeners();
+            updateP2PStatus("✅ Activo (Host)", "#28a745");
             resolve(true);
         });
 
         peer.on('disconnected', () => {
             console.warn('Pelado del servidor de señalización. Reconectando...');
+            updateP2PStatus("Reconectando...", "#ffc107");
             peer.reconnect();
         });
         
         peer.on('error', (err) => {
             console.error('Error Peer Master:', err.type, err);
             if (err.type === 'unavailable-id') {
+                updateP2PStatus("ID Ocupado", "#dc3545");
                 resolve(false);
             } else if (err.type === 'network' || err.type === 'server-error') {
-                // Reintentar tras error de red
+                updateP2PStatus("Error de Red", "#dc3545");
                 setTimeout(() => peer.reconnect(), 5000);
                 resolve(false);
             } else {
+                updateP2PStatus("Error P2P", "#dc3545");
                 resolve(false);
             }
         });
@@ -251,23 +266,21 @@ function intentarConectarConMaster() {
     }
 
     const masterId = `${PEER_PREFIX}-${gameCodeFixed}`;
-    console.log(`🔗 Conectando al Master: ${masterId}`);
+    console.log(`🔗 Intentando conectar al Master ID: ${masterId}`);
     
     // Si ya existe una conexión abierta, no hacemos nada
     if (connToMaster && connToMaster.open) {
+        console.log("Conexión ya abierta.");
         return;
     }
     
     const syncStatusEl = document.getElementById('syncStatus');
     if (syncStatusEl) {
-        syncStatusEl.textContent = 'Buscando Host...';
+        syncStatusEl.textContent = 'Buscando Host (' + gameCodeFixed + ')...';
         syncStatusEl.style.color = '#ffc107';
     }
 
-    connToMaster = peer.connect(masterId, {
-        reliable: true,
-        connectionPriority: 'high'
-    });
+    connToMaster = peer.connect(masterId);
     
     // Safety timeout for connection (increased to 15s for slow networks)
     const connectionTimeout = setTimeout(() => {
@@ -1424,10 +1437,13 @@ function actualizarListaBingos() {
 // ---- Game Sharing Functions ----
 
 function generateGameToken() {
-    // If no game code exists, generate a 2-digit code (10-99)
+    // If no game code exists, we create one. But ideally we should use reserveGameCode() 
+    // to be safer about collisions, but for a quick share, a random one works for now.
     if (!gameCodeFixed) {
         gameCodeFixed = Math.floor(Math.random() * 90) + 10; // 10-99
         console.log(`🎲 New game code generated: ${gameCodeFixed}`);
+        // If we are master, we SHOULD try to claim it immediately
+        if (isMaster) claimToken(gameCodeFixed);
     }
     
     // Base token is the code
@@ -1781,7 +1797,12 @@ window.onload = () => {
     const restored = loadGameState();
     if (restored) {
         applyGameStateToUI();
-        if (!isMaster) initCrossDeviceSync();
+        if (!isMaster) {
+            initCrossDeviceSync();
+        } else if (gameCodeFixed) {
+            // Si somos el Master y tenemos un código, reclamarlo de nuevo
+            claimToken(gameCodeFixed);
+        }
     } else {
         // Check for shared game in URL hash
         const hash = window.location.hash.substring(1);
@@ -1794,10 +1815,18 @@ window.onload = () => {
                 numerosSalidos = parts.slice(1).map(Number);
                 numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1).filter(n => !numerosSalidos.includes(n));
                 applyGameStateToUI();
-                if (!isMaster) initCrossDeviceSync();
+                if (!isMaster) {
+                    initCrossDeviceSync();
+                } else if (gameCodeFixed) {
+                    claimToken(gameCodeFixed);
+                }
             } else if (loadSharedGame(hash)) {
                 // Shared game loaded via Base64
-                if (!isMaster) initCrossDeviceSync();
+                if (!isMaster) {
+                    initCrossDeviceSync();
+                } else if (gameCodeFixed) {
+                    claimToken(gameCodeFixed);
+                }
             } else {
                 reiniciarJuego();
             }
