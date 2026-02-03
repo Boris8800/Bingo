@@ -60,7 +60,7 @@ function checkTokenInUse(code, timeout = 1200) {
 // Reserve a random free 4-digit game code (best-effort, limited retries)
 async function reserveGameCode(attempts = 5) {
     // Try a small vanity ordered list first to provide predictable tokens
-    const vanity = ['8888','7777','1111','2222','3333','4444','5555','6666','9999','0000'];
+    const vanity = ['88','77','11','22','33','44','55','66','99','00'];
     for (let v of vanity) {
         const candidate = parseInt(v, 10);
         if (candidate === gameCodeFixed) continue;
@@ -75,7 +75,7 @@ async function reserveGameCode(attempts = 5) {
 
     // If vanity candidates are busy, fallback to random attempts
     for (let i = 0; i < attempts; i++) {
-        const candidate = Math.floor(Math.random() * 9000) + 1000;
+        const candidate = Math.floor(Math.random() * 90) + 10; // 10-99
         if (candidate === gameCodeFixed) continue;
         const inUse = await checkTokenInUse(candidate, 900);
         if (!inUse) {
@@ -84,9 +84,8 @@ async function reserveGameCode(attempts = 5) {
             return gameCodeFixed;
         }
     }
-
-    // Final fallback: pick a random code without confirmation
-    gameCodeFixed = Math.floor(Math.random() * 9000) + 1000;
+    // Final fallback: pick a random 2-digit code without confirmation
+    gameCodeFixed = Math.floor(Math.random() * 90) + 10;
     console.warn('⚠️ Could not find unused token after attempts; using', gameCodeFixed);
     return gameCodeFixed;
 }
@@ -1397,9 +1396,9 @@ function actualizarListaBingos() {
 // ---- Game Sharing Functions ----
 
 function generateGameToken() {
-    // If no game code exists, generate a 4-digit code (1000-9999)
+    // If no game code exists, generate a 2-digit code (10-99)
     if (!gameCodeFixed) {
-        gameCodeFixed = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
+        gameCodeFixed = Math.floor(Math.random() * 90) + 10; // 10-99
         console.log(`🎲 New game code generated: ${gameCodeFixed}`);
     }
     

@@ -604,8 +604,8 @@
             try {
                 // Token format: "1234" or "1234,1" or "1234,1,30" or "1234,1,30,21,45,..."
                 // Game code followed by all drawn numbers
-                if (!/^\d{4}(,\d+)*$/.test(token)) {
-                    throw new Error("Token debe ser formato: 'XXXX' o 'XXXX,1,30,21' (XXXX = código 4 dígitos)");
+                if (!/^\d{2}(,\d+)*$/.test(token)) {
+                    throw new Error("Token debe ser formato: 'XX' o 'XX,1,30,21' (XX = código 2 dígitos)");
                 }
                 
                 // Token is valid - start syncing
