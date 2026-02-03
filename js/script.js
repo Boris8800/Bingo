@@ -1205,7 +1205,19 @@ function actualizarEstadoJuego(estado) {
     switch (estado) {
         case "enMarcha": estadoJuegoDiv.textContent = "✅ Juego en marcha ✅"; estadoJuegoDiv.className = "enMarcha"; break;
         case "pausado": estadoJuegoDiv.textContent = "❌ Juego pausado ❌"; estadoJuegoDiv.className = "pausado"; break;
-        case "listo": estadoJuegoDiv.textContent = "ℹ️ Juego listo. ¡Presiona Empezar! ℹ️"; estadoJuegoDiv.className = "listo"; break;
+        case "listo":
+            // No mostrar el mensaje de 'Juego listo' en vistas que no sean Master (Web 3 espectador)
+            if (typeof window !== 'undefined' && window.__IS_MASTER) {
+                estadoJuegoDiv.style.display = 'block';
+                estadoJuegoDiv.textContent = "ℹ️ Juego listo. ¡Presiona Empezar! ℹ️";
+                estadoJuegoDiv.className = "listo";
+            } else {
+                // Espectadores no ven este aviso
+                estadoJuegoDiv.textContent = "";
+                estadoJuegoDiv.className = "";
+                estadoJuegoDiv.style.display = 'none';
+            }
+            break;
         case "finalizado": estadoJuegoDiv.textContent = "🏁 ¡Juego finalizado! 🏁"; estadoJuegoDiv.className = "finalizado"; break;
         case "pausadoInput": estadoJuegoDiv.textContent = "⌨️ Pausa (input activo) ⌨️"; estadoJuegoDiv.className = "pausadoInput"; break;
         default: estadoJuegoDiv.textContent = estado; estadoJuegoDiv.className = estado;
