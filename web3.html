@@ -283,7 +283,8 @@
             }
 
             try {
-                if (!/^\d{1,5}(,\d+)*$/.test(token)) {
+                // Support both legacy 2-digit and new codes
+                if (!/^\d{1,6}(,\d+)*$/.test(token)) {
                     throw new Error("Formato inválido (Ej: 21 o 21,5,10)");
                 }
 
@@ -291,6 +292,9 @@
                 gameCodeFixed = parseInt(parts[0]);
                 numerosSalidos = parts.slice(1).map(Number);
                 drawCounter = numerosSalidos.length;
+                
+                msg.textContent = `📡 Conectando a juego ${gameCodeFixed}...`;
+                msg.style.color = "var(--text-secondary)";
                 
                 // Trigger P2P Sync
                 if (typeof initCrossDeviceSync === 'function') {
@@ -301,9 +305,6 @@
                 if (typeof applyGameStateToUI === 'function') {
                     applyGameStateToUI();
                 }
-
-                msg.textContent = `✅ Cargado código ${gameCodeFixed}. Conectando...`;
-                msg.style.color = "green";
                 
                 // Importante: resetear el contador de P2P para aceptar el primer estado del Master
                 lastDrawCounterReceived = -1; 
@@ -311,7 +312,7 @@
                 window.location.hash = token;
             } catch (e) {
                 msg.textContent = "Error: " + e.message;
-                msg.style.color = "red";
+                msg.style.color = "#dc3545";
             }
         }
 

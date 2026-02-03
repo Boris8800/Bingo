@@ -83,7 +83,6 @@ function checkTokenInUse(code, timeout = 1200) {
 // Reserve a free game code (strictly 2 digits)
 // Best-effort: checks PeerJS for recent activity; not atomic.
 async function reserveGameCode(attempts = 15) {
-    const len = 2;
     const min = 10;
     const max = 99;
 
@@ -225,11 +224,22 @@ function intentarConectarConMaster() {
     console.log(`🔗 Conectando al Master: ${masterId}`);
     
     // Si ya existe una conexión, no la duplicamos
-    if (connToMaster && connToMaster.open) return;
+    if (connToMaster && (connToMaster.open || connToMaster.connecting)) return;
     
     connToMaster = peer.connect(masterId, { reliable: true });
     
+    // Safety timeout for connection
+    const connectionTimeout = setTimeout(() => {
+        if (connToMaster && !connToMaster.open) {
+            console.warn('⌛ Tiempo de espera agotado conectando al Master.');
+            const syncStatusEl = document.getElementById('syncStatus');
+            if (syncStatusEl) syncStatusEl.textContent = 'Sin respuesta del Host...';
+            connToMaster.close();
+        }
+    }, 8000);
+
     connToMaster.on('open', () => {
+        clearTimeout(connectionTimeout);
         console.log('✅ Conexión establecida con el Master');
         const syncStatusEl = document.getElementById('syncStatus');
         if (syncStatusEl) syncStatusEl.textContent = 'Conectado';
@@ -245,7 +255,16 @@ function intentarConectarConMaster() {
         applySharedState(data);
     });
     
+    connToMaster.on('error', (err) => {
+        clearTimeout(connectionTimeout);
+        console.error('❌ Error en conexión con Master:', err);
+        const syncStatusEl = document.getElementById('syncStatus');
+        if (syncStatusEl) syncStatusEl.textContent = 'Error de conexión';
+        setTimeout(intentarConectarConMaster, 5000);
+    });
+
     connToMaster.on('close', () => {
+        clearTimeout(connectionTimeout);
         console.warn('Conexión perdida. Reintentando en 3s...');
         const syncStatusEl = document.getElementById('syncStatus');
         if (syncStatusEl) syncStatusEl.textContent = 'Reconectando...';
@@ -552,7 +571,7 @@ function speakWithWebSpeechInternal(text) {
     }
 }
 
-function setVoice() {
+function setVoice(options = { silent: false }) {
     const voiceSelect = document.getElementById('voiceSelect');
     if (!voiceSelect || !voiceSelect.value) {
         selectedVoice = null;
@@ -568,10 +587,12 @@ function setVoice() {
         selectedVoice = voices.find(voice => voice.voiceURI === preferredVoiceURI) || null;
     }
     
-    // Probar la voz seleccionada
-    setTimeout(() => {
-        speakText("Voz seleccionada correctamente");
-    }, 100);
+    // Probar la voz seleccionada solo si no es silencioso y no somos espectador (web3)
+    if (!options.silent && isMaster) {
+        setTimeout(() => {
+            speakText("Voz seleccionada correctamente");
+        }, 100);
+    }
     
     saveGameState();
 }
@@ -1180,7 +1201,7 @@ function applyGameStateToUI() {
         const option = Array.from(voiceSelect.options).find(opt => opt.value === preferredVoiceURI);
         if (option) {
             voiceSelect.value = preferredVoiceURI;
-            setVoice();
+            setVoice({ silent: true });
         }
     }
 
@@ -1666,14 +1687,14 @@ window.onload = () => {
                 populateVoiceList();
                 const voiceSelectElement = document.getElementById('voiceSelect');
                 if (voiceSelectElement && !voiceSelectElement.onchange) {
-                    voiceSelectElement.addEventListener('change', setVoice);
+                    voiceSelectElement.addEventListener('change', () => setVoice({ silent: false }));
                 }
             };
         } else {
             populateVoiceList();
             const voiceSelectElement = document.getElementById('voiceSelect');
             if (voiceSelectElement) {
-                voiceSelectElement.addEventListener('change', setVoice);
+                voiceSelectElement.addEventListener('change', () => setVoice({ silent: false }));
             }
         }
     } else {
