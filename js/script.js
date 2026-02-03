@@ -57,23 +57,41 @@ function checkTokenInUse(code, timeout = 1200) {
     });
 }
 
-// Reserve a random free 4-digit game code (best-effort, limited retries)
+// Reserve a free 4-digit game code using an ordered vanity list first, then random fallback
 async function reserveGameCode(attempts = 5) {
+    // Ordered candidate list (4-digit tokens). The host will try these in order.
+    const orderedCandidates = [8888, 7777, 1111, 2222, 3333, 4444, 5555, 6666, 9999, 1234];
+
+    for (const candidate of orderedCandidates) {
+        if (candidate === gameCodeFixed) continue;
+        try {
+            const inUse = await checkTokenInUse(candidate, 900);
+            if (!inUse) {
+                gameCodeFixed = candidate;
+                console.log(`🎯 Reserved vanity game code: ${gameCodeFixed}`);
+                return gameCodeFixed;
+            }
+            console.log(`⚠️ Vanity candidate ${candidate} appears in use, trying next...`);
+        } catch (e) {
+            console.warn('Error checking candidate', candidate, e);
+        }
+    }
+
+    // If all ordered candidates are busy, fall back to random probing (best-effort)
     for (let i = 0; i < attempts; i++) {
         const candidate = Math.floor(Math.random() * 9000) + 1000;
-        // Quick check: avoid repeating same candidate
         if (candidate === gameCodeFixed) continue;
-        const inUse = await checkTokenInUse(candidate, 900);
+        const inUse = await checkTokenInUse(candidate, 700);
         if (!inUse) {
             gameCodeFixed = candidate;
-            console.log(`🎯 Reserved game code: ${gameCodeFixed}`);
+            console.log(`🎯 Reserved random game code: ${gameCodeFixed}`);
             return gameCodeFixed;
         }
-        console.log(`⚠️ Candidate ${candidate} appears in use, trying next...`);
     }
-    // Fallback: take a random code (last resort)
+
+    // Last resort: choose a random code without checking
     gameCodeFixed = Math.floor(Math.random() * 9000) + 1000;
-    console.warn('⚠️ Could not find unused token after attempts; using', gameCodeFixed);
+    console.warn('⚠️ Could not reliably reserve token after attempts; using', gameCodeFixed);
     return gameCodeFixed;
 }
 
