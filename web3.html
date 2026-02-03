@@ -16,7 +16,10 @@
                 statusDiv.innerHTML = '<span style="color: #28a745; font-weight: bold;">✅ Sincronización Activa</span>';
             }
             const syncStatusEl = document.getElementById('syncStatus');
-            if (syncStatusEl) syncStatusEl.textContent = 'Conectado';
+            if (syncStatusEl) {
+                syncStatusEl.textContent = 'Conectado';
+                syncStatusEl.style.color = '#28a745';
+            }
             
             // Mostrar notificación visual temporal
             showToast("¡Conectado exitosamente al Master!");
@@ -50,10 +53,12 @@
                 const input = document.getElementById('newTokenInput');
                 if (input) {
                     input.value = urlToken;
-                    setTimeout(loadNewGameFromToken, 500);
+                    setTimeout(loadNewGameFromToken, 800); // Dar un poco de tiempo extra al peer para inicializar
                 }
             }
         });
+
+        // La función loadNewGameFromToken se define solo una vez al final del body para asegurar acceso a script.js
     </script>
     <style>
         body { 

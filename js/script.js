@@ -18,7 +18,7 @@ let isMaster = (typeof window !== 'undefined' && window.__IS_MASTER === false) ?
 let peer = null;
 let connections = [];         // Solo para Master: lista de conexiones activas
 let connToMaster = null;      // Para Viewer: conexión activa al Master
-const PEER_PREFIX = 'bingo-v5-sync'; // Prefijo único actualizado para evitar sesiones colgadas en PeerJS
+const PEER_PREFIX = 'bingo-v5-pro'; // Prefijo único actualizado para evitar sesiones colgadas en PeerJS
 
 // --- Función UI Toast Compartida ---
 function showToast(message) {
@@ -42,10 +42,11 @@ let gameCodeFixed = null;
  * Verifica si un código de juego está siendo usado por un Master.
  * Intenta conectar al PeerID correspondiente.
  */
-function checkTokenInUse(code, timeout = 1500) {
+function checkTokenInUse(code, timeout = 1200) {
     return new Promise((resolve) => {
         if (!code) return resolve(false);
-        const tempPeer = new Peer();
+        // Usar un ID temporal aleatorio para no colisionar
+        const tempPeer = new Peer(`check-${Math.floor(Math.random()*100000)}`);
         let finished = false;
         
         const cleanup = () => {
@@ -65,7 +66,7 @@ function checkTokenInUse(code, timeout = 1500) {
             conn.on('open', () => {
                 clearTimeout(timer);
                 cleanup();
-                resolve(true); // Alguien respondió
+                resolve(true); // Alguien respondió, ID ocupado
             });
             conn.on('error', () => {
                 clearTimeout(timer);
@@ -85,27 +86,27 @@ function checkTokenInUse(code, timeout = 1500) {
 // Reserve a free game code (strictly 2 digits: 10-99)
 // Uses a shuffled list for true "high randomness"
 async function reserveGameCode() {
-    // Generate a random pool of 20 unique candidates
+    // Generate a random pool of 30 unique candidates
     const candidates = [];
-    while (candidates.length < 20) {
+    while (candidates.length < 30) {
         const num = Math.floor(Math.random() * 90) + 10;
         if (!candidates.includes(num)) candidates.push(num);
     }
 
-    // Try at most 10 of them to find a clean ID
-    for (let i = 0; i < 10; i++) {
+    // Try finding a clean ID
+    for (let i = 0; i < candidates.length; i++) {
         const candidate = candidates[i];
         if (candidate === gameCodeFixed) continue;
-        const inUse = await checkTokenInUse(candidate, 1200);
+        const inUse = await checkTokenInUse(candidate, 1000);
         if (!inUse) {
             gameCodeFixed = candidate;
-            console.log(`🎯 Reserved random 2-digit game code: ${gameCodeFixed}`);
+            console.log(`🎯 Reserved high-random 2-digit game code: ${gameCodeFixed}`);
             return gameCodeFixed;
         }
     }
 
-    // Final random pick if all checked are busy (collisions are 2-digits so it's possible)
-    gameCodeFixed = candidates[Math.floor(Math.random() * candidates.length)];
+    // fallback
+    gameCodeFixed = Math.floor(Math.random() * 90) + 10;
     return gameCodeFixed;
 }
 
@@ -129,13 +130,21 @@ function claimToken(code) {
             setupMasterListeners();
             resolve(true);
         });
+
+        peer.on('disconnected', () => {
+            console.warn('Pelado del servidor de señalización. Reconectando...');
+            peer.reconnect();
+        });
         
         peer.on('error', (err) => {
+            console.error('Error Peer Master:', err.type, err);
             if (err.type === 'unavailable-id') {
-                console.warn('ID de Peer ocupado:', code);
+                resolve(false);
+            } else if (err.type === 'network' || err.type === 'server-error') {
+                // Reintentar tras error de red
+                setTimeout(() => peer.reconnect(), 5000);
                 resolve(false);
             } else {
-                console.error('Error al abrir Peer Master:', err);
                 resolve(false);
             }
         });
@@ -203,48 +212,79 @@ window.addEventListener('storage', (event) => {
  */
 function initCrossDeviceSync() {
     if (isMaster || !gameCodeFixed) return;
-    if (peer) { try { peer.destroy(); } catch (e) {} }
+    if (peer && !peer.destroyed) { try { peer.destroy(); } catch (e) {} }
     
+    console.log("🚀 Iniciando conexión de espectador...");
     peer = new Peer();
+    
     peer.on('open', (id) => {
         console.log('📡 Mi ID de Espectador:', id);
         intentarConectarConMaster();
     });
-    peer.on('error', (err) => console.error('Error Peer Espectador:', err));
+
+    peer.on('disconnected', () => {
+        console.warn('Espectador desconectado del servidor. Reconectando...');
+        peer.reconnect();
+    });
+
+    peer.on('error', (err) => {
+        console.error('❌ Error Peer Espectador:', err.type, err);
+        if (err.type === 'peer-unavailable') {
+            const syncStatusEl = document.getElementById('syncStatus');
+            if (syncStatusEl) {
+                syncStatusEl.textContent = 'Host no encontrado (¿Iniciaste el juego?)';
+                syncStatusEl.style.color = '#dc3545';
+            }
+            // Reintentar en un momento por si el host está tardando en subir
+            setTimeout(intentarConectarConMaster, 6000);
+        }
+    });
 }
 
 function intentarConectarConMaster() {
-    if (!gameCodeFixed) return;
+    if (!gameCodeFixed || !peer || peer.destroyed) return;
+    
+    if (peer.disconnected) {
+        peer.reconnect();
+        setTimeout(intentarConectarConMaster, 3000);
+        return;
+    }
+
     const masterId = `${PEER_PREFIX}-${gameCodeFixed}`;
     console.log(`🔗 Conectando al Master: ${masterId}`);
     
-    // Si ya existe una conexión, no la duplicamos
-    if (connToMaster && (connToMaster.open || connToMaster.connecting)) {
-        console.log("Ya hay una conexión en curso...");
+    // Si ya existe una conexión abierta, no hacemos nada
+    if (connToMaster && connToMaster.open) {
         return;
     }
     
-    connToMaster = peer.connect(masterId);
+    const syncStatusEl = document.getElementById('syncStatus');
+    if (syncStatusEl) {
+        syncStatusEl.textContent = 'Buscando Host...';
+        syncStatusEl.style.color = '#ffc107';
+    }
+
+    connToMaster = peer.connect(masterId, {
+        reliable: true,
+        connectionPriority: 'high'
+    });
     
-    // Safety timeout for connection (increased to 12s)
+    // Safety timeout for connection (increased to 15s for slow networks)
     const connectionTimeout = setTimeout(() => {
         if (connToMaster && !connToMaster.open) {
             console.warn('⌛ Tiempo de espera agotado conectando al Master.');
-            const syncStatusEl = document.getElementById('syncStatus');
             if (syncStatusEl) {
                 syncStatusEl.textContent = 'Sin respuesta del Host (Reintentando...)';
                 syncStatusEl.style.color = '#dc3545';
             }
             connToMaster.close();
-            // Optional: trigger a retry faster
-            setTimeout(intentarConectarConMaster, 4000);
+            setTimeout(intentarConectarConMaster, 5000);
         }
-    }, 12000);
+    }, 15000);
 
     connToMaster.on('open', () => {
         clearTimeout(connectionTimeout);
         console.log('✅ Conexión establecida con el Master');
-        const syncStatusEl = document.getElementById('syncStatus');
         if (syncStatusEl) {
             syncStatusEl.textContent = 'Conectado';
             syncStatusEl.style.color = '#28a745';
@@ -264,17 +304,15 @@ function intentarConectarConMaster() {
     connToMaster.on('error', (err) => {
         clearTimeout(connectionTimeout);
         console.error('❌ Error en conexión con Master:', err);
-        const syncStatusEl = document.getElementById('syncStatus');
         if (syncStatusEl) syncStatusEl.textContent = 'Error de conexión';
-        setTimeout(intentarConectarConMaster, 5000);
+        setTimeout(intentarConectarConMaster, 8000);
     });
 
     connToMaster.on('close', () => {
         clearTimeout(connectionTimeout);
-        console.warn('Conexión perdida. Reintentando en 3s...');
-        const syncStatusEl = document.getElementById('syncStatus');
+        console.warn('Conexión cerrada. Reintentando...');
         if (syncStatusEl) syncStatusEl.textContent = 'Reconectando...';
-        setTimeout(intentarConectarConMaster, 3000);
+        setTimeout(intentarConectarConMaster, 4000);
     });
 }
 
