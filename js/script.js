@@ -54,27 +54,59 @@ function initCrossDeviceSync() {
     }
     
     // El tema es único basado en el código de 4 dígitos para evitar colisiones
-    const topic = `bingo_boris_2026_${gameCodeFixed}`;
+        const topic = `bingo_boris_2026_${gameCodeFixed}`; // Unique topic based on the 4-digit code to avoid collisions
     console.log(`📡 Iniciando escucha Cross-Device en tema: ${topic}`);
     
     try {
         ntfyEventSource = new EventSource(`https://ntfy.sh/${topic}/sse`);
-        
+
+        // Manejo robusto del mensaje SSE: ntfy puede enviar distintos formatos.
         ntfyEventSource.onmessage = (event) => {
             try {
-                const data = JSON.parse(event.data);
-                if (data.message) {
-                    const state = JSON.parse(data.message);
-                    console.log('📲 Actualización recibida de otro dispositivo');
-                    applySharedState(state);
+                // event.data puede ser: "{\"message\":\"...\"}" o bien directamente el cuerpo enviado.
+                let parsed = null;
+                try {
+                    parsed = JSON.parse(event.data);
+                } catch (e) {
+                    // No JSON, trataremos el texto tal cual
+                    parsed = event.data;
+                }
+
+                // Si ntfy nos envía un wrapper con "message", usemos su contenido
+                if (parsed && typeof parsed === 'object' && parsed.message) {
+                    try {
+                        const state = JSON.parse(parsed.message);
+                        console.log('📲 Actualización recibida de otro dispositivo (wrapper.message)');
+                        applySharedState(state);
+                        return;
+                    } catch (e) {
+                        console.warn('Mensaje wrapper no es JSON:', e);
+                    }
+                }
+
+                // Si el body ya es el JSON del estado
+                if (typeof parsed === 'object') {
+                    console.log('📲 Actualización recibida de otro dispositivo (direct JSON)');
+                    applySharedState(parsed);
+                    return;
+                }
+
+                // Si recibimos texto plano, intentamos parsearlo como JSON
+                try {
+                    const maybeState = JSON.parse(String(parsed));
+                    console.log('📲 Actualización recibida (texto -> JSON)');
+                    applySharedState(maybeState);
+                    return;
+                } catch (e) {
+                    console.warn('No se pudo interpretar el mensaje SSE como JSON:', e);
                 }
             } catch (e) {
                 console.error('Error procesando mensaje Cross-Device', e);
             }
         };
-        
+
         ntfyEventSource.onerror = (err) => {
-            console.warn('Error en conexión Cross-Device, reconectando...');
+            console.warn('Error en conexión Cross-Device. El cliente intentará reconectar automáticamente.', err);
         };
     } catch (e) {
         console.error('No se pudo iniciar Cross-Device Sync', e);
@@ -108,12 +140,14 @@ async function broadcastState() {
     if (gameCodeFixed) {
         const topic = `bingo_boris_2026_${gameCodeFixed}`;
         try {
+            // Enviamos JSON explícitamente para que el receptor lo identifique
             fetch(`https://ntfy.sh/${topic}`, {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(state)
-            });
+            }).catch(e => console.warn('Error al enviar estado a otros dispositivos', e));
         } catch (e) {
-            console.warn('Error al enviar estado a otros dispositivos');
+            console.warn('Error al enviar estado a otros dispositivos', e);
         }
     }
     
