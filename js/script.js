@@ -17,6 +17,9 @@ const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastCha
 let isMaster = true;           // Define si esta pestaña controla el juego (Host) o solo escucha (Live)
 let ntfyEventSource = null;    // Fuente de eventos para recibir datos desde otros dispositivos (Cross-Device)
 let lastDrawCounterReceived = -1; // Protege contra mensajes antiguos o fuera de orden
+let ntfyReconnectAttempt = 0;
+let ntfyBackoffTimer = null;
+let ntfyConnected = false;
 
 // ---- Identificadores de Juego (Tokens) ----
 let currentGameToken = null;
@@ -58,7 +61,22 @@ function initCrossDeviceSync() {
     console.log(`📡 Iniciando escucha Cross-Device en tema: ${topic}`);
     
     try {
+        // Reset attempts when (re)starting
+        ntfyReconnectAttempt = 0;
+        if (ntfyBackoffTimer) {
+            clearTimeout(ntfyBackoffTimer);
+            ntfyBackoffTimer = null;
+        }
+
         ntfyEventSource = new EventSource(`https://ntfy.sh/${topic}/sse`);
+
+        ntfyEventSource.onopen = () => {
+            ntfyConnected = true;
+            ntfyReconnectAttempt = 0;
+            console.log('📶 SSE conectado a ntfy.sh');
+            const syncStatusEl = document.getElementById('syncStatus');
+            if (syncStatusEl) syncStatusEl.textContent = 'Conectado';
+        };
 
         // Manejo robusto del mensaje SSE: ntfy puede enviar distintos formatos.
         ntfyEventSource.onmessage = (event) => {
@@ -106,7 +124,24 @@ function initCrossDeviceSync() {
         };
 
         ntfyEventSource.onerror = (err) => {
-            console.warn('Error en conexión Cross-Device. El cliente intentará reconectar automáticamente.', err);
+            console.warn('Error en conexión Cross-Device. Intentando reconectar...', err);
+            ntfyConnected = false;
+            const syncStatusEl = document.getElementById('syncStatus');
+            if (syncStatusEl) syncStatusEl.textContent = 'Reconectando...';
+
+            try {
+                ntfyEventSource.close();
+            } catch (e) {}
+
+            // Backoff exponencial (1s,2s,4s,8s...) hasta 30s max
+            ntfyReconnectAttempt = Math.min(10, ntfyReconnectAttempt + 1);
+            const delay = Math.min(30000, 1000 * Math.pow(2, ntfyReconnectAttempt - 1));
+            if (ntfyBackoffTimer) clearTimeout(ntfyBackoffTimer);
+            ntfyBackoffTimer = setTimeout(() => {
+                ntfyBackoffTimer = null;
+                console.log(`Reintentando SSE (intento ${ntfyReconnectAttempt}) en ${delay}ms`);
+                initCrossDeviceSync();
+            }, delay);
         };
     } catch (e) {
         console.error('No se pudo iniciar Cross-Device Sync', e);
@@ -139,16 +174,25 @@ async function broadcastState() {
     // 2. Sincronización Global: Envía a otros dispositivos vía ntfy.sh
     if (gameCodeFixed) {
         const topic = `bingo_boris_2026_${gameCodeFixed}`;
-        try {
-            // Enviamos JSON explícitamente para que el receptor lo identifique
-            fetch(`https://ntfy.sh/${topic}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(state)
-            }).catch(e => console.warn('Error al enviar estado a otros dispositivos', e));
-        } catch (e) {
-            console.warn('Error al enviar estado a otros dispositivos', e);
-        }
+
+        // Intentamos con reintentos limitados en caso de fallo de red
+        const postState = async (attempt = 0) => {
+            try {
+                await fetch(`https://ntfy.sh/${topic}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(state)
+                });
+            } catch (err) {
+                console.warn('Error al enviar estado a otros dispositivos (ntfy), intento:', attempt, err);
+                if (attempt < 3) {
+                    const delay = 500 * Math.pow(2, attempt); // 500ms, 1000ms, 2000ms
+                    setTimeout(() => postState(attempt + 1), delay);
+                }
+            }
+        };
+
+        postState(0);
     }
     
     // Guardar también en persistencia local por seguridad
@@ -162,15 +206,18 @@ async function broadcastState() {
 function applySharedState(state) {
     if (!state) return;
     
-    // Seguridad: Si el número de sorteo recibido es menor al actual, lo ignoramos
-    if (state.drawCounter < lastDrawCounterReceived) return;
+    // Seguridad: Si el número de sorteo recibido es menor o igual al local, lo ignoramos
+    if (typeof state.drawCounter === 'number' && state.drawCounter <= drawCounter) return;
     lastDrawCounterReceived = state.drawCounter;
     
     numerosSalidos = state.numerosSalidos || [];
     numerosDisponibles = state.numerosDisponibles || [];
     cartonesConBingo = state.cartonesConBingo || [];
     drawIntervalMs = state.drawIntervalMs || 3500;
-    drawCounter = state.drawCounter || 0;
+    // Aseguramos que drawCounter avance al mayor conocido
+    if (typeof state.drawCounter === 'number') {
+        drawCounter = Math.max(drawCounter, state.drawCounter);
+    }
     gameCodeFixed = state.gameCodeFixed || gameCodeFixed;
     
     // Actualizamos la interfaz con los nuevos datos
@@ -247,6 +294,74 @@ function playBingoSoundEffect() {
         
     } catch (e) {
         console.warn("Could not play synthesized sound:", e);
+    }
+}
+
+/**
+ * Announce bingo: show banner, try Notifications API, vibrate if mobile, and play sound.
+ */
+function announceBingo(cartonId) {
+    try {
+        // 1) In-page banner
+        const existing = document.getElementById('bingoBanner');
+        if (existing) existing.remove();
+
+        const banner = document.createElement('div');
+        banner.id = 'bingoBanner';
+        banner.style.position = 'fixed';
+        banner.style.left = '8px';
+        banner.style.right = '8px';
+        banner.style.top = '12px';
+        banner.style.zIndex = 99999;
+        banner.style.backgroundColor = 'rgba(0,128,0,0.95)';
+        banner.style.color = 'white';
+        banner.style.padding = '12px 18px';
+        banner.style.borderRadius = '8px';
+        banner.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        banner.style.fontSize = '18px';
+        banner.style.textAlign = 'center';
+        banner.textContent = `¡BINGO confirmado: cartón ${cartonId}!`;
+        document.body.appendChild(banner);
+
+        // Auto-hide after 6s
+        setTimeout(() => { try { banner.remove(); } catch (e) {} }, 6000);
+
+        // 2) System Notification (if permission)
+        if ('Notification' in window) {
+            if (Notification.permission === 'granted') {
+                try {
+                    const n = new Notification('¡BINGO!', { body: `Cartón ${cartonId} tiene bingo.`, tag: `bingo-${cartonId}` });
+                    setTimeout(() => n.close(), 5000);
+                } catch (e) {
+                    console.warn('No se pudo crear Notification:', e);
+                }
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(perm => {
+                    if (perm === 'granted') {
+                        try { new Notification('¡BINGO!', { body: `Cartón ${cartonId} tiene bingo.` }); } catch (e) {}
+                    }
+                }).catch(()=>{});
+            }
+        }
+
+        // 3) Vibrate (mobile browsers, secure contexts)
+        if (navigator && navigator.vibrate) {
+            try { navigator.vibrate([200, 100, 200]); } catch (e) {}
+        }
+
+        // 4) Tono/voz
+        try {
+            playBingoSoundEffect();
+            if (window.speechSynthesis) {
+                const msg = new SpeechSynthesisUtterance(`Bingo confirmado. Cartón ${cartonId}.`);
+                if (selectedVoice) { msg.voice = selectedVoice; msg.lang = selectedVoice.lang; } else { msg.lang = 'es-ES'; }
+                window.speechSynthesis.speak(msg);
+            }
+        } catch (e) {
+            console.warn('Error announcing bingo:', e);
+        }
+    } catch (e) {
+        console.warn('announceBingo failed:', e);
     }
 }
 
@@ -641,7 +756,7 @@ function verificarCarton() {
                 card.appendChild(generarMiniTableroParaCarton(numerosEnCartonAttr));
                 cartonDisplayContainer.appendChild(card);
 
-                if (numerosEnCarton.length > 0 && faltantes.length === 0) { // ¡Bingo detectado!
+                    if (numerosEnCarton.length > 0 && faltantes.length === 0) { // ¡Bingo detectado!
                     mensajeVerificacionCarton.textContent = "¡BINGO CONFIRMADO!";
                     mensajeVerificacionCarton.style.color = "green";
                     
@@ -668,6 +783,8 @@ function verificarCarton() {
                         actualizarListaBingos();
                         actualizarMisCartonesBingoDisplay();
                         saveGameState();
+                        // Announce to user
+                        announceBingo(numeroCarton);
                         broadcastState();
                     }
                 } else {
@@ -813,14 +930,16 @@ function verificarTodosLosCartones(options = {}) {
                 if (faltantes.length === 0) { // Bingo detected
                     if (!cartonesConBingo.includes(numeroCarton)) {
                         cartonesConBingo.push(numeroCarton);
-                        // algunBingoNuevoEsteTurno = true; // Not used for sound here
 
-                        // Req 3: Play sound if this new bingo is for a tracked card
+                        // Play sound for tracked cards
                         if (!silent && myTrackedCardNumbers.includes(numeroCarton)) {
                             playBingoSoundEffect();
                         }
-                        
-                        // If we are master, we should broadcast that a new bingo was found
+
+                        // Announce bingo visually/notification/vibrate
+                        announceBingo(numeroCarton);
+
+                        // If we are master, broadcast new bingo
                         if (isMaster) {
                             broadcastState();
                         }
