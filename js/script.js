@@ -163,7 +163,8 @@ async function broadcastState() {
         drawCounter,
         juegoPausado,
         enEjecucion,
-        gameCodeFixed
+        gameCodeFixed,
+        myTrackedCardNumbers
     };
     
     // 1. Sincronización Local: Envía a otras pestañas en el mismo navegador/dispositivo
@@ -213,6 +214,10 @@ function applySharedState(state) {
     numerosSalidos = state.numerosSalidos || [];
     numerosDisponibles = state.numerosDisponibles || [];
     cartonesConBingo = state.cartonesConBingo || [];
+    // Apply tracked cards from master if provided (allows viewers to be notified only for tracked cards)
+    if (Array.isArray(state.myTrackedCardNumbers)) {
+        myTrackedCardNumbers = state.myTrackedCardNumbers.filter(n => Number.isInteger(n) && n > 0);
+    }
     drawIntervalMs = state.drawIntervalMs || 3500;
     // Aseguramos que drawCounter avance al mayor conocido
     if (typeof state.drawCounter === 'number') {
@@ -783,8 +788,10 @@ function verificarCarton() {
                         actualizarListaBingos();
                         actualizarMisCartonesBingoDisplay();
                         saveGameState();
-                        // Announce to user
-                        announceBingo(numeroCarton);
+                        // Announce to user only if tracked locally
+                        if (myTrackedCardNumbers.includes(numeroCarton)) {
+                            announceBingo(numeroCarton);
+                        }
                         broadcastState();
                     }
                 } else {
@@ -936,8 +943,10 @@ function verificarTodosLosCartones(options = {}) {
                             playBingoSoundEffect();
                         }
 
-                        // Announce bingo visually/notification/vibrate
-                        announceBingo(numeroCarton);
+                        // Announce bingo only if this card is being tracked by the user
+                        if (myTrackedCardNumbers.includes(numeroCarton)) {
+                            announceBingo(numeroCarton);
+                        }
 
                         // If we are master, broadcast new bingo
                         if (isMaster) {
@@ -1137,17 +1146,41 @@ function mostrarCartonesGuardados() {
 function setupCartonesGuardadosToggle() {
     const btn = document.getElementById('toggleCartonesBtn');
     const container = document.getElementById('cartonesGuardadosContainer');
-    if (!btn || !container) return;
+    // If container or button are missing in the DOM, create sensible defaults so the feature always works
+    let targetContainer = container;
+    if (!targetContainer) {
+        targetContainer = document.createElement('div');
+        targetContainer.id = 'cartonesGuardadosContainer';
+        targetContainer.setAttribute('hidden', '');
+        // Basic styling to avoid breaking layout
+        targetContainer.style.position = 'relative';
+        document.body.appendChild(targetContainer);
+    }
 
-    btn.addEventListener('click', () => {
-        const isHidden = container.hasAttribute('hidden');
+    let toggleBtn = btn;
+    if (!toggleBtn) {
+        // Try to place near share button if available
+        const shareBtn = document.getElementById('shareGameBtn');
+        toggleBtn = document.createElement('button');
+        toggleBtn.id = 'toggleCartonesBtn';
+        toggleBtn.textContent = 'Ver Cartones Guardados';
+        toggleBtn.className = 'small-button';
+        if (shareBtn && shareBtn.parentNode) {
+            shareBtn.parentNode.insertBefore(toggleBtn, shareBtn.nextSibling);
+        } else {
+            document.body.insertBefore(toggleBtn, document.body.firstChild);
+        }
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        const isHidden = targetContainer.hasAttribute('hidden');
         if (isHidden) {
             mostrarCartonesGuardados();
-            container.removeAttribute('hidden');
-            btn.textContent = 'Ocultar Cartones Guardados';
+            targetContainer.removeAttribute('hidden');
+            toggleBtn.textContent = 'Ocultar Cartones Guardados';
         } else {
-            container.setAttribute('hidden', '');
-            btn.textContent = 'Ver Cartones Guardados';
+            targetContainer.setAttribute('hidden', '');
+            toggleBtn.textContent = 'Ver Cartones Guardados';
         }
     });
 }
