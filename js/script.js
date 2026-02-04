@@ -331,6 +331,16 @@ function clearLocalHistory() {
     // Limpiar UI
     const numerosContainer = document.getElementById('numerosContainer');
     if (numerosContainer) numerosContainer.innerHTML = '';
+    // Recrear los círculos 1..90 para mantener la UI consistente
+    if (numerosContainer) {
+        for (let i = 1; i <= 90; i++) {
+            const circulo = document.createElement('div');
+            circulo.classList.add('numeroCirculo');
+            circulo.textContent = i;
+            circulo.id = `numero${i}`;
+            numerosContainer.appendChild(circulo);
+        }
+    }
     const ultimos = document.getElementById('ultimosNumerosContainer');
     if (ultimos) ultimos.innerHTML = '';
     // quitar marcas en tablero principal si existe
