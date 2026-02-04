@@ -466,9 +466,10 @@ function applySharedState(state) {
     
     lastDrawCounterReceived = state.drawCounter;
     
-    // Guardamos los bingos anteriores para detectar nuevos en Web3
+    // Guardamos los bingos y números anteriores para detectar nuevos en Web3
     const oldBingos = [...cartonesConBingo];
-    
+    const oldNumeros = [...numerosSalidos];
+
     numerosSalidos = state.numerosSalidos || [];
     numerosDisponibles = state.numerosDisponibles || [];
     cartonesConBingo = state.cartonesConBingo || [];
@@ -506,6 +507,17 @@ function applySharedState(state) {
             actualizarEstadoJuego(state.juegoPausado ? "pausado" : "listo");
         }
     }
+
+    // Después de aplicar UI, si somos espectador y tiene activado sonido, leer nuevos números
+    if (!isMaster) {
+        const nuevosNumeros = numerosSalidos.filter(n => !oldNumeros.includes(n));
+        if (nuevosNumeros && nuevosNumeros.length > 0) {
+            const speakPref = (localStorage.getItem('web3Speak') === 'true');
+            if (speakPref) {
+                nuevosNumeros.forEach(n => speakText(n.toString()));
+            }
+        }
+    }
 }
 
 // ---- Velocidad del juego (ms) ----
@@ -514,6 +526,19 @@ let drawIntervalMs = 3500;
 /// ---- Variables para Selección de Voz ----
 let voices = [];
 let selectedVoice = null;
+
+// Preferencia de sonido para espectadores (Web3)
+let spectatorSpeakEnabled = (localStorage.getItem('web3Speak') === 'true');
+
+function toggleSpectatorSound() {
+    spectatorSpeakEnabled = !spectatorSpeakEnabled;
+    localStorage.setItem('web3Speak', spectatorSpeakEnabled ? 'true' : 'false');
+    const btn = document.getElementById('spectatorSoundToggle');
+    if (btn) {
+        btn.setAttribute('aria-pressed', spectatorSpeakEnabled ? 'true' : 'false');
+        btn.textContent = spectatorSpeakEnabled ? 'Sonido: ON' : 'Sonido: OFF';
+    }
+}
 
 // ---- Persistencia (localStorage) ----
 const STORAGE_KEY = 'bingoGameStateV1';
@@ -1884,6 +1909,15 @@ window.onload = () => {
     
     if (page === 'web3') {
         isMaster = false;
+        // Inicializar estado del botón de sonido para espectadores
+        try {
+            const btn = document.getElementById('spectatorSoundToggle');
+            if (btn) {
+                const pref = (localStorage.getItem('web3Speak') === 'true');
+                btn.setAttribute('aria-pressed', pref ? 'true' : 'false');
+                btn.textContent = pref ? 'Sonido: ON' : 'Sonido: OFF';
+            }
+        } catch (e) {}
     } else if (path.includes('live_index.html')) {
         isMaster = false;
     } else {
