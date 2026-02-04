@@ -871,6 +871,53 @@ button:hover {
     .cartonBingo { padding: 5px 10px; font-size: 0.8em; }
 }
 
+/* Web3: Mejoras para pantallas muy estrechas (teléfonos) */
+@media (max-width: 420px) {
+    body[data-page="web3"] {
+        padding-top: 40px;
+        font-size: clamp(0.8rem, 1vw, 1rem);
+    }
+    body[data-page="web3"] #numeroContainer {
+        width: 120px;
+        height: 120px;
+    }
+    body[data-page="web3"] .control-box {
+        padding: 10px;
+        margin: 10px auto;
+        max-width: 100%;
+    }
+    body[data-page="web3"] .icon-btn {
+        padding: 6px 8px;
+        font-size: 0.85rem;
+    }
+    body[data-page="web3"] #numerosContainer {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+        padding: 6px;
+    }
+    body[data-page="web3"] .numeroCirculo {
+        width: 26px;
+        height: 26px;
+        font-size: 0.75rem;
+    }
+    body[data-page="web3"] .ultimoNumeroCirculo {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+    body[data-page="web3"] #ultimosNumerosContainer {
+        padding: 8px;
+    }
+    body[data-page="web3"] #toggleCartonesBtn,
+    body[data-page="web3"] .btn,
+    body[data-page="web3"] .btn-secondary {
+        width: 100%;
+        padding: 10px 12px;
+    }
+    #enableSoundBanner { padding: 10px; }
+    main.center { margin-top: 10px; padding: 8px; }
+}
+
 /* Modal Styling for Sharing (Web 2) */
 .modal {
     display: none;
