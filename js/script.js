@@ -441,7 +441,8 @@ async function broadcastState() {
         juegoPausado,
         enEjecucion,
         gameCodeFixed,
-        myTrackedCardNumbers
+        myTrackedCardNumbers,
+        preferredVoiceURI: preferredVoiceURI || ''
     };
 
     if (isMaster && peer) {
@@ -505,6 +506,10 @@ function applySharedState(state) {
         drawCounter = Math.max(drawCounter, state.drawCounter);
     }
     gameCodeFixed = state.gameCodeFixed || gameCodeFixed;
+    // Si el Master envía preferencia de voz, intentar aplicarla en Web3
+    if (!isMaster && state.preferredVoiceURI) {
+        tryApplyRemoteVoice(state.preferredVoiceURI);
+    }
     
     // Actualizamos la interfaz con los nuevos datos
     applyGameStateToUI();
@@ -530,6 +535,93 @@ function applySharedState(state) {
                 nuevosNumeros.forEach(n => speakText(n.toString()));
             }
         }
+    }
+}
+
+/**
+ * Intentar aplicar la voz preferida enviada por el Master.
+ * Si no existe exactamente, elegir la mejor voz en español disponible.
+ */
+function tryApplyRemoteVoice(preferredURI) {
+    if (!preferredURI) return;
+    // Guardamos la preferencia remota temporalmente
+    preferredVoiceURI = preferredURI;
+
+    // Asegurarnos de tener la lista de voces cargada
+    if (typeof speechSynthesis !== 'undefined') {
+        voices = speechSynthesis.getVoices();
+        if (!voices || voices.length === 0) {
+            // Esperar al evento voiceschanged
+            window.speechSynthesis.onvoiceschanged = () => {
+                voices = speechSynthesis.getVoices();
+                _matchAndApplyVoice(preferredURI);
+            };
+            return;
+        }
+    }
+
+    _matchAndApplyVoice(preferredURI);
+}
+
+function _matchAndApplyVoice(preferredURI) {
+    // 1) Intentar match exacto por voiceURI
+    let found = voices.find(v => v.voiceURI === preferredURI);
+
+    // 2) Si no exacto, intentar match por nombre (substring)
+    if (!found && preferredURI) {
+        found = voices.find(v => v.name && preferredURI && v.name.toLowerCase().includes(preferredURI.toLowerCase().split('/').pop()));
+    }
+
+    // 3) Si no hay match, buscar la mejor voz en español
+    if (!found) {
+        const spanish = voices.filter(v => v.lang && v.lang.startsWith('es'));
+        if (spanish.length > 0) {
+            // Priorizar Google/Natural/Premium por nombre
+            spanish.sort((a, b) => {
+                const aIsBetter = /Natural|Google|Premium|Neural/i.test(a.name);
+                const bIsBetter = /Natural|Google|Premium|Neural/i.test(b.name);
+                if (aIsBetter && !bIsBetter) return -1;
+                if (!aIsBetter && bIsBetter) return 1;
+                return a.name.localeCompare(b.name);
+            });
+            found = spanish[0];
+        }
+    }
+
+    if (found) {
+        selectedVoice = found;
+        preferredVoiceURI = found.voiceURI || preferredVoiceURI;
+        // Actualizar UI si existe el select
+        const voiceSelect = document.getElementById('voiceSelect');
+        if (voiceSelect) {
+            Array.from(voiceSelect.options).forEach(opt => {
+                try { opt.selected = (opt.value === preferredVoiceURI); } catch (e) {}
+            });
+        }
+        saveGameState();
+        console.log('🗣️ Voz sincronizada desde Master:', found.name || preferredVoiceURI);
+        updateVoiceIndicator();
+    } else {
+        console.log('🗣️ No se encontró voz local exacta; se mantiene preferencia:', preferredURI);
+    }
+}
+
+/** Actualiza el indicador visual de voz en Web3 si existe */
+function updateVoiceIndicator() {
+    try {
+        const el = document.getElementById('voiceIndicator');
+        if (!el) return;
+        if (selectedVoice && selectedVoice.name) {
+            el.textContent = `Voz: ${selectedVoice.name}`;
+        } else if (preferredVoiceURI === 'google-premium') {
+            el.textContent = 'Voz: Google Premium';
+        } else if (preferredVoiceURI) {
+            el.textContent = `Voz: ${preferredVoiceURI}`;
+        } else {
+            el.textContent = 'Voz: —';
+        }
+    } catch (e) {
+        console.warn('updateVoiceIndicator error:', e);
     }
 }
 
@@ -724,6 +816,8 @@ function populateVoiceList() {
             preferredVoiceURI = 'google-premium';
         }
     }
+    // Actualizar indicador visual (si existe)
+    updateVoiceIndicator();
 }
 
 let backgroundAudio = null;
@@ -789,6 +883,15 @@ function setVoice(options) {
     }
     
     saveGameState();
+    // Notificar a los espectadores la nueva preferencia de voz
+    try {
+        if (isMaster) {
+            broadcastState();
+        }
+    } catch (e) {
+        console.warn('No se pudo broadcastState después de setVoice:', e);
+    }
+    updateVoiceIndicator();
 }
 
 // ---- FIN FUNCIONES DE VOZ ----
