@@ -340,6 +340,9 @@ function clearLocalHistory() {
             circulo.id = `numero${i}`;
             numerosContainer.appendChild(circulo);
         }
+        // pequeña animación para indicar recreación
+        numerosContainer.classList.add('recreated');
+        setTimeout(() => { try { numerosContainer.classList.remove('recreated'); } catch (e) {} }, 800);
     }
     const ultimos = document.getElementById('ultimosNumerosContainer');
     if (ultimos) ultimos.innerHTML = '';
@@ -1055,6 +1058,12 @@ function anunciarNumero(numero) {
 function marcarNumero(numero) {
     const circulo = document.getElementById(`numero${numero}`);
     if (circulo) circulo.classList.add('marcado');
+    if (circulo) {
+        circulo.classList.add('highlight');
+        setTimeout(() => {
+            try { circulo.classList.remove('highlight'); } catch (e) {}
+        }, 800);
+    }
 }
 
 function actualizarUltimosNumeros() {
