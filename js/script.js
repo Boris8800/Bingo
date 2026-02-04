@@ -625,6 +625,36 @@ function updateVoiceIndicator() {
     }
 }
 
+// Inicializar UI de voz en carga
+function initVoiceUI() {
+    try {
+        if (typeof populateVoiceList === 'function') populateVoiceList();
+        updateVoiceIndicator();
+
+        const voiceSelect = document.getElementById('voiceSelect');
+        if (voiceSelect) {
+            voiceSelect.addEventListener('change', () => {
+                try { setVoice(); } catch (e) { console.warn('setVoice error:', e); }
+                updateVoiceIndicator();
+            });
+        }
+
+        if (typeof speechSynthesis !== 'undefined') {
+            speechSynthesis.onvoiceschanged = () => {
+                try { populateVoiceList(); updateVoiceIndicator(); } catch (e) { console.warn('voiceschanged handler error:', e); }
+            };
+        }
+    } catch (e) {
+        console.warn('initVoiceUI error:', e);
+    }
+}
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(initVoiceUI, 0);
+} else {
+    document.addEventListener('DOMContentLoaded', initVoiceUI);
+}
+
 // ---- Velocidad del juego (ms) ----
 let drawIntervalMs = 3500;
 
