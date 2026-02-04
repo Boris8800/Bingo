@@ -61,6 +61,7 @@ function showToast(message) {
 let lastDrawCounterReceived = -1; 
 let drawCounter = 0;
 let gameCodeFixed = null;
+let lastConnectedGameCode = null; // Para detectar cambio de token en espectadores
 
 /**
  * Verifica si un código de juego está siendo usado por un Master.
@@ -288,6 +289,11 @@ window.addEventListener('storage', (event) => {
  */
 function initCrossDeviceSync() {
     if (isMaster || !gameCodeFixed) return;
+    // Si el espectador está intentando conectarse a un token distinto, limpiar historial local
+    if (lastConnectedGameCode !== gameCodeFixed) {
+        clearLocalHistory();
+        lastConnectedGameCode = gameCodeFixed;
+    }
     if (peer && !peer.destroyed) { try { peer.destroy(); } catch (e) {} }
     
     console.log("🚀 Iniciando conexión de espectador...");
@@ -315,6 +321,25 @@ function initCrossDeviceSync() {
             setTimeout(intentarConectarConMaster, 6000);
         }
     });
+}
+
+function clearLocalHistory() {
+    // Limpiar números y UI locales para evitar mezclar partidas
+    numerosSalidos = [];
+    numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
+    drawCounter = 0;
+    // Limpiar UI
+    const numerosContainer = document.getElementById('numerosContainer');
+    if (numerosContainer) numerosContainer.innerHTML = '';
+    const ultimos = document.getElementById('ultimosNumerosContainer');
+    if (ultimos) ultimos.innerHTML = '';
+    // quitar marcas en tablero principal si existe
+    for (let i = 1; i <= 90; i++) {
+        const el = document.getElementById(`numero${i}`);
+        if (el) el.classList.remove('marcado');
+    }
+    const estadoJuegoDiv = document.getElementById('estadoJuego');
+    if (estadoJuegoDiv) { estadoJuegoDiv.textContent = ''; estadoJuegoDiv.style.display = 'none'; }
 }
 
 function intentarConectarConMaster() {
@@ -849,7 +874,8 @@ function actualizarMisCartonesBingoDisplay() {
  * Reinicia el estado completo del juego.
  * Solo el Master tiene permiso para realizar un reinicio global.
  */
-async function reiniciarJuego() {
+async function reiniciarJuego(options = {}) {
+    const { allowNewToken = false } = options;
     lastActivityTime = Date.now(); // Resetear reloj de actividad
     if (numerosSalidos.length > 0 && isMaster) {
         if (!confirm("¿Estás seguro de que quieres reiniciar el juego? Se perderá el progreso actual.")) {
@@ -882,8 +908,8 @@ async function reiniciarJuego() {
     actualizarUltimosNumeros();
     limpiarMensajeVerificacion();
     
-    // Si somos el Host, generamos un nuevo token único
-    if (isMaster) {
+    // Si somos el Host Y se permite generar token (solo en carga de página), generamos un nuevo token único
+    if (isMaster && allowNewToken) {
         // Liberar cualquier peer anterior
         try { releaseClaim(); } catch (e) {}
         window.location.hash = '';
@@ -901,6 +927,7 @@ async function reiniciarJuego() {
         }
 
         const newToken = generateGameToken();
+        // Solo actualizamos el hash en la carga inicial cuando se solicita
         window.location.hash = newToken;
     }
     
@@ -971,12 +998,7 @@ function siguienteNumero() {
     numerosSalidos.push(numero);
     drawCounter++; // Increment draw counter for web3 sync
     
-    // Update URL hash with new token for web3 sync (only if game code exists from sharing)
-    if (gameCodeFixed) {
-        const newToken = generateGameToken();
-        window.location.hash = newToken;
-        console.log(`📡 Token updated: ${newToken}`);
-    }
+    // NOTE: No actualizar el hash en cada sorteo — el token base solo cambia en recarga.
 
     const numeroDisplay = document.getElementById('numero');
     if (numeroDisplay) numeroDisplay.textContent = numero;
@@ -1967,13 +1989,13 @@ window.onload = () => {
                     claimToken(gameCodeFixed);
                 }
             } else {
-                reiniciarJuego();
+                reiniciarJuego({ allowNewToken: true });
             }
         } else if (!isMaster) {
             // If we are on slave page without a hash, just wait for WebSocket or show empty
-            reiniciarJuego();
+            reiniciarJuego({ allowNewToken: true });
         } else {
-            reiniciarJuego();
+            reiniciarJuego({ allowNewToken: true });
         }
     }
 
