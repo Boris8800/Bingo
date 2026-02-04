@@ -536,7 +536,7 @@ function toggleSpectatorSound() {
     const btn = document.getElementById('spectatorSoundToggle');
     if (btn) {
         btn.setAttribute('aria-pressed', spectatorSpeakEnabled ? 'true' : 'false');
-        btn.textContent = spectatorSpeakEnabled ? 'Sonido: ON' : 'Sonido: OFF';
+        btn.textContent = spectatorSpeakEnabled ? 'sonido activado' : 'sonido desactivado';
     }
 }
 
@@ -1915,7 +1915,7 @@ window.onload = () => {
             if (btn) {
                 const pref = (localStorage.getItem('web3Speak') === 'true');
                 btn.setAttribute('aria-pressed', pref ? 'true' : 'false');
-                btn.textContent = pref ? 'Sonido: ON' : 'Sonido: OFF';
+                btn.textContent = pref ? 'sonido activado' : 'sonido desactivado';
             }
         } catch (e) {}
     } else if (path.includes('live_index.html')) {
