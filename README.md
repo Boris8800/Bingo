@@ -191,4 +191,37 @@ Para ver el progreso de sincronización:
 - **Manual**: Verifica un número específico ingresando su valor
 - **Sonido**: Chime sintetizado al detectar un BINGO
 - **Historial**: Almacena todas las partidas ganadas
+
+## 🔧 Cambios recientes de Conexión y Pruebas
+
+Hechos importantes relacionados con la sincronización P2P y las pruebas (guardados en el repositorio):
+
+- Archivos clave modificados:
+   - `js/script.js`: mejoras en la gestión P2P (estado unificado, reconexión, prevención de doble inicialización) y hooks de prueba añadidos (`__setInternalPeerForTests`, `__getConnectionsCountForTests`, `__getApplySharedStateCountForTests`, además de exponer `__lastAppliedState` para inspección en tests).
+   - `tests/run_p2p_sim.js`: simulador JSDOM de PeerJS (`PeerStub`) para pruebas locales de Master → Viewer, con delivery mejorado de conexiones y fallback controlado.
+   - `make.js`: runner simple para ejecutar tests automatizados.
+
+- ¿Qué solucionan estos cambios?
+   - Mejor visibilidad del estado P2P en la UI (`p2pStatusText` / `syncStatus`).
+   - Reconexión más robusta y mensajes de error más claros (p. ej. `Host no encontrado (bingo-v6-live-XX)`).
+   - Prevención de doble-inicialización de `Peer` en viewers/masters.
+   - Facilitan pruebas automatizadas en CI/local sin depender de navegadores reales.
+
+- Cómo ejecutar las pruebas locales (headless + simulación P2P):
+
+```bash
+# Instalar dependencias (si no está hecho)
+npm install
+
+# Ejecutar el runner de pruebas (headless + P2P stub)
+node make.js
+```
+
+- Notas sobre la cobertura de pruebas:
+   - `tests/run_p2p_sim.js` utiliza un stub (`PeerStub`) para emular la mensajería WebRTC dentro de JSDOM. Esto permite validar la lógica de difusión y recepción de estado (`broadcastState()` / `applySharedState()`), pero no sustituye pruebas E2E con navegadores reales para verificar WebRTC nativo.
+   - Si quieres pruebas E2E reales de WebRTC, lo recomendado es usar Playwright/puppeteer para levantar dos contextos de navegador (Host + Viewer) y validar la conexión PeerJS en condiciones reales.
+
+- Estado actual: los ajustes de conexión están comprometidos y empujados a la rama `main`.
+
+Si quieres, puedo: añadir pruebas Playwright para verificación real de WebRTC, o limpiar/extraer los hooks de prueba antes de publicar una release. ¿Qué prefieres?
 ```
