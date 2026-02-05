@@ -91,6 +91,11 @@ let lastDrawCounterReceived = -1;
 let drawCounter = 0;
 let gameCodeFixed = null;
 let lastConnectedGameCode = null; // Para detectar cambio de token en espectadores
+const AUDIO_SYNC_DELAY_MS = 500;
+let lastAnnounceIdSent = -1;
+let lastAnnounceNumber = null;
+let lastAnnounceAt = 0;
+let lastAnnounceIdApplied = -1;
 
 /**
  * Verifica si un código de juego está siendo usado por un Master.
@@ -483,7 +488,10 @@ async function broadcastState() {
         enEjecucion,
         gameCodeFixed,
         myTrackedCardNumbers,
-        preferredVoiceURI: preferredVoiceURI || ''
+        preferredVoiceURI: preferredVoiceURI || '',
+        announceId: lastAnnounceIdSent,
+        announceNumber: lastAnnounceNumber,
+        announceAt: lastAnnounceAt
     };
 
     // Include saved cartones (if present in DOM) so viewers can render the same cards
@@ -616,11 +624,24 @@ function applySharedState(state) {
 
     // Después de aplicar UI, si somos espectador y tiene activado sonido, leer nuevos números
     if (!isMaster) {
-        const nuevosNumeros = numerosSalidos.filter(n => !oldNumeros.includes(n));
-        if (nuevosNumeros && nuevosNumeros.length > 0) {
-            const speakPref = (localStorage.getItem('web3Speak') === 'true');
-            if (speakPref) {
-                nuevosNumeros.forEach(n => speakText(n.toString()));
+        const speakPref = (localStorage.getItem('web3Speak') === 'true');
+        let usedAnnounce = false;
+
+        if (speakPref && typeof state.announceId === 'number' && state.announceNumber && typeof state.announceAt === 'number') {
+            if (state.announceId > lastAnnounceIdApplied) {
+                lastAnnounceIdApplied = state.announceId;
+                scheduleSpeakAt(state.announceNumber, state.announceAt);
+                usedAnnounce = true;
+            }
+        }
+
+        // Fallback: legacy local announcement if no synced announce was used
+        if (!usedAnnounce) {
+            const nuevosNumeros = numerosSalidos.filter(n => !oldNumeros.includes(n));
+            if (nuevosNumeros && nuevosNumeros.length > 0) {
+                if (speakPref) {
+                    nuevosNumeros.forEach(n => speakText(n.toString()));
+                }
             }
         }
     }
@@ -935,7 +956,6 @@ function populateVoiceList() {
         ? selectedVoice.voiceURI
         : (preferredVoiceURI || voiceSelect.value || '');
     voiceSelect.innerHTML = '';
-*** End Patch
     const defaultOption = document.createElement('option');
     defaultOption.textContent = 'Voz por defecto del navegador';
     defaultOption.value = '';
@@ -1012,6 +1032,14 @@ function populateVoiceList() {
 }
 
 let backgroundAudio = null;
+
+function scheduleSpeakAt(text, whenMs) {
+    if (!text) return;
+    const delay = Math.max(0, (whenMs || 0) - Date.now());
+    setTimeout(() => {
+        try { speakText(String(text)); } catch (e) { console.warn('scheduleSpeakAt error:', e); }
+    }, delay);
+}
 
 function speakText(text) {
     if (!text) return;
@@ -1365,14 +1393,21 @@ function siguienteNumero() {
 
     marcarNumero(numero);
     actualizarUltimosNumeros();
-    anunciarNumero(numero);
+    const announceAt = Date.now() + AUDIO_SYNC_DELAY_MS;
+    lastAnnounceIdSent = drawCounter;
+    lastAnnounceNumber = numero;
+    lastAnnounceAt = announceAt;
+    anunciarNumero(numero, announceAt);
     verificarTodosLosCartones(); // This will now handle sound for tracked bingos
     saveGameState();
     broadcastState();
 }
 
-function anunciarNumero(numero) {
-    if (numero) {
+function anunciarNumero(numero, announceAt) {
+    if (!numero) return;
+    if (typeof announceAt === 'number') {
+        scheduleSpeakAt(numero, announceAt);
+    } else {
         speakText(numero.toString());
     }
 }
