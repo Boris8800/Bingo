@@ -1110,12 +1110,20 @@ function populateVoiceList() {
             }
         }
     } else {
-        // Preferir Google Premium por defecto si es la primera vez
-        const googlePremiumOpt = Array.from(voiceSelect.options).find(opt => opt.value === 'google-premium');
-        if (googlePremiumOpt) {
-            googlePremiumOpt.selected = true;
-            selectedVoice = { voiceURI: 'google-premium', name: 'Google Premium', lang: 'es-ES' };
-            preferredVoiceURI = 'google-premium';
+        const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+        if (isIOS) {
+            // On iOS, prefer the best local voice instead of Google TTS
+            chooseBestLocalVoice();
+        } else {
+            // Preferir Google Premium por defecto si es la primera vez
+            const googlePremiumOpt = Array.from(voiceSelect.options).find(opt => opt.value === 'google-premium');
+            if (googlePremiumOpt) {
+                googlePremiumOpt.selected = true;
+                selectedVoice = { voiceURI: 'google-premium', name: 'Google Premium', lang: 'es-ES' };
+                preferredVoiceURI = 'google-premium';
+            } else {
+                chooseBestLocalVoice();
+            }
         }
     }
     // If a selectedVoice was pre-assigned (e.g., by chooseBestLocalVoice), reflect it in the select
@@ -1376,6 +1384,12 @@ async function reiniciarJuego(options = {}) {
     numerosSalidos = [];
     numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
     cartonesConBingo = [];
+    // Ensure UI list for "Cartones con Bingo" is cleared immediately
+    const listaBingos = document.getElementById('listaCartonesBingo');
+    if (listaBingos) {
+        listaBingos.innerHTML = '';
+        listaBingos.textContent = 'Ningún cartón tiene bingo todavía';
+    }
 
     const numeroDisplay = document.getElementById('numero');
     if (numeroDisplay) numeroDisplay.textContent = '--';
