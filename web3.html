@@ -124,6 +124,10 @@
             <button id="nightModeToggle" class="icon-btn" onclick="toggleNightMode()" aria-label="Cambiar modo noche" aria-pressed="false">&#127769;</button>
             <div id="voiceIndicator" class="voice-indicator" aria-hidden="true">Voz: —</div>
             <button id="headerMenuToggle" class="icon-btn" aria-expanded="false" aria-controls="headerMenu" onclick="toggleHeaderMenu()" title="Abrir menú">☰</button>
+            <div id="visit-counter-header" style="font-size:0.82rem; color:var(--text-secondary); margin-left:8px; opacity:0.9; display:inline-flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="opacity:0.8"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 11h3v2h-6v-2h3V8h2v5z" fill="currentColor"/></svg>
+                <span id="count-display">0</span>
+            </div>
             <div id="headerMenu" class="header-menu" aria-hidden="true">
                 <div class="header-menu-content">
                     <label style="font-size:0.9rem; display:block; margin-bottom:6px;">Voz</label>
