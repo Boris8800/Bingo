@@ -7,6 +7,7 @@ let juegoPausado = false;
 let cartonesConBingo = [];
 let lastActivityTime = Date.now(); // Rastreo de inactividad
 const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutos en ms
+let currentGameToken = null;
 
 // ---- Sistema de Sindicación y Sincronización (No-Server) ----
 // Permite que múltiples pestañas y múltiples dispositivos se mantengan sincronizados
