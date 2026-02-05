@@ -56,6 +56,20 @@ function showHelp() {
     console.log('Headless test completed.');
   }
 
+  // Additional verification test for cartones logic
+  if (runHeadless) {
+    console.log('\n1.5) Running cartones verification test (tests/run_verify_cartones_test.js)');
+    const t05 = Date.now();
+    const res05 = await run('node tests/run_verify_cartones_test.js');
+    const ok05 = !(res05.err && res05.err.code !== 0);
+    results.push({ name: 'verify-cartones', ok: ok05, ms: Date.now() - t05, code: 25 });
+    if (!ok05) {
+      console.error('Cartones verification test failed.');
+      process.exit(25);
+    }
+    console.log('Cartones verification test completed.');
+  }
+
   if (runP2P) {
     console.log('\n2) Running P2P simulation test (tests/run_p2p_sim.js)');
     const t0 = Date.now();
