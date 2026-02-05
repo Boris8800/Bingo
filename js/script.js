@@ -737,6 +737,73 @@ function initVoiceUI() {
     }
 }
 
+/**
+ * Choose the best local voice for this browser (prefer Spanish; prefer Natural/Google/Premium/Neural)
+ * This is intended for Web3 viewers so they hear the best available local voice by default.
+ */
+function chooseBestLocalVoice() {
+    try {
+        if (!voices || voices.length === 0) return;
+
+        // Prefer Spanish voices and prioritize names that look premium/natural
+        let found = voices.find(v => v.lang && v.lang.startsWith('es') && /Natural|Google|Premium|Neural/i.test(v.name));
+        if (!found) found = voices.find(v => v.lang && v.lang.startsWith('es'));
+        if (!found) found = voices.find(v => /Natural|Google|Premium|Neural/i.test(v.name));
+        if (!found) found = voices[0];
+
+        if (found) {
+            selectedVoice = found;
+            preferredVoiceURI = found.voiceURI || found.name || '';
+            // reflect in the select if present
+            const voiceSelect = document.getElementById('voiceSelect');
+            if (voiceSelect) {
+                const opt = Array.from(voiceSelect.options).find(o => o.value === preferredVoiceURI || o.textContent.includes(found.name));
+                if (opt) opt.selected = true;
+            }
+            updateVoiceIndicator();
+        }
+    } catch (e) {
+        console.warn('chooseBestLocalVoice error:', e);
+    }
+}
+
+/**
+ * Toggle the compact header menu in Web3 (opens/closes the small header menu)
+ */
+function toggleHeaderMenu() {
+    try {
+        const menu = document.getElementById('headerMenu');
+        const toggle = document.getElementById('headerMenuToggle');
+        if (!menu || !toggle) return;
+        const isOpen = menu.style.display && menu.style.display !== 'none';
+        if (isOpen) {
+            menu.style.display = 'none';
+            menu.setAttribute('aria-hidden', 'true');
+            toggle.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('click', _closeHeaderOnDocClick);
+        } else {
+            menu.style.display = 'block';
+            menu.setAttribute('aria-hidden', 'false');
+            toggle.setAttribute('aria-expanded', 'true');
+            // Close when clicking outside
+            setTimeout(() => document.addEventListener('click', _closeHeaderOnDocClick), 50);
+        }
+    } catch (e) { console.warn('toggleHeaderMenu error', e); }
+}
+
+function _closeHeaderOnDocClick(ev) {
+    try {
+        const menu = document.getElementById('headerMenu');
+        const toggle = document.getElementById('headerMenuToggle');
+        if (!menu || !toggle) return;
+        if (ev.target && (menu.contains(ev.target) || toggle.contains(ev.target))) return;
+        menu.style.display = 'none';
+        menu.setAttribute('aria-hidden', 'true');
+        toggle.setAttribute('aria-expanded', 'false');
+        document.removeEventListener('click', _closeHeaderOnDocClick);
+    } catch (e) {}
+}
+
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setTimeout(initVoiceUI, 0);
 } else {
@@ -868,7 +935,7 @@ function populateVoiceList() {
         ? selectedVoice.voiceURI
         : (preferredVoiceURI || voiceSelect.value || '');
     voiceSelect.innerHTML = '';
-
+*** End Patch
     const defaultOption = document.createElement('option');
     defaultOption.textContent = 'Voz por defecto del navegador';
     defaultOption.value = '';
@@ -934,6 +1001,12 @@ function populateVoiceList() {
             preferredVoiceURI = 'google-premium';
         }
     }
+    // If a selectedVoice was pre-assigned (e.g., by chooseBestLocalVoice), reflect it in the select
+    if (!previouslySelectedURI && selectedVoice && selectedVoice.voiceURI) {
+        const opt = Array.from(voiceSelect.options).find(o => o.value === selectedVoice.voiceURI);
+        if (opt) opt.selected = true;
+    }
+
     // Actualizar indicador visual (si existe)
     updateVoiceIndicator();
 }
@@ -2195,6 +2268,34 @@ window.onload = () => {
                 btn.textContent = pref ? 'sonido activado' : 'sonido desactivado';
             }
         } catch (e) {}
+
+        // Compact header: ensure header menu toggle exists and wire closing
+        try {
+            const toggle = document.getElementById('headerMenuToggle');
+            const menu = document.getElementById('headerMenu');
+            if (toggle && menu) {
+                // Ensure menu is hidden initially
+                menu.style.display = 'none';
+                menu.setAttribute('aria-hidden', 'true');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        } catch (e) {}
+
+        // Ensure we pick the best available voice locally for Web3 viewers by default
+        try {
+            if (typeof speechSynthesis !== 'undefined') {
+                if (speechSynthesis.getVoices().length === 0) {
+                    speechSynthesis.onvoiceschanged = () => {
+                        populateVoiceList();
+                        chooseBestLocalVoice();
+                    };
+                } else {
+                    populateVoiceList();
+                    chooseBestLocalVoice();
+                }
+            }
+        } catch (e) {}
+
     } else {
         isMaster = true; // Por defecto Master (index.html, live_index.html, etc.)
     }

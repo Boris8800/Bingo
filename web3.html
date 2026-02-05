@@ -55,15 +55,21 @@
         }
     </script>
     <style>
-        /* Exact layout matching Web 1 */
-        body { padding-top: 50px; }
-        
+        /* Compact header and layout adjustments for Web3 */
+        body { padding-top: 44px; }
+        .topbar { height: 44px; padding: 6px 10px; align-items: center; }
+        .brand-badge { padding: 4px 8px; }
+        .brand-badge img { width: 28px; height: 28px; }
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .header-menu { position: absolute; right: 10px; top: 50px; z-index: 1200; display: none; }
+        .header-menu .header-menu-content { background: var(--bg-card); padding: 8px; border-radius: 8px; box-shadow: var(--shadow-md); }
+
         #numeroContainer {
-            margin: 30px auto !important;
+            margin: 22px auto !important;
         }
 
         .view-mode-badge {
-            margin: 10px auto;
+            margin: 8px auto;
             font-size: 0.75rem;
             font-weight: bold;
             opacity: 0.6;
@@ -117,10 +123,16 @@
 
             <button id="nightModeToggle" class="icon-btn" onclick="toggleNightMode()" aria-label="Cambiar modo noche" aria-pressed="false">&#127769;</button>
             <div id="voiceIndicator" class="voice-indicator" aria-hidden="true">Voz: —</div>
-            <div id="voiceHeaderContainer" style="display:inline-flex; gap:8px; align-items:center; margin-left:12px;">
-                <select id="voiceSelect" aria-label="Seleccionar voz" style="padding:6px 8px; border-radius:6px;"></select>
-                <button class="icon-btn" style="padding:6px 8px; font-size:0.8rem;" onclick="populateVoiceList(); updateVoiceIndicator();">↻</button>
-                <button class="icon-btn" style="padding:6px 8px; font-size:0.8rem;" onclick="setVoice(); updateVoiceIndicator(); speakText('Prueba de voz');">🔊</button>
+            <button id="headerMenuToggle" class="icon-btn" aria-expanded="false" aria-controls="headerMenu" onclick="toggleHeaderMenu()" title="Abrir menú">☰</button>
+            <div id="headerMenu" class="header-menu" aria-hidden="true">
+                <div class="header-menu-content">
+                    <label style="font-size:0.9rem; display:block; margin-bottom:6px;">Voz</label>
+                    <select id="voiceSelect" aria-label="Seleccionar voz" style="padding:6px 8px; border-radius:6px; min-width:180px;"></select>
+                    <div style="display:flex; gap:6px; margin-top:8px; justify-content:flex-end;">
+                        <button class="icon-btn" onclick="populateVoiceList(); chooseBestLocalVoice(); updateVoiceIndicator();">↻</button>
+                        <button class="icon-btn" onclick="setVoice(); updateVoiceIndicator(); speakText('Prueba de voz');">🔊</button>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
