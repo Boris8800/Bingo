@@ -1131,11 +1131,21 @@ function actualizarMisCartonesBingoDisplay() {
                     if (input) {
                         input.value = String(cartonId);
                     }
+                    // Animate pill to give feedback
+                    try { pill.classList.add('pulse-on-click'); } catch (e) {}
+                    setTimeout(() => { try { pill.classList.remove('pulse-on-click'); } catch (e) {} }, 800);
+
                     // Run the verification flow which also renders the mini-card
                     verificarCarton();
-                    // Focus the verification area for clarity
+
+                    // Focus the verification area for clarity and add highlight
                     const display = document.getElementById('cartonDisplayContainer');
-                    if (display) display.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    if (display) {
+                        display.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // add a brief highlight class to the container
+                        try { display.classList.add('reveal-card'); } catch (e) {}
+                        setTimeout(() => { try { display.classList.remove('reveal-card'); } catch (e) {} }, 900);
+                    }
                 } catch (e) { console.warn('Error handling tracked-pill click', e); }
             });
         } catch (e) {}
@@ -1382,12 +1392,21 @@ function verificarCarton() {
                 // Generar mini-tablero visual para inspección rápida
                 const card = document.createElement('div');
                 card.className = 'saved-card';
+                // reveal animation for the displayed card
+                try { card.classList.add('reveal-card'); } catch (e) {}
+                setTimeout(() => { try { card.classList.remove('reveal-card'); } catch (e) {} }, 1200);
                 const title = document.createElement('strong');
                 title.className = 'saved-card-title';
                 title.textContent = `Cartón ${numeroCarton}`;
                 card.appendChild(title);
                 card.appendChild(generarMiniTableroParaCarton(numerosEnCartonAttr));
                 cartonDisplayContainer.appendChild(card);
+
+                // temporary highlight the saved-card element
+                try {
+                    card.classList.add('highlight');
+                    setTimeout(() => { try { card.classList.remove('highlight'); } catch (e) {} }, 1400);
+                } catch (e) {}
 
                     if (numerosEnCarton.length > 0 && faltantes.length === 0) { // ¡Bingo detectado!
                     mensajeVerificacionCarton.textContent = "¡BINGO!";

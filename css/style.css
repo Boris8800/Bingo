@@ -301,6 +301,56 @@ body.night-mode #myTrackedBingosList {
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
+/* Animations */
+@keyframes pulseScale {
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); }
+  50% { transform: scale(1.06); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+ 100% { transform: scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 0 rgba(46,204,113,0); }
+  50% { box-shadow: 0 8px 24px rgba(46,204,113,0.28); }
+ 100% { box-shadow: 0 0 0 rgba(46,204,113,0); }
+}
+
+.tracked-card-pill {
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+.tracked-card-pill:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+.pulse-on-click {
+    animation: pulseScale 700ms ease-in-out both;
+}
+
+.reveal-card {
+    animation: revealFade 420ms cubic-bezier(.2,.9,.3,1) both;
+}
+@keyframes revealFade {
+  0% { opacity: 0; transform: translateY(8px) scale(0.98); }
+ 60% { opacity: 1; transform: translateY(-4px) scale(1.02); }
+100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.saved-card.highlight {
+    animation: glow 1200ms ease-in-out 1;
+    border-color: var(--bingo-success);
+}
+
+/* mini-cell bounce when marked */
+.mini-cell.marcado {
+    transform-origin: center;
+    animation: markedBounce 600ms ease both;
+}
+@keyframes markedBounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
 body.night-mode .mis-cartones-bingo-item {
     background-color: #f39c12 !important;
     color: #000 !important;
