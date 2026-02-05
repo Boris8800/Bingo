@@ -1121,6 +1121,24 @@ function actualizarMisCartonesBingoDisplay() {
 
         pill.appendChild(idSpan);
         pill.appendChild(progressSpan);
+        // Make pill interactive: clicking shows the same cartón in the "verificar cartón" area
+        try {
+            pill.style.cursor = 'pointer';
+            pill.title = `Verificar cartón ${cartonId}`;
+            pill.addEventListener('click', () => {
+                try {
+                    const input = document.getElementById('cartonVerificar');
+                    if (input) {
+                        input.value = String(cartonId);
+                    }
+                    // Run the verification flow which also renders the mini-card
+                    verificarCarton();
+                    // Focus the verification area for clarity
+                    const display = document.getElementById('cartonDisplayContainer');
+                    if (display) display.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } catch (e) { console.warn('Error handling tracked-pill click', e); }
+            });
+        } catch (e) {}
         container.appendChild(pill);
     });
     
