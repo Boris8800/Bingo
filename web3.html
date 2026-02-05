@@ -257,11 +257,22 @@
         });
     </script>
     <div class="page-spacer" aria-hidden="true"></div>
+    <div style="text-align: center; margin-bottom: 8px;">
+        <button id="openStatsBtn" class="btn-secondary" type="button" onclick="openStatsModal()">Estadisticas</button>
+    </div>
     <div id="visit-counter" style="text-align: center; margin-bottom: 20px; font-family: sans-serif; font-size: 0.9rem; color: var(--text-secondary); opacity: 0.8;">
         <span id="count-display"></span>
     </div>
     <footer style="text-align: center; margin-top: 40px; padding: 20px; font-size: 0.85em; opacity: 0.6;">
         © Boris8800 - v8
     </footer>
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeStatsModal()">&times;</span>
+            <h2>Estadisticas de Bingo</h2>
+            <p style="font-size: 0.9em; color: var(--text-secondary); margin-top: 0;">Cartones con mas bingos</p>
+            <div id="statsList" style="margin-top: 10px;"></div>
+        </div>
+    </div>
 </body>
 </html>

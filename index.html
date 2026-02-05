@@ -66,9 +66,7 @@
 <div id="numero" role="status" aria-live="polite" aria-atomic="true">--</div>
 </div>
 
-<div id="enableSoundBanner" style="position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, var(--btn-primary) 0%, #0056b3 100%); padding: 20px; text-align: center; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <button id="enableSoundBtn" onclick="enableAudioOnClick(); document.getElementById('enableSoundBanner').style.display='none';" style="padding: 12px 30px; background: white; color: #0056b3; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 1.1em; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔊 Habilitar Sonido</button>
-</div>
+ 
 
 <div id="botonesContainer">
 <button id="reiniciarBtn" onclick="reiniciarJuego()">Reiniciar Juego</button>
@@ -249,6 +247,9 @@
 
 
 <div class="page-spacer" aria-hidden="true"></div>
+<div style="text-align: center; margin-bottom: 8px;">
+    <button id="openStatsBtn" class="btn-secondary" type="button" onclick="openStatsModal()">Estadisticas</button>
+</div>
 <div id="visit-counter" style="text-align: center; margin-bottom: 20px; font-family: sans-serif; font-size: 0.9rem; color: var(--text-secondary); opacity: 0.8;">
     <span id="count-display"></span>
 </div>
@@ -275,6 +276,16 @@
         <p style="font-size: 0.85em; color: var(--text-secondary); text-align: center; margin-top: 15px;">
             Tus amigos pueden entrar a <br><strong>boris8800.github.io/Bingo/web3.html</strong><br> e ingresar el token o código.
         </p>
+    </div>
+</div>
+
+<!-- Modal de Estadisticas -->
+<div id="statsModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeStatsModal()">&times;</span>
+        <h2>Estadisticas de Bingo</h2>
+        <p style="font-size: 0.9em; color: var(--text-secondary); margin-top: 0;">Cartones con mas bingos</p>
+        <div id="statsList" style="margin-top: 10px;"></div>
     </div>
 </div>
 

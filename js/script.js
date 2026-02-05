@@ -558,6 +558,9 @@ function applySharedState(state) {
     // Detectar si hay un nuevo bingo en nuestros cartones seguidos (Para Web3)
     if (!isMaster) {
         const nuevosBingos = cartonesConBingo.filter(id => !oldBingos.includes(id));
+        if (nuevosBingos.length > 0) {
+            nuevosBingos.forEach(id => incrementBingoStat(id));
+        }
         const trackedBingoGanador = nuevosBingos.find(id => myTrackedCardNumbers.includes(id));
         
         if (trackedBingoGanador) {
@@ -858,6 +861,8 @@ let preferredVoiceURI = '';
 // ---- Variables para Nuevas Funcionalidades ----
 let myTrackedCardNumbers = [];
 let audioCtx = null;
+const STATS_KEY = 'bingo_stats_counts_v1';
+let bingoStats = null;
 
 // ---- Sound Effects (Synthesized for reliability) ----
 function initAudioContext() {
@@ -920,6 +925,98 @@ function announceBingo(cartonId) {
     } catch (e) {
         console.warn('announceBingo failed:', e);
     }
+}
+
+function loadBingoStats() {
+    if (bingoStats) return bingoStats;
+    try {
+        const raw = localStorage.getItem(STATS_KEY);
+        bingoStats = raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        bingoStats = {};
+    }
+    return bingoStats;
+}
+
+function saveBingoStats() {
+    try {
+        if (!bingoStats) return;
+        localStorage.setItem(STATS_KEY, JSON.stringify(bingoStats));
+    } catch (e) {}
+}
+
+function incrementBingoStat(cartonId) {
+    if (!cartonId) return;
+    const stats = loadBingoStats();
+    const key = String(cartonId);
+    stats[key] = (stats[key] || 0) + 1;
+    saveBingoStats();
+
+    const modal = document.getElementById('statsModal');
+    if (modal && modal.style.display === 'block') {
+        renderBingoStatsList();
+    }
+}
+
+function getSortedBingoStats() {
+    const stats = loadBingoStats();
+    return Object.keys(stats)
+        .map((k) => ({ carton: k, wins: stats[k] }))
+        .sort((a, b) => b.wins - a.wins || Number(a.carton) - Number(b.carton));
+}
+
+function renderBingoStatsList() {
+    const container = document.getElementById('statsList');
+    if (!container) return;
+    const stats = getSortedBingoStats();
+    container.innerHTML = '';
+
+    if (stats.length === 0) {
+        container.textContent = 'Sin estadisticas aun.';
+        return;
+    }
+
+    const list = document.createElement('div');
+    list.style.display = 'flex';
+    list.style.flexDirection = 'column';
+    list.style.gap = '8px';
+
+    stats.forEach((item) => {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.justifyContent = 'space-between';
+        row.style.alignItems = 'center';
+        row.style.padding = '6px 10px';
+        row.style.borderRadius = '8px';
+        row.style.border = '1px solid var(--border-color)';
+        row.style.background = 'var(--bg-secondary)';
+
+        const label = document.createElement('span');
+        label.textContent = `Carton ${item.carton}`;
+        label.style.fontWeight = '600';
+
+        const count = document.createElement('span');
+        count.textContent = `${item.wins} bingo${item.wins === 1 ? '' : 's'}`;
+        count.style.opacity = '0.8';
+
+        row.appendChild(label);
+        row.appendChild(count);
+        list.appendChild(row);
+    });
+
+    container.appendChild(list);
+}
+
+function openStatsModal() {
+    const modal = document.getElementById('statsModal');
+    if (!modal) return;
+    renderBingoStatsList();
+    modal.style.display = 'block';
+}
+
+function closeStatsModal() {
+    const modal = document.getElementById('statsModal');
+    if (modal) modal.style.display = 'none';
 }
 
 // Unlock audio on mobile/browser with first user gesture (click, touch, keyboard)
@@ -1528,6 +1625,7 @@ function verificarCarton() {
                     // Agregar a la lista global de Bingos si es nuevo (lógica interna)
                     if (!cartonesConBingo.includes(numeroCarton)) {
                         cartonesConBingo.push(numeroCarton);
+                        incrementBingoStat(numeroCarton);
                         actualizarListaBingos();
                         actualizarMisCartonesBingoDisplay();
                         saveGameState();
@@ -1676,8 +1774,9 @@ function verificarTodosLosCartones(options = {}) {
         if (!match || !match[1]) return;
         const numeroCarton = parseInt(match[1]);
 
-        if (cartonesConBingo.includes(numeroCarton)) {
-            return;
+                    if (!cartonesConBingo.includes(numeroCarton)) {
+                        cartonesConBingo.push(numeroCarton);
+                        incrementBingoStat(numeroCarton);
         }
 
         const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
@@ -2140,6 +2239,10 @@ window.onclick = function(event) {
     const modal = document.getElementById('shareModal');
     if (event.target == modal) {
         modal.style.display = "none";
+    }
+    const statsModal = document.getElementById('statsModal');
+    if (event.target == statsModal) {
+        statsModal.style.display = "none";
     }
 }
 
