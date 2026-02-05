@@ -1110,20 +1110,15 @@ function populateVoiceList() {
             }
         }
     } else {
-        const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-        if (isIOS) {
-            // On iOS, prefer the best local voice instead of Google TTS
-            chooseBestLocalVoice();
+        // Preferir Google Premium por defecto si es la primera vez (aplica a Web1 y Web3)
+        const googlePremiumOpt = Array.from(voiceSelect.options).find(opt => opt.value === 'google-premium');
+        if (googlePremiumOpt) {
+            googlePremiumOpt.selected = true;
+            selectedVoice = { voiceURI: 'google-premium', name: 'Google Premium', lang: 'es-ES' };
+            preferredVoiceURI = 'google-premium';
         } else {
-            // Preferir Google Premium por defecto si es la primera vez
-            const googlePremiumOpt = Array.from(voiceSelect.options).find(opt => opt.value === 'google-premium');
-            if (googlePremiumOpt) {
-                googlePremiumOpt.selected = true;
-                selectedVoice = { voiceURI: 'google-premium', name: 'Google Premium', lang: 'es-ES' };
-                preferredVoiceURI = 'google-premium';
-            } else {
-                chooseBestLocalVoice();
-            }
+            // Fallback a la mejor voz local si Google Premium no está disponible
+            chooseBestLocalVoice();
         }
     }
     // If a selectedVoice was pre-assigned (e.g., by chooseBestLocalVoice), reflect it in the select
@@ -1992,6 +1987,115 @@ function generarMiniTableroParaCarton(numeros) {
     return generarMiniTableroElement(numeros);
 }
 
+// ---- iOS: Banner para activar voz (solo iPhone/iPad/iPod) ----
+function createIOSActivateBannerIfNeeded() {
+    try {
+        const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+        if (!isIOS) return;
+        if (typeof window.speechSynthesis === 'undefined') return;
+        if (localStorage.getItem('voiceActivatedOnIOS') === 'true') return;
+
+        // Don't show if voice UI isn't present at all
+        const voiceContainer = document.getElementById('voiceSettingsContainer') || document.body;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'iosVoiceActivateBanner';
+        overlay.style.position = 'fixed';
+        overlay.style.left = '0';
+        overlay.style.top = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.zIndex = '2147483647';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.background = 'rgba(0,0,0,0.35)';
+
+        const card = document.createElement('div');
+        card.style.background = 'white';
+        card.style.color = '#111';
+        card.style.padding = '18px 20px';
+        card.style.borderRadius = '12px';
+        card.style.boxShadow = '0 8px 30px rgba(0,0,0,0.25)';
+        card.style.maxWidth = '92%';
+        card.style.width = '420px';
+        card.style.textAlign = 'center';
+        card.style.fontSize = '16px';
+
+        const title = document.createElement('div');
+        title.textContent = 'Toca para activar la voz';
+        title.style.fontWeight = '700';
+        title.style.marginBottom = '8px';
+        card.appendChild(title);
+
+        const desc = document.createElement('div');
+        desc.textContent = 'En iPhone es necesario un toque para habilitar la reproducción de voz. Toca aquí para activarla.';
+        desc.style.fontSize = '14px';
+        desc.style.opacity = '0.95';
+        desc.style.marginBottom = '14px';
+        card.appendChild(desc);
+
+        const btn = document.createElement('button');
+        btn.textContent = 'Activar voz';
+        btn.style.background = 'var(--bingo-success)';
+        btn.style.color = 'white';
+        btn.style.border = 'none';
+        btn.style.padding = '10px 16px';
+        btn.style.borderRadius = '8px';
+        btn.style.fontSize = '15px';
+        btn.style.cursor = 'pointer';
+        btn.addEventListener('click', () => {
+            try {
+                activateVoiceOnIOS();
+            } catch (e) { console.warn('activateVoiceOnIOS error', e); }
+        });
+        card.appendChild(btn);
+
+        const small = document.createElement('div');
+        small.textContent = 'Puedes cambiar la voz luego en Ajustes.';
+        small.style.fontSize = '12px';
+        small.style.opacity = '0.8';
+        small.style.marginTop = '10px';
+        card.appendChild(small);
+
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+    } catch (e) {
+        console.warn('createIOSActivateBannerIfNeeded error', e);
+    }
+}
+
+function activateVoiceOnIOS() {
+    try {
+        // Try to initialize/resume AudioContext
+        try {
+            if (!audioCtx) initAudioContext();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+        } catch (e) {}
+
+        // Force load voices and speak a test phrase to unlock speech on iOS
+        if (typeof speechSynthesis !== 'undefined') {
+            // ensure voices are loaded
+            const v = speechSynthesis.getVoices();
+            if (!v || v.length === 0) {
+                speechSynthesis.onvoiceschanged = () => {
+                    try { speakText('Voz activada'); } catch (e) {}
+                };
+            } else {
+                try { speakText('Voz activada'); } catch (e) { console.warn(e); }
+            }
+        }
+
+        localStorage.setItem('voiceActivatedOnIOS', 'true');
+        const el = document.getElementById('iosVoiceActivateBanner');
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+    } catch (e) {
+        console.warn('activateVoiceOnIOS overall error', e);
+    }
+}
+
 function mostrarCartonesGuardados() {
     const contenedor = document.getElementById('listaCartonesGuardados');
     if (!contenedor) return;
@@ -2439,11 +2543,9 @@ window.onload = () => {
                 if (speechSynthesis.getVoices().length === 0) {
                     speechSynthesis.onvoiceschanged = () => {
                         populateVoiceList();
-                        chooseBestLocalVoice();
                     };
                 } else {
                     populateVoiceList();
-                    chooseBestLocalVoice();
                 }
             }
         } catch (e) {}
@@ -2579,6 +2681,9 @@ window.onload = () => {
 
     // Update share button with current token
     updateShareButton();
+
+    // Mostrar banner de activación de voz en iPhone si hace falta
+    try { createIOSActivateBannerIfNeeded(); } catch (e) { console.warn('createIOSActivateBannerIfNeeded call failed', e); }
 };
 
 async function downloadCardsAsPDF() {
