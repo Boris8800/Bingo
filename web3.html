@@ -39,7 +39,9 @@
                 const input = document.getElementById('newTokenInput');
                 if (input) {
                     input.value = urlToken;
-                    setTimeout(loadNewGameFromToken, 800);
+                    // Eliminamos el timeout redundante que llama a initCrossDeviceSync, 
+                    // ya que script.js ya lo hace en su window.onload al detectar el hash.
+                    // Solo nos aseguramos de que el input tenga el valor.
                 }
             }
         });

@@ -24,7 +24,7 @@ const PEER_PREFIX = 'bingo-v6-live'; // Prefijo actualizado para forzar limpieza
 
 // --- Función UI Status Master ---
 function updateP2PStatus(status, color = "inherit") {
-    const el = document.getElementById('p2pStatusText');
+    const el = document.getElementById('p2pStatusText') || document.getElementById('syncStatus');
     if (el) {
         el.textContent = status;
         if (color) el.style.color = color;
@@ -108,33 +108,42 @@ function checkTokenInUse(code, timeout = 1200) {
     });
 }
 
-// Reserve a free game code (strictly 2 digits: 10-99)
-// Systematic check of all tokens to ensure we find a free one
+// Reserve a free game code (starting from 2 digits up to 4 if needed)
 async function reserveGameCode() {
     updateP2PStatus("Buscando canal libre...", "#ffc107");
     
-    // Crear lista de todos los códigos (10-99) y barajarlos
-    let candidates = [];
-    for (let i = 10; i <= 99; i++) candidates.push(i);
-    for (let i = candidates.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-    }
+    // Definir rangos de búsqueda progresiva (2 dígitos, luego 3)
+    const ranges = [[10, 99], [100, 999]];
+    
+    for (const [min, max] of ranges) {
+        let candidates = [];
+        for (let i = min; i <= max; i++) candidates.push(i);
+        
+        // Barajar candidatos del rango actual
+        for (let i = candidates.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        }
 
-    // Probar systematically todos los candidatos
-    for (const candidate of candidates) {
-        if (candidate === gameCodeFixed) continue;
-        const inUse = await checkTokenInUse(candidate, 600); // 600ms is enough for a quick check
-        if (!inUse) {
-            gameCodeFixed = candidate;
-            lastActivityTime = Date.now(); // Reiniciar reloj al obtener nuevo código
-            console.log(`🎯 Canal libre encontrado y reservado: ${gameCodeFixed}`);
-            return gameCodeFixed;
+        // Probar Systematicamente un subconjunto de candidatos para no tardar una eternidad
+        // Si el rango es pequeño (2 dígitos), probar todos. Si es grande, probar una muestra.
+        const maxTries = (max - min > 150) ? 100 : (max - min + 1);
+        const testSubset = candidates.slice(0, maxTries);
+
+        for (const candidate of testSubset) {
+            if (candidate === gameCodeFixed) continue;
+            const inUse = await checkTokenInUse(candidate, 1200); 
+            if (!inUse) {
+                gameCodeFixed = candidate;
+                lastActivityTime = Date.now();
+                console.log(`🎯 Canal libre encontrado y reservado: ${gameCodeFixed}`);
+                return gameCodeFixed;
+            }
         }
     }
 
-    // fallback extremademente raro
-    gameCodeFixed = Math.floor(Math.random() * 90) + 10;
+    // fallback final
+    gameCodeFixed = Math.floor(Math.random() * 9000) + 1000;
     lastActivityTime = Date.now();
     return gameCodeFixed;
 }
@@ -297,6 +306,8 @@ function initCrossDeviceSync() {
     if (peer && !peer.destroyed) { try { peer.destroy(); } catch (e) {} }
     
     console.log("🚀 Iniciando conexión de espectador...");
+    updateP2PStatus("Iniciando P2P...", "#ffc107");
+    
     peer = new Peer();
     
     peer.on('open', (id) => {
@@ -306,19 +317,18 @@ function initCrossDeviceSync() {
 
     peer.on('disconnected', () => {
         console.warn('Espectador desconectado del servidor. Reconectando...');
+        updateP2PStatus("Reconectando...", "#ffc107");
         peer.reconnect();
     });
 
     peer.on('error', (err) => {
         console.error('❌ Error Peer Espectador:', err.type, err);
         if (err.type === 'peer-unavailable') {
-            const syncStatusEl = document.getElementById('syncStatus');
-            if (syncStatusEl) {
-                syncStatusEl.textContent = 'Host no encontrado (¿Iniciaste el juego?)';
-                syncStatusEl.style.color = '#dc3545';
-            }
+            updateP2PStatus("Host no encontrado", "#dc3545");
             // Reintentar en un momento por si el host está tardando en subir
             setTimeout(intentarConectarConMaster, 6000);
+        } else {
+            updateP2PStatus("Error de Conexión", "#dc3545");
         }
     });
 }
@@ -356,9 +366,20 @@ function clearLocalHistory() {
 }
 
 function intentarConectarConMaster() {
-    if (!gameCodeFixed || !peer || peer.destroyed) return;
-    
+    if (isMaster) return;
+    if (!gameCodeFixed) {
+        updateP2PStatus("Sin Código", "#dc3545");
+        return;
+    }
+
+    if (!peer || peer.destroyed) {
+        console.warn("Peer no inicializado. Re-intentando init...");
+        initCrossDeviceSync();
+        return;
+    }
+
     if (peer.disconnected) {
+        updateP2PStatus("Reconectando a Servidor...", "#ffc107");
         peer.reconnect();
         setTimeout(intentarConectarConMaster, 3000);
         return;
@@ -367,17 +388,13 @@ function intentarConectarConMaster() {
     const masterId = `${PEER_PREFIX}-${gameCodeFixed}`;
     console.log(`🔗 Intentando conectar al Master ID: ${masterId}`);
     
-    // Si ya existe una conexión abierta, no hacemos nada
-    if (connToMaster && connToMaster.open) {
-        console.log("Conexión ya abierta.");
+    // Si ya existe una conexión abierta o en proceso, no hacemos nada
+    if (connToMaster && (connToMaster.open || connToMaster._open)) {
+        console.log("Conexión ya abierta o en proceso.");
         return;
     }
     
-    const syncStatusEl = document.getElementById('syncStatus');
-    if (syncStatusEl) {
-        syncStatusEl.textContent = 'Buscando Host (' + gameCodeFixed + ')...';
-        syncStatusEl.style.color = '#ffc107';
-    }
+    updateP2PStatus(`Buscando Host (${gameCodeFixed})...`, "#ffc107");
 
     connToMaster = peer.connect(masterId);
     
@@ -385,10 +402,7 @@ function intentarConectarConMaster() {
     const connectionTimeout = setTimeout(() => {
         if (connToMaster && !connToMaster.open) {
             console.warn('⌛ Tiempo de espera agotado conectando al Master.');
-            if (syncStatusEl) {
-                syncStatusEl.textContent = 'Sin respuesta del Host (Reintentando...)';
-                syncStatusEl.style.color = '#dc3545';
-            }
+            updateP2PStatus("Host no responde (reintentando)", "#dc3545");
             connToMaster.close();
             setTimeout(intentarConectarConMaster, 5000);
         }
@@ -397,10 +411,7 @@ function intentarConectarConMaster() {
     connToMaster.on('open', () => {
         clearTimeout(connectionTimeout);
         console.log('✅ Conexión establecida con el Master');
-        if (syncStatusEl) {
-            syncStatusEl.textContent = 'Conectado';
-            syncStatusEl.style.color = '#28a745';
-        }
+        updateP2PStatus("Conectado", "#28a745");
         
         // Notify web3.html if function exists
         if (typeof onConnectionCompleted === 'function') {
@@ -472,8 +483,9 @@ function applySharedState(state) {
 
     // Control de versión del estado (drawCounter)
     if (typeof state.drawCounter === 'number') {
-        // Ignoramos si es un estado antiguo
-        if (state.drawCounter < drawCounter) return;
+        // Ignoramos si es un estado antiguo, EXCEPTO si el contador vuelve a 0 (reinicio del Master)
+        const isReset = state.drawCounter === 0 && drawCounter > 0;
+        if (!isReset && state.drawCounter < drawCounter) return;
         // Si es el mismo contador y ya lo procesamos, lo ignoramos (evita loops o doble procesamiento)
         if (state.drawCounter === drawCounter && lastDrawCounterReceived === state.drawCounter) return;
     }
@@ -513,6 +525,9 @@ function applySharedState(state) {
     
     // Actualizamos la interfaz con los nuevos datos
     applyGameStateToUI();
+    
+    // Guardamos estado para persistencia en refresh
+    saveGameState();
     
     // Sincronizamos los botones de control para reflejar el estado del Master
     const startStopBtn = document.getElementById('startStopBtn');
@@ -2056,10 +2071,10 @@ function loadSharedGame(encoded) {
 // --- INICIALIZACIÓN DEL JUEGO ---
 window.onload = () => {
     // Detect page mode
-    const path = window.location.pathname;
     const page = document.body.getAttribute('data-page');
+    const isExplicitWeb3 = (typeof window !== 'undefined' && window.__IS_MASTER === false);
     
-    if (page === 'web3') {
+    if (page === 'web3' || isExplicitWeb3) {
         isMaster = false;
         // Inicializar estado del botón de sonido para espectadores
         try {
@@ -2070,10 +2085,8 @@ window.onload = () => {
                 btn.textContent = pref ? 'sonido activado' : 'sonido desactivado';
             }
         } catch (e) {}
-    } else if (path.includes('live_index.html')) {
-        isMaster = false;
     } else {
-        isMaster = true; // index.html is the master
+        isMaster = true; // Por defecto Master (index.html, live_index.html, etc.)
     }
 
     const numerosContainer = document.getElementById('numerosContainer');
@@ -2141,44 +2154,51 @@ window.onload = () => {
         }
     });
 
+    // prioritize hash over restored state for viewers
+    const hash = window.location.hash.substring(1);
     const restored = loadGameState();
-    if (restored) {
+
+    if (hash) {
+        // Check if it's the numeric format (XX,num1,num2...)
+        if (/^\d{2,5}(?:,\d+)*$/.test(hash)) {
+            console.log("Loading numeric token from hash:", hash);
+            const parts = hash.split(',');
+            gameCodeFixed = parseInt(parts[0]);
+            numerosSalidos = parts.slice(1).map(Number);
+            numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1).filter(n => !numerosSalidos.includes(n));
+            applyGameStateToUI();
+            if (!isMaster) {
+                initCrossDeviceSync();
+            } else if (gameCodeFixed) {
+                claimToken(gameCodeFixed);
+            }
+        } else if (loadSharedGame(hash)) {
+            // Shared game loaded via Base64
+            if (!isMaster) {
+                initCrossDeviceSync();
+            } else if (gameCodeFixed) {
+                claimToken(gameCodeFixed);
+            }
+        } else {
+            reiniciarJuego({ allowNewToken: true });
+        }
+    } else if (restored) {
         applyGameStateToUI();
         if (!isMaster) {
-            initCrossDeviceSync();
+            // Solo sincronizamos si tenemos un código válido restaurado
+            if (gameCodeFixed) {
+                initCrossDeviceSync();
+            } else {
+                updateP2PStatus("Inactivo (Sin Código)");
+            }
         } else if (gameCodeFixed) {
             // Si somos el Master y tenemos un código, reclamarlo de nuevo
             claimToken(gameCodeFixed);
         }
     } else {
-        // Check for shared game in URL hash
-        const hash = window.location.hash.substring(1);
-        if (hash) {
-            // Check if it's the numeric format (XX,num1,num2...)
-            if (/^\d{2,5}(?:,\d+)*$/.test(hash)) {
-                console.log("Loading numeric token from hash:", hash);
-                const parts = hash.split(',');
-                gameCodeFixed = parseInt(parts[0]);
-                numerosSalidos = parts.slice(1).map(Number);
-                numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1).filter(n => !numerosSalidos.includes(n));
-                applyGameStateToUI();
-                if (!isMaster) {
-                    initCrossDeviceSync();
-                } else if (gameCodeFixed) {
-                    claimToken(gameCodeFixed);
-                }
-            } else if (loadSharedGame(hash)) {
-                // Shared game loaded via Base64
-                if (!isMaster) {
-                    initCrossDeviceSync();
-                } else if (gameCodeFixed) {
-                    claimToken(gameCodeFixed);
-                }
-            } else {
-                reiniciarJuego({ allowNewToken: true });
-            }
-        } else if (!isMaster) {
-            // If we are on slave page without a hash, just wait for WebSocket or show empty
+        // No hash, no restored state
+        if (!isMaster) {
+            updateP2PStatus("Inactivo");
             reiniciarJuego({ allowNewToken: true });
         } else {
             reiniciarJuego({ allowNewToken: true });
@@ -2373,8 +2393,8 @@ async function downloadCardsAsPDF() {
     }
 }
 
-// ---- Clear token on page unload (reload or navigate) ----
-window.addEventListener('beforeunload', () => {
-    window.location.hash = '';
-    console.log('🧹 Token cleared from address bar');
-});
+// ---- Clear token on page unload: DISABLED to allow persistent connection on refresh ----
+// window.addEventListener('beforeunload', () => {
+//     window.location.hash = '';
+//     console.log('🧹 Token cleared from address bar');
+// });
