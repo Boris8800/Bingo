@@ -486,6 +486,20 @@ async function broadcastState() {
         preferredVoiceURI: preferredVoiceURI || ''
     };
 
+    // Include saved cartones (if present in DOM) so viewers can render the same cards
+    try {
+        const cartDivs = document.querySelectorAll('#cartonesContainer > div[data-numeros]');
+        if (cartDivs && cartDivs.length > 0) {
+            state.savedCartones = Array.from(cartDivs).map(d => ({ id: d.id || null, numeros: d.getAttribute('data-numeros') || '' }));
+        } else {
+            // fallback: include from persisted savedCards in localStorage
+            const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem('bingo_savedCardsV1') : null;
+            if (raw) {
+                try { state.savedCartones = JSON.parse(raw); } catch (e) {}
+            }
+        }
+    } catch (e) {}
+
     if (isMaster && peer) {
         connections.forEach(conn => {
             if (conn && conn.open) {
@@ -558,6 +572,32 @@ function applySharedState(state) {
     
     // Actualizamos la interfaz con los nuevos datos
     applyGameStateToUI();
+
+    // If the master provided saved cartones (cards), ensure viewer renders the same
+    try {
+        if (!isMaster && state.savedCartones && Array.isArray(state.savedCartones)) {
+            // persist into localStorage for later loads
+            try { localStorage.setItem('bingo_savedCardsV1', JSON.stringify(state.savedCartones)); } catch (e) {}
+
+            // recreate cartonesContainer entries to match master
+            const container = document.getElementById('cartonesContainer');
+            if (container) {
+                // remove existing generated cartones
+                const existing = container.querySelectorAll('div[data-numeros]');
+                existing.forEach(n => n.parentNode && n.parentNode.removeChild(n));
+
+                state.savedCartones.forEach(s => {
+                    const el = document.createElement('div');
+                    if (s.id) el.id = s.id;
+                    el.setAttribute('data-numeros', (s.numeros || '').toString());
+                    container.appendChild(el);
+                });
+            }
+
+            // Refresh saved cartones UI
+            try { mostrarCartonesGuardados(); } catch (e) {}
+        }
+    } catch (e) {}
     
     // Guardamos estado para persistencia en refresh
     saveGameState();
