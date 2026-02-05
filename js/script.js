@@ -19,6 +19,34 @@ const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastCha
 // 2. Variables de Control de Estado de Red (P2P via PeerJS)
 let isMaster = (typeof window !== 'undefined' && window.__IS_MASTER === false) ? false : true;
 let peer = null;
+// Test hook: allows tests to inject an internal Peer instance (only used in tests)
+function __setInternalPeerForTests(p) {
+    try { peer = p; } catch (e) { console.warn('Could not set internal peer for tests:', e); }
+}
+// Test helper: return number of active connections (for test harness)
+function __getConnectionsCountForTests() {
+    try { return Array.isArray(connections) ? connections.length : 0; } catch (e) { return 0; }
+}
+// Test hook: count how many times applySharedState was invoked
+let __applySharedStateCallCount = 0;
+function __getApplySharedStateCountForTests() { try { return __applySharedStateCallCount; } catch (e) { return 0; } }
+function __resetApplySharedStateCountForTests() { __applySharedStateCallCount = 0; }
+// Expose test hooks on window for JSDOM test harness
+if (typeof window !== 'undefined') {
+    try {
+        window.__getApplySharedStateCountForTests = __getApplySharedStateCountForTests;
+        window.__resetApplySharedStateCountForTests = __resetApplySharedStateCountForTests;
+        window.__setInternalPeerForTests = __setInternalPeerForTests;
+        window.__getConnectionsCountForTests = __getConnectionsCountForTests;
+        // Test hook: allow harness to inject a P2P-like state directly into this window
+        window.__test_receiveP2PState = function(state) {
+            try { console.log('TESTHOOK viewer __test_receiveP2PState called', state && (state.numerosSalidos ? state.numerosSalidos.length : 'no-numeros')); } catch (e) {}
+            try { applySharedState(state); } catch (e) { console.error('TESTHOOK viewer applySharedState error', e); }
+            try { window.__lastAppliedState = state; } catch (e) {}
+        };
+        window.__getLastAppliedStateForTests = function() { try { return window.__lastAppliedState || null; } catch (e) { return null; } };
+    } catch (e) {}
+}
 let connections = [];         // Solo para Master: lista de conexiones activas
 let connToMaster = null;      // Para Viewer: conexión activa al Master
 const PEER_PREFIX = 'bingo-v6-live'; // Prefijo actualizado para forzar limpieza de sesiones
@@ -478,6 +506,9 @@ async function broadcastState() {
  * Aplica un estado de juego recibido externamente.
  */
 function applySharedState(state) {
+    __applySharedStateCallCount++;
+    try { console.log('TESTHOOK applySharedState called', {count: __applySharedStateCallCount, drawCounter: state && state.drawCounter, numerosSalidos_len: state && (state.numerosSalidos ? state.numerosSalidos.length : 'undefined')}); } catch (e) {}
+    try { if (typeof window !== 'undefined') window.__lastAppliedState = state; } catch (e) {}
     if (!state) return;
     
     // Si somos Master, no aplicamos estados de otros (evita conflictos)
