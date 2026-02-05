@@ -5,6 +5,7 @@ let intervalo;
 let enEjecucion = false;
 let juegoPausado = false;
 var cartonesConBingo = [];
+if (typeof window !== 'undefined') try { window.cartonesConBingo = cartonesConBingo; } catch (e) {}
 let lastActivityTime = Date.now(); // Rastreo de inactividad
 const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutos en ms
 let currentGameToken = null;
@@ -556,6 +557,7 @@ function applySharedState(state) {
     numerosSalidos = state.numerosSalidos || [];
     numerosDisponibles = state.numerosDisponibles || [];
     cartonesConBingo = state.cartonesConBingo || [];
+    if (typeof window !== 'undefined') try { window.cartonesConBingo = cartonesConBingo; } catch (e) {}
 
     // Detectar si hay un nuevo bingo en nuestros cartones seguidos (Para Web3)
     if (!isMaster) {
@@ -712,8 +714,7 @@ function _matchAndApplyVoice(preferredURI) {
                 try { opt.selected = (opt.value === preferredVoiceURI); } catch (e) {}
             });
         }
-        saveGameState();
-        console.log('🗣️ Voz sincronizada desde Master:', found.name || preferredVoiceURI);
+        console.log('🗣️ Voz seleccionada localmente:', found.name || preferredVoiceURI);
         updateVoiceIndicator();
     } else {
         console.log('🗣️ No se encontró voz local exacta; se mantiene preferencia:', preferredURI);
@@ -858,7 +859,8 @@ function toggleSpectatorSound() {
 
 // ---- Persistencia (localStorage) ----
 const STORAGE_KEY = 'bingoGameStateV1';
-let preferredVoiceURI = '';
+// Por defecto intentamos usar Google Premium (mejor TTS) salvo que el navegador/plataforma lo impida
+let preferredVoiceURI = 'google-premium';
 
 // ---- Variables para Nuevas Funcionalidades ----
 let myTrackedCardNumbers = [];
@@ -1112,21 +1114,15 @@ function populateVoiceList() {
             }
         }
     } else {
-        // On iOS prefer a local voice (selecting Google TTS often fails there)
-        const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-        if (isIOS) {
-            chooseBestLocalVoice();
+        // Preferir Google Premium por defecto incluso en iOS si está disponible
+        const googlePremiumOpt = Array.from(voiceSelect.options).find(opt => opt.value === 'google-premium');
+        if (googlePremiumOpt) {
+            googlePremiumOpt.selected = true;
+            selectedVoice = { voiceURI: 'google-premium', name: 'Google Premium', lang: 'es-ES' };
+            preferredVoiceURI = 'google-premium';
         } else {
-            // Preferir Google Premium por defecto si es la primera vez (aplica a Web1 y otros navegadores)
-            const googlePremiumOpt = Array.from(voiceSelect.options).find(opt => opt.value === 'google-premium');
-            if (googlePremiumOpt) {
-                googlePremiumOpt.selected = true;
-                selectedVoice = { voiceURI: 'google-premium', name: 'Google Premium', lang: 'es-ES' };
-                preferredVoiceURI = 'google-premium';
-            } else {
-                // Fallback a la mejor voz local si Google Premium no está disponible
-                chooseBestLocalVoice();
-            }
+            // Fallback a la mejor voz local si Google Premium no está disponible
+            chooseBestLocalVoice();
         }
     }
     // If a selectedVoice was pre-assigned (e.g., by chooseBestLocalVoice), reflect it in the select
@@ -1437,6 +1433,7 @@ async function reiniciarJuego(options = {}) {
     numerosSalidos = [];
     numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1);
     cartonesConBingo = [];
+    if (typeof window !== 'undefined') try { window.cartonesConBingo = cartonesConBingo; } catch (e) {}
     // Ensure UI list for "Cartones con Bingo" is cleared immediately
     const listaBingos = document.getElementById('listaCartonesBingo');
     if (listaBingos) {
@@ -1833,6 +1830,7 @@ function limpiarMensajeVerificacion() {
 function verificarTodosLosCartones(options = {}) {
     const { silent = false } = options;
     const elementosCartones = document.querySelectorAll('#cartonesContainer > div[id^="carton"]');
+    try { console.log('DEBUG: verificarTodos - numerosSalidos length=', Array.isArray(numerosSalidos)?numerosSalidos.length:'(no numerosSalidos)', 'elementosCartones=', elementosCartones.length); } catch (e) {}
     let algunBingoTrackeadoNuevo = false;
 
     elementosCartones.forEach(cartonElement => {
@@ -1849,9 +1847,16 @@ function verificarTodosLosCartones(options = {}) {
             if (numerosEnCarton.length > 0) {
                 const faltantes = numerosEnCarton.filter(num => !numerosSalidos.includes(num));
                 if (faltantes.length === 0) { // Bingo detected
-                    if (!cartonesConBingo.includes(numeroCarton)) {
-                        cartonesConBingo.push(numeroCarton);
-                        
+                    // Ensure we mutate the same array instance observed by tests (window.cartonesConBingo)
+                    const targetBingos = (typeof window !== 'undefined' && Array.isArray(window.cartonesConBingo)) ? window.cartonesConBingo : cartonesConBingo;
+                    if (!targetBingos.includes(numeroCarton)) {
+                        try { console.log('DEBUG: verificarTodos - bingo detected for', numeroCarton); } catch (e) {}
+                        targetBingos.push(numeroCarton);
+                        try { console.log('DEBUG: verificarTodos - pushed into targetBingos'); } catch (e) {}
+                        // keep internal reference in sync
+                        try { cartonesConBingo = targetBingos; } catch (e) {}
+                        if (typeof window !== 'undefined') try { window.cartonesConBingo = targetBingos; } catch (e) {}
+
                         // Si el cartón está en la lista de seguimiento, activamos sonido
                         if (myTrackedCardNumbers.includes(numeroCarton)) {
                             algunBingoTrackeadoNuevo = true;
@@ -1919,13 +1924,16 @@ function loadGameState() {
     try {
         if (typeof localStorage === 'undefined') return false;
         const raw = localStorage.getItem(STORAGE_KEY);
+        try { console.log('DEBUG: loadGameState raw present=', !!raw, 'raw_preview=', String(raw).slice(0,200)); } catch (e) {}
         if (!raw) return false;
 
         const state = JSON.parse(raw);
+        try { console.log('DEBUG: loadGameState parsed state keys=', state && Object.keys(state)); } catch (e) {}
         if (!state || typeof state !== 'object') return false;
 
         const salidos = Array.isArray(state.numerosSalidos) ? state.numerosSalidos : null;
         const disponibles = Array.isArray(state.numerosDisponibles) ? state.numerosDisponibles : null;
+        try { console.log('DEBUG: loadGameState salidos_len=', salidos ? salidos.length : 'null', 'disponibles_len=', disponibles ? disponibles.length : 'null'); } catch (e) {}
         if (!salidos || !disponibles) return false;
 
         numerosSalidos = salidos.filter(n => Number.isInteger(n) && n >= 1 && n <= 90);
@@ -1936,6 +1944,7 @@ function loadGameState() {
         cartonesConBingo = Array.isArray(state.cartonesConBingo)
             ? state.cartonesConBingo.filter(n => Number.isInteger(n) && n > 0)
             : [];
+        if (typeof window !== 'undefined') try { window.cartonesConBingo = cartonesConBingo; } catch (e) {}
         myTrackedCardNumbers = Array.isArray(state.myTrackedCardNumbers)
             ? state.myTrackedCardNumbers.filter(n => Number.isInteger(n) && n > 0)
             : [];
@@ -2547,6 +2556,7 @@ function loadSharedGame(encoded) {
         drawIntervalMs = state.drawIntervalMs || 3500;
         myTrackedCardNumbers = state.myTrackedCardNumbers || [];
         cartonesConBingo = state.cartonesConBingo || [];
+        if (typeof window !== 'undefined') try { window.cartonesConBingo = cartonesConBingo; } catch (e) {}
         currentGameToken = encoded;
 
         applyGameStateToUI();
@@ -2653,9 +2663,6 @@ window.onload = () => {
 
     setupCartonesGuardadosToggle();
 
-    // Persist current DOM cartones so web3 viewers can load them
-    try { if (isMaster) saveGameState(); } catch (e) {}
-
     // Speed slider
     const speedSlider = document.getElementById('speedSlider');
     if (speedSlider) {
@@ -2665,8 +2672,8 @@ window.onload = () => {
         });
     }
 
-    // Default UI - Set to 3.5 seconds as default
-    setDrawSpeed(3500, { persist: true });
+    // Default UI - Set to 3.5 seconds as default (don't persist until after load)
+    setDrawSpeed(3500, { persist: false });
 
     document.addEventListener('keydown', (e) => {
         const tag = document.activeElement ? document.activeElement.tagName : '';
@@ -2685,6 +2692,12 @@ window.onload = () => {
     // prioritize hash over restored state for viewers
     const hash = window.location.hash.substring(1);
     const restored = loadGameState();
+
+    // Persist current DOM cartones so web3 viewers can load them only if
+    // there was no restored state. Previously this code ran before
+    // `restored` was defined which caused an immediate overwrite of the
+    // persisted STORAGE_KEY with an empty state. Save only after load.
+    try { if (isMaster && !restored) saveGameState(); } catch (e) {}
 
     if (hash) {
         // Check if it's the numeric format (XX,num1,num2...)
