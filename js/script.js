@@ -324,7 +324,8 @@ function initCrossDeviceSync() {
     peer.on('error', (err) => {
         console.error('❌ Error Peer Espectador:', err.type, err);
         if (err.type === 'peer-unavailable') {
-            updateP2PStatus("Host no encontrado", "#dc3545");
+            const attemptedId = `${PEER_PREFIX}-${gameCodeFixed}`;
+            updateP2PStatus(`Host no encontrado (${attemptedId})`, "#dc3545");
             // Reintentar en un momento por si el host está tardando en subir
             setTimeout(intentarConectarConMaster, 6000);
         } else {
@@ -427,14 +428,14 @@ function intentarConectarConMaster() {
     connToMaster.on('error', (err) => {
         clearTimeout(connectionTimeout);
         console.error('❌ Error en conexión con Master:', err);
-        if (syncStatusEl) syncStatusEl.textContent = 'Error de conexión';
+        updateP2PStatus('Error de conexión', '#dc3545');
         setTimeout(intentarConectarConMaster, 8000);
     });
 
     connToMaster.on('close', () => {
         clearTimeout(connectionTimeout);
         console.warn('Conexión cerrada. Reintentando...');
-        if (syncStatusEl) syncStatusEl.textContent = 'Reconectando...';
+        updateP2PStatus('Reconectando...', '#ffc107');
         setTimeout(intentarConectarConMaster, 4000);
     });
 }
