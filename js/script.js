@@ -4,7 +4,7 @@ let numerosDisponibles = []; // Se inicializa en reiniciarJuego
 let intervalo;
 let enEjecucion = false;
 let juegoPausado = false;
-let cartonesConBingo = [];
+var cartonesConBingo = [];
 let lastActivityTime = Date.now(); // Rastreo de inactividad
 const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutos en ms
 let currentGameToken = null;
@@ -1110,15 +1110,21 @@ function populateVoiceList() {
             }
         }
     } else {
-        // Preferir Google Premium por defecto si es la primera vez (aplica a Web1 y Web3)
-        const googlePremiumOpt = Array.from(voiceSelect.options).find(opt => opt.value === 'google-premium');
-        if (googlePremiumOpt) {
-            googlePremiumOpt.selected = true;
-            selectedVoice = { voiceURI: 'google-premium', name: 'Google Premium', lang: 'es-ES' };
-            preferredVoiceURI = 'google-premium';
-        } else {
-            // Fallback a la mejor voz local si Google Premium no está disponible
+        // On iOS prefer a local voice (selecting Google TTS often fails there)
+        const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+        if (isIOS) {
             chooseBestLocalVoice();
+        } else {
+            // Preferir Google Premium por defecto si es la primera vez (aplica a Web1 y otros navegadores)
+            const googlePremiumOpt = Array.from(voiceSelect.options).find(opt => opt.value === 'google-premium');
+            if (googlePremiumOpt) {
+                googlePremiumOpt.selected = true;
+                selectedVoice = { voiceURI: 'google-premium', name: 'Google Premium', lang: 'es-ES' };
+                preferredVoiceURI = 'google-premium';
+            } else {
+                // Fallback a la mejor voz local si Google Premium no está disponible
+                chooseBestLocalVoice();
+            }
         }
     }
     // If a selectedVoice was pre-assigned (e.g., by chooseBestLocalVoice), reflect it in the select
@@ -2074,14 +2080,22 @@ function activateVoiceOnIOS() {
 
         // Force load voices and speak a test phrase to unlock speech on iOS
         if (typeof speechSynthesis !== 'undefined') {
-            // ensure voices are loaded
+            // ensure voices are loaded and pick a good local voice on iOS
             const v = speechSynthesis.getVoices();
             if (!v || v.length === 0) {
                 speechSynthesis.onvoiceschanged = () => {
-                    try { speakText('Voz activada'); } catch (e) {}
+                    try {
+                        populateVoiceList();
+                        chooseBestLocalVoice();
+                        speakText('Voz activada');
+                    } catch (e) { console.warn(e); }
                 };
             } else {
-                try { speakText('Voz activada'); } catch (e) { console.warn(e); }
+                try {
+                    populateVoiceList();
+                    chooseBestLocalVoice();
+                    speakText('Voz activada');
+                } catch (e) { console.warn(e); }
             }
         }
 
