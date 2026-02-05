@@ -1783,10 +1783,7 @@ function verificarTodosLosCartones(options = {}) {
         if (!match || !match[1]) return;
         const numeroCarton = parseInt(match[1]);
 
-                    if (!cartonesConBingo.includes(numeroCarton)) {
-                        cartonesConBingo.push(numeroCarton);
-                        incrementBingoStat(numeroCarton);
-        }
+        
 
         const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
         if (numerosEnCartonAttr && numerosEnCartonAttr.trim() !== "") {
