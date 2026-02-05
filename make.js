@@ -16,19 +16,17 @@ function parseArgs() {
   return {
     headless: args.has('--headless'),
     p2p: args.has('--p2p'),
-    fast: args.has('--fast'),
     help: args.has('--help') || args.has('-h'),
   };
 }
 
 function showHelp() {
   console.log('=== Bingo project test runner ===');
-  console.log('Usage: node make.js [--headless] [--p2p] [--fast]');
+  console.log('Usage: node make.js [--headless] [--p2p]');
   console.log('');
   console.log('Options:');
   console.log('  --headless  Run only the headless token/load test');
   console.log('  --p2p       Run only the P2P simulation test');
-  console.log('  --fast      Alias for --headless');
 }
 
 (async () => {
@@ -38,8 +36,8 @@ function showHelp() {
     process.exit(0);
   }
 
-  const runHeadless = args.fast || args.headless || (!args.headless && !args.p2p);
-  const runP2P = args.p2p || (!args.fast && !args.headless && !args.p2p);
+  const runHeadless = args.headless || (!args.headless && !args.p2p);
+  const runP2P = args.p2p || (!args.headless && !args.p2p);
 
   console.log('=== Bingo project test runner ===');
   const results = [];

@@ -21,10 +21,12 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 - **Modo Oscuro/Claro**: Interfaz adaptable a tus preferencias visuales.
 - **Historial Visual**: Panel con los últimos 10 números y tablero completo.
 - **Seguimiento Personal**: Añade tu cartón manual y el sistema te avisará si haces ¡BINGO!
+- **Estadísticas**: Ventana emergente con cartones y cuántos bingos han ganado.
 
 ### 📤 Compartir y Exportar
 - **PDF Export**: Genera y descarga tus cartones en PDF listos para imprimir con un solo clic.
 - **Sincronización Multi-Dispositivo (P2P)**: Gracias a la integración con **PeerJS (WebRTC)**, puedes conectar tu PC (Host) con móviles (Invitados) de forma directa (Peer-to-Peer) sin necesidad de un servidor backend. ¡Ideal para GitHub Pages!
+- **Audio sincronizado (P2P)**: El host envía el timestamp para que el anuncio por voz suene al mismo tiempo en Web3.
 - **Tokens 2–4 Dígitos (progresivo)**: El sistema intentará reservar códigos cortos (2 dígitos) y, si están ocupados, escalará automáticamente a códigos más largos (3 o 4 dígitos) para reducir colisiones globales.
 - **Modo Espectador**: Tus amigos pueden seguir el juego sincronizado desde sus propios dispositivos (`web3.html`).
 
@@ -39,8 +41,8 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 
 2. **Jugar como Invitado (Móvil/Tablet)**:
    - Abre la web y ve a la sección **Web 3** o escanea el QR generado por el Host.
-   -   - Ingresa el código de 2–4 dígitos o escanea el QR.
-   -   - El dispositivo se conectará al canal del Host y recibirá los números en tiempo real conforme vayan saliendo.
+   - Ingresa el código de 2–4 dígitos o escanea el QR.
+   - El dispositivo se conectará al canal del Host y recibirá los números en tiempo real conforme vayan saliendo.
 
 ## 🛠️ Detalles Técnicos de Sincronización
 
@@ -140,6 +142,7 @@ Los espectadores (Web3) pueden ahora rastrear sus propios cartones:
 - Estado de sincronización con el host
 - Lista de cartones ganadores
 - Interfaz limpia y responsiva optimizada para móviles
+- Menú compacto en el header con selección de voz
 
 ### Cómo Funciona la Lógica +1+2+3+4+5...
 
@@ -215,6 +218,12 @@ npm install
 
 # Ejecutar el runner de pruebas (headless + P2P stub)
 node make.js
+
+# Ejecutar sólo headless (rápido)
+node make.js --headless
+
+# Ejecutar sólo P2P sim
+node make.js --p2p
 ```
 
 - Notas sobre la cobertura de pruebas:
