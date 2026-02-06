@@ -1340,6 +1340,16 @@ function actualizarMisCartonesBingoDisplay() {
             pill.style.background = 'var(--bg-secondary)';
             pill.style.color = 'var(--text-primary)';
             pill.style.border = '1px solid var(--border-color)';
+            
+            // Alerta visual si faltan pocos números
+            const faltan = total - hits;
+            if (faltan === 1) {
+                pill.classList.add('pill-alert-1');
+                pill.title = "¡A FALTA DE 1!";
+            } else if (faltan === 2) {
+                pill.classList.add('pill-alert-2');
+                pill.title = "¡A falta de 2!";
+            }
         }
 
         const idSpan = document.createElement('span');

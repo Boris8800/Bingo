@@ -330,6 +330,28 @@ body.night-mode #myTrackedBingosList {
     box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
 
+/* Animaciones de alerta para cartones por completar */
+@keyframes blinkOrange {
+    0% { background-color: var(--bg-secondary); box-shadow: 0 0 0px rgba(255, 165, 0, 0); }
+    50% { background-color: #ffa500; box-shadow: 0 0 15px rgba(255, 165, 0, 0.6); color: white; }
+    100% { background-color: var(--bg-secondary); box-shadow: 0 0 0px rgba(255, 165, 0, 0); }
+}
+
+@keyframes blinkRed {
+    0% { background-color: var(--bg-secondary); box-shadow: 0 0 0px rgba(255, 0, 0, 0); }
+    50% { background-color: #ff4d4d; box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); color: white; }
+    100% { background-color: var(--bg-secondary); box-shadow: 0 0 0px rgba(255, 0, 0, 0); }
+}
+
+.pill-alert-2 {
+    animation: blinkOrange 1.5s infinite ease-in-out;
+}
+
+.pill-alert-1 {
+    animation: blinkRed 0.8s infinite ease-in-out;
+    border-color: #ff0000 !important;
+}
+
 .pulse-on-click {
     animation: pulseScale 700ms ease-in-out both;
 }
