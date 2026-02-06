@@ -531,13 +531,19 @@ async function broadcastState() {
  * Aplica un estado de juego recibido externamente.
  */
 function applySharedState(state) {
-    __applySharedStateCallCount++;
-    try { console.log('TESTHOOK applySharedState called', {count: __applySharedStateCallCount, drawCounter: state && state.drawCounter, numerosSalidos_len: state && (state.numerosSalidos ? state.numerosSalidos.length : 'undefined')}); } catch (e) {}
-    try { if (typeof window !== 'undefined') window.__lastAppliedState = state; } catch (e) {}
     if (!state) return;
     
     // Si somos Master, no aplicamos estados de otros (evita conflictos)
     if (isMaster) return;
+
+    // Si la sincronización está pausada porque estamos editando cartones, ignoramos la actualización
+    if (syncPausedByTracking) {
+        console.log('Sync ignored: Currently editing tracked cards');
+        return;
+    }
+
+    __applySharedStateCallCount++;
+    try { console.log('TESTHOOK applySharedState called', {count: __applySharedStateCallCount, drawCounter: state && state.drawCounter, numerosSalidos_len: state && (state.numerosSalidos ? state.numerosSalidos.length : 'undefined')}); } catch (e) {}
 
     // Control de versión del estado (drawCounter)
     if (typeof state.drawCounter === 'number') {
@@ -1277,53 +1283,6 @@ function actualizarMisCartonesBingoDisplay() {
     if (!myTrackedListDiv) return;
     myTrackedListDiv.innerHTML = '';
 
-
-// Pausar / Reanudar sincronización cuando el usuario edita "Seguir mis Cartones"
-function pauseCrossDeviceSyncForTracking() {
-    if (isMaster) return; // solo tiene sentido para espectadores
-    if (syncPausedByTracking) return;
-    syncPausedByTracking = true;
-    try {
-        if (connToMaster && connToMaster.open) {
-            try { connToMaster.close(); } catch (e) {}
-        }
-    } catch (e) {}
-    try {
-        if (peer && !peer.destroyed) {
-            try { peer.destroy(); } catch (e) {}
-        }
-    } catch (e) {}
-    updateP2PStatus('Pausado (Editando Cartones)', '#6c757d');
-}
-
-function resumeCrossDeviceSyncAfterTracking() {
-    if (isMaster) return;
-    if (!syncPausedByTracking) return;
-    syncPausedByTracking = false;
-    updateP2PStatus('Reanudando sincronización...', '#ffc107');
-    // Reiniciar el proceso de conexión
-    if (typeof initCrossDeviceSync === 'function') {
-        // pequeño retardo para que UI muestre cambio
-        setTimeout(() => { try { initCrossDeviceSync(); } catch (e) { console.warn(e); } }, 250);
-    }
-}
-
-function attachTrackingInputHandlers() {
-    const inputEl = document.getElementById('myCardNumbersInput');
-    if (!inputEl) return;
-    // Cuando el usuario pone el foco, pausamos la sincronización
-    inputEl.addEventListener('focus', () => {
-        try { pauseCrossDeviceSyncForTracking(); } catch (e) { console.warn(e); }
-    });
-    // No reanudamos en blur: reanudamos explícitamente cuando presionan "Seguir"
-}
-
-// Registrar handlers cuando el DOM esté listo
-if (typeof document !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', attachTrackingInputHandlers);
-    // También intentar registrar inmediatamente si el elemento ya existe
-    setTimeout(attachTrackingInputHandlers, 200);
-}
     if (myTrackedCardNumbers.length === 0) {
         myTrackedListDiv.textContent = "---";
         return;
@@ -1416,6 +1375,58 @@ if (typeof document !== 'undefined') {
     });
     
     myTrackedListDiv.appendChild(container);
+}
+
+// Pausar / Reanudar sincronización cuando el usuario edita "Seguir mis Cartones"
+function pauseCrossDeviceSyncForTracking() {
+    if (isMaster) return; // solo tiene sentido para espectadores
+    if (syncPausedByTracking) return;
+    syncPausedByTracking = true;
+    try {
+        if (connToMaster && connToMaster.open) {
+            try { connToMaster.close(); } catch (e) {}
+        }
+    } catch (e) {}
+    try {
+        if (peer && !peer.destroyed) {
+            try { peer.destroy(); } catch (e) {}
+        }
+    } catch (e) {}
+    updateP2PStatus('Pausado (Editando Cartones)', '#6c757d');
+}
+
+function resumeCrossDeviceSyncAfterTracking() {
+    if (isMaster) return;
+    if (!syncPausedByTracking) return;
+    syncPausedByTracking = false;
+    updateP2PStatus('Reanudando sincronización...', '#ffc107');
+    // Reiniciar el proceso de conexión
+    if (typeof initCrossDeviceSync === 'function') {
+        // pequeño retardo para que UI muestre cambio
+        setTimeout(() => { try { initCrossDeviceSync(); } catch (e) { console.warn(e); } }, 250);
+    }
+}
+
+function attachTrackingInputHandlers() {
+    const inputEl = document.getElementById('myCardNumbersInput');
+    if (!inputEl) return;
+    
+    // Cuando el usuario hace click o pone el foco, pausamos la sincronización
+    const pauseHandler = () => {
+        try { pauseCrossDeviceSyncForTracking(); } catch (e) { console.warn(e); }
+    };
+
+    inputEl.addEventListener('focus', pauseHandler);
+    inputEl.addEventListener('click', pauseHandler);
+    
+    // No reanudamos en blur: reanudamos explícitamente cuando presionan "Seguir"
+}
+
+// Registrar handlers cuando el DOM esté listo
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', attachTrackingInputHandlers);
+    // También intentar registrar inmediatamente si el elemento ya existe
+    setTimeout(attachTrackingInputHandlers, 200);
 }
 // ---- FIN FUNCIONES "MIS CARTONES" ----
 
