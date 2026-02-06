@@ -2056,6 +2056,10 @@ function generarMiniTableroElement(numeros) {
     const wrapper = document.createElement('div');
     wrapper.className = 'mini-board';
     const nums = (numeros || '').split(',').map(n => n.trim()).filter(Boolean);
+    
+    // Sort numbers numerically from smallest to largest
+    nums.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+
     nums.forEach(num => {
         const cell = document.createElement('div');
         cell.className = 'mini-cell';
