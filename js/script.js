@@ -485,7 +485,6 @@ async function broadcastState() {
         numerosSalidos,
         numerosDisponibles,
         cartonesConBingo,
-        bingoStats, // Sincronizar estadísticas globales
         drawIntervalMs,
         drawCounter,
         juegoPausado,
@@ -560,25 +559,11 @@ function applySharedState(state) {
     cartonesConBingo = state.cartonesConBingo || [];
     if (typeof window !== 'undefined') try { window.cartonesConBingo = cartonesConBingo; } catch (e) {}
 
-    // Sincronizar estadísticas globales (bingoStats)
-    if (state.bingoStats) {
-        bingoStats = state.bingoStats;
-        saveBingoStats(); // Persistir en el espectador
-        // Refrescar lista si está abierta
-        const modal = document.getElementById('statsModal');
-        if (modal && modal.style.display === 'block') {
-            renderBingoStatsList();
-        }
-    }
-
     // Detectar si hay un nuevo bingo en nuestros cartones seguidos (Para Web3)
     if (!isMaster) {
         const nuevosBingos = cartonesConBingo.filter(id => !oldBingos.includes(id));
         if (nuevosBingos.length > 0) {
-            // Ya no hace falta llamar a incrementBingoStat localmente porque el Master
-            // nos envía el estado actualizado de bingoStats, pero lo mantenemos por si acaso
-            // o para asegurar que se cuente incluso si el broadcast tarda.
-            // Para evitar duplicado, incrementBingoStat debería ser inteligente.
+            nuevosBingos.forEach(id => incrementBingoStat(id));
         }
         const trackedBingoGanador = nuevosBingos.find(id => myTrackedCardNumbers.includes(id));
         
