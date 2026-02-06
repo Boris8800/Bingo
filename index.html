@@ -55,6 +55,7 @@
             <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22grad%22%20cx%3D%2230%25%22%20cy%3D%2230%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b8d4e3%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2245%22%20fill%3D%22url%28%23grad%29%22%20stroke%3D%22%234a90e2%22%20stroke-width%3D%223%22/%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%2235%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20fill%3D%22%232c5282%22%3EBINGO%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%2230%22%20cy%3D%2265%22%20r%3D%223%22%20fill%3D%22%234a90e2%22/%3E%0A%20%20%3Ccircle%20cx%3D%2270%22%20cy%3D%2270%22%20r%3D%222%22%20fill%3D%22%234a90e2%22/%3E%0A%3C/svg%3E" width="32" height="32" alt="Logo">
         </a>
         <button id="nightModeToggle" class="icon-btn" onclick="toggleNightMode()" aria-label="Cambiar modo noche" aria-pressed="false">&#127769;</button>
+        <button id="helpBtn" class="icon-btn" onclick="openHelpModal()" aria-label="Abrir ayuda" title="Ayuda">Ayuda</button>
     </header>
 
     <div id="voiceSettingsContainer" class="control-box">
@@ -345,6 +346,91 @@
         <p style="font-size: 0.9em; color: var(--text-secondary); margin-top: 0;">Cartones con más bingos</p>
         <div id="statsList" style="margin-top: 10px;"></div>
         <button onclick="resetBingoStats()" class="btn-secondary" style="width: 100%; margin-top: 20px; border-color: #ff4d4d; color: #ff4d4d; background: transparent;">Resetear Estadísticas</button>
+    </div>
+</div>
+
+<!-- Modal de Ayuda / Instrucciones -->
+<div id="helpModal" class="modal">
+    <div class="modal-content" style="max-width:900px;">
+        <span class="close-modal" onclick="closeHelpModal()">&times;</span>
+        <h2>Ayuda - Cómo funciona Bingo Virtual</h2>
+        <div style="max-height:60vh; overflow:auto; padding-right:6px;">
+            <section>
+                <h3>Visión general</h3>
+                <p>Este es un juego de Bingo en el que un equipo (Web1 - Host / Máster) controla el sorteo de números, y los espectadores (Web3) pueden conectarse y seguirlo en tiempo real. Puedes jugar desde el PC (Host) o desde móviles/otros dispositivos (Invitados).</p>
+            </section>
+
+            <section>
+                <h3>Controles principales (Web1 - Host)</h3>
+                <ul>
+                    <li><strong>Comenzar / Detener:</strong> Inicia o detiene el sorteo automático de números.</li>
+                    <li><strong>Reiniciar:</strong> Limpia la partida y restablece los números disponibles (1–90).</li>
+                    <li><strong>Compartir:</strong> Genera el código/QR que los espectadores usarán para conectarse via WebRTC (PeerJS).</li>
+                    <li><strong>Velocidad:</strong> Ajusta la velocidad del sorteo mediante el control deslizante.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Voz y audio</h3>
+                <ul>
+                    <li>Selecciona la voz en el control de voz. Se intentará usar la voz preferida (por ejemplo, Google Premium) cuando esté disponible.</li>
+                    <li>En dispositivos iOS Safari, el audio puede estar bloqueado hasta que realices una interacción: toca la pantalla para desbloquear audio.</li>
+                    <li>El host envía un timestamp para que la reproducción de voz en los invitados esté sincronizada.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Seguir mis cartones</h3>
+                <p>En la sección "Seguir mis Cartones" puedes indicar los ID de tus cartones (separados por comas). El sistema muestra "pills" con el progreso (aciertos/total) y una vista previa del cartón.</p>
+                <ul>
+                    <li>Los "pills" parpadearán en naranja si te faltan 2 números y en rojo si te falta 1 número.</li>
+                    <li>Si uno de tus cartones hace Bingo, el sistema reproducirá un sonido y el juego se pausará automáticamente para confirmar.</li>
+                    <li>Puedes pulsar "Continuar" para reanudar el sorteo.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Verificar cartón</h3>
+                <p>Introduce el número de cartón en la casilla "Verificar cartón" y pulsa "Verificar" para ver una representación visual del cartón y los números que faltan.</p>
+            </section>
+
+            <section>
+                <h3>Sincronización (Web3)</h3>
+                <p>El sistema usa PeerJS (WebRTC) para conectar espectadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Seguir".</p>
+            </section>
+
+            <section>
+                <h3>Estadísticas</h3>
+                <p>El juego mantiene un contador de bingos por cartón. Las estadísticas están sincronizadas entre el host y los espectadores y pueden resetearse desde el modal de estadísticas con el botón "Resetear Estadísticas".</p>
+            </section>
+
+            <section>
+                <h3>Exportar / Imprimir</h3>
+                <p>Puedes generar un PDF con los cartones para imprimirlos usando la función de exportación integrada.</p>
+            </section>
+
+            <section>
+                <h3>Modo espectador</h3>
+                <p>Los espectadores pueden conectarse con el código que genera el Host o mediante el QR. La vista del espectador recibe el estado del juego y muestra los números en tiempo real. Si se detecta un Bingo en un cartón seguido, la vista puede notificar y pedir la pausa al Host.</p>
+            </section>
+
+            <section>
+                <h3>Buenas prácticas</h3>
+                <ul>
+                    <li>Como Host, asegúrate de compartir el código con tiempo y confirmar que los espectadores están conectados antes de empezar.</li>
+                    <li>Si hay muchos espectadores, la conectividad puede tardar unos segundos; espera a que el contador de espectadores suba.</li>
+                    <li>Usa el botón de activar sonido en iOS si no escuchas anuncios por voz.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h3>Problemas comunes</h3>
+                <ul>
+                    <li>Si un espectador no recibe números: comprobar código, conexión de red y que la página tenga permiso para WebRTC.</li>
+                    <li>Si el audio no suena en móvil iOS: toca la pantalla o pulsa el botón de sonido para desbloquear el AudioContext.</li>
+                </ul>
+            </section>
+        </div>
     </div>
 </div>
 

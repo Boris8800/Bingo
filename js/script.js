@@ -1083,6 +1083,18 @@ function closeStatsModal() {
     if (modal) modal.style.display = 'none';
 }
 
+// ---- Help modal handlers ----
+function openHelpModal() {
+    const modal = document.getElementById('helpModal');
+    if (!modal) return;
+    modal.style.display = 'block';
+}
+
+function closeHelpModal() {
+    const modal = document.getElementById('helpModal');
+    if (modal) modal.style.display = 'none';
+}
+
 // Unlock audio on mobile/browser with first user gesture (click, touch, keyboard)
 // This allows AudioContext to be created and resumed properly
 ['click', 'touchstart', 'keydown'].forEach(evt => {
