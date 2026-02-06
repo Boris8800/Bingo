@@ -53,6 +53,7 @@ let connToMaster = null;      // Para Viewer: conexión activa al Master
 const PEER_PREFIX = 'bingo-v6-live'; // Prefijo actualizado para forzar limpieza de sesiones
 // Flag para pausar la sincronización cuando el usuario edita "Seguir mis Cartones"
 let syncPausedByTracking = false;
+let currentPreviewedCardId = null;
 
 // --- Función UI Status Master ---
 function updateP2PStatus(status, color = "inherit") {
@@ -1280,12 +1281,20 @@ function validateCardNumbers(input) {
 
 function actualizarMisCartonesBingoDisplay() {
     const myTrackedListDiv = document.getElementById('myTrackedBingosList');
+    const previewDiv = document.getElementById('myTrackedCardPreview');
     if (!myTrackedListDiv) return;
     myTrackedListDiv.innerHTML = '';
 
     if (myTrackedCardNumbers.length === 0) {
         myTrackedListDiv.textContent = "---";
+        if (previewDiv) previewDiv.innerHTML = '';
+        currentPreviewedCardId = null;
         return;
+    }
+
+    // Re-render preview if active to update markers
+    if (currentPreviewedCardId) {
+        showTrackedCardPreview(currentPreviewedCardId);
     }
 
     const container = document.createElement('div');
@@ -1349,26 +1358,18 @@ function actualizarMisCartonesBingoDisplay() {
             pill.title = `Verificar cartón ${cartonId}`;
             pill.addEventListener('click', () => {
                 try {
+                    // Render locally in the tracking area preview
+                    showTrackedCardPreview(cartonId);
+                    
+                    // Animate pill
+                    pill.classList.add('pulse-on-click');
+                    setTimeout(() => pill.classList.remove('pulse-on-click'), 800);
+                } catch (e) { 
+                    console.warn('Error handling tracked-pill click', e);
+                    // Fallback to old behavior if preview div missing
                     const input = document.getElementById('cartonVerificar');
-                    if (input) {
-                        input.value = String(cartonId);
-                    }
-                    // Animate pill to give feedback
-                    try { pill.classList.add('pulse-on-click'); } catch (e) {}
-                    setTimeout(() => { try { pill.classList.remove('pulse-on-click'); } catch (e) {} }, 800);
-
-                    // Run the verification flow which also renders the mini-card
-                    verificarCarton();
-
-                    // Focus the verification area for clarity and add highlight
-                    const display = document.getElementById('cartonDisplayContainer');
-                    if (display) {
-                        display.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        // add a brief highlight class to the container
-                        try { display.classList.add('reveal-card'); } catch (e) {}
-                        setTimeout(() => { try { display.classList.remove('reveal-card'); } catch (e) {} }, 900);
-                    }
-                } catch (e) { console.warn('Error handling tracked-pill click', e); }
+                    if (input) { input.value = String(cartonId); verificarCarton(); }
+                }
             });
         } catch (e) {}
         container.appendChild(pill);
@@ -1378,6 +1379,58 @@ function actualizarMisCartonesBingoDisplay() {
 }
 
 // Pausar / Reanudar sincronización cuando el usuario edita "Seguir mis Cartones"
+function showTrackedCardPreview(cartonId) {
+    currentPreviewedCardId = cartonId;
+    const previewDiv = document.getElementById('myTrackedCardPreview');
+    if (!previewDiv) return;
+    
+    previewDiv.innerHTML = '';
+    const cartonElement = document.getElementById(`carton${cartonId}`);
+    if (!cartonElement) {
+        currentPreviewedCardId = null;
+        return;
+    }
+
+    const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
+    if (!numerosEnCartonAttr) {
+        currentPreviewedCardId = null;
+        return;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'saved-card';
+    card.style.margin = '10px auto';
+    card.style.maxWidth = '100%';
+    
+    // Header for the preview
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.style.marginBottom = '5px';
+    
+    const title = document.createElement('strong');
+    title.textContent = `Viendo Cartón ${cartonId}`;
+    title.style.fontSize = '0.9rem';
+    
+    const closeBtn = document.createElement('span');
+    closeBtn.innerHTML = '×';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.style.fontSize = '1.5rem';
+    closeBtn.style.lineHeight = '1';
+    closeBtn.onclick = () => { 
+        currentPreviewedCardId = null;
+        previewDiv.innerHTML = ''; 
+    };
+    
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    card.appendChild(header);
+    
+    card.appendChild(generarMiniTableroParaCarton(numerosEnCartonAttr));
+    previewDiv.appendChild(card);
+}
+
 function pauseCrossDeviceSyncForTracking() {
     if (isMaster) return; // solo tiene sentido para espectadores
     if (syncPausedByTracking) return;
