@@ -2077,6 +2077,12 @@ function generarMiniTableroElement(numeros) {
         const val = parseInt(num, 10);
         cell.textContent = num;
         
+        // Calculate column (0-8) based on decade
+        // 1-9: Col 0, 10-19: Col 1, ..., 80-90: Col 8
+        let col = Math.floor(val / 10);
+        if (val === 90) col = 8;
+        cell.style.gridColumn = col + 1;
+        
         // Mark if the number has been drawn
         if (numerosSalidos.includes(val)) {
             cell.classList.add('marcado');

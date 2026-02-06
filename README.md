@@ -1,6 +1,6 @@
 # 🎉 Bingo Virtual
 
-![Version](https://img.shields.io/badge/version-1.3-blue.svg)
+![Version](https://img.shields.io/badge/version-1.3.1-blue.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
@@ -21,6 +21,7 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 - **Modo Oscuro/Claro**: Interfaz adaptable a tus preferencias visuales.
 - **Historial Visual**: Panel con los últimos 10 números y tablero completo.
 - **Seguimiento Personal**: Añade tu cartón manual y el sistema te avisará si haces ¡BINGO!
+- **Diseño Profesional (9x3)**: Los mini-tableros de seguimiento emulan un cartón real con 9 columnas por decenas y orden vertical.
 - **Tableros Ordenados**: Los números en los mini-tableros guardados se muestran siempre ordenados de menor a mayor.
 - **Estadísticas**: Ventana emergente con cartones y cuántos bingos han ganado.
 - **Compatibilidad iOS**: Audio totalmente funcional en dispositivos Apple mediante activación por toque inicial.
