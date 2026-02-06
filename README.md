@@ -1,6 +1,6 @@
 # 🎉 Bingo Virtual
 
-![Version](https://img.shields.io/badge/version-1.2-blue.svg)
+![Version](https://img.shields.io/badge/version-1.3-blue.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
@@ -21,7 +21,10 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 - **Modo Oscuro/Claro**: Interfaz adaptable a tus preferencias visuales.
 - **Historial Visual**: Panel con los últimos 10 números y tablero completo.
 - **Seguimiento Personal**: Añade tu cartón manual y el sistema te avisará si haces ¡BINGO!
+- **Tableros Ordenados**: Los números en los mini-tableros guardados se muestran siempre ordenados de menor a mayor.
 - **Estadísticas**: Ventana emergente con cartones y cuántos bingos han ganado.
+- **Compatibilidad iOS**: Audio totalmente funcional en dispositivos Apple mediante activación por toque inicial.
+- **Voces Premium**: Soporte preferente para voces de alta calidad como "Google Premium".
 
 ### 📤 Compartir y Exportar
 - **PDF Export**: Genera y descarga tus cartones en PDF listos para imprimir con un solo clic.
@@ -131,11 +134,11 @@ Sortea número 3 → Token: 22+1+2+3   ✅ Detecta +3, marca número 3
 
 ### Seguir Cartones
 Los espectadores (Web3) pueden ahora rastrear sus propios cartones:
-- **Ingresa tus números**: Introduce los números de tu cartón separados por comas (ej: 7, 15, 23)
-- **Seguimiento automático**: El sistema marca automáticamente tus números conforme el host los sorteó
-- **Alertas de Bingo**: Se notifica cuando tienes un BINGO en tus cartones rastreados
-- **Sincronización**: Tu tracker se sincroniza en tiempo real con el juego del host
-- **Persistencia**: Los cartones rastreados se guardan y recuperan al recargar
+- **Ingresa tus números**: Introduce los números de tu cartón separados por comas (ej: 7, 15, 23).
+- **Control de Sincronización Inteligente**: Al hacer click en la caja de texto para editar tus cartones, la sincronización se **pausa automáticamente** para evitar que los números entrantes borren lo que estás escribiendo. Se reanuda al pulsar "Seguir".
+- **Seguimiento automático**: El sistema marca automáticamente tus números conforme el host los sorteó.
+- **Alertas de Bingo**: Se notifica cuando tienes un BINGO en tus cartones rastreados.
+- **Persistencia**: Los cartones rastreados se guardan y recuperan al recargar.
 
 ### Visualización en Tiempo Real
 - Panel de últimos 10 números sorteados
