@@ -485,6 +485,7 @@ async function broadcastState() {
         numerosSalidos,
         numerosDisponibles,
         cartonesConBingo,
+        bingoStats, // Sincronizar estadísticas globales
         drawIntervalMs,
         drawCounter,
         juegoPausado,
@@ -559,11 +560,25 @@ function applySharedState(state) {
     cartonesConBingo = state.cartonesConBingo || [];
     if (typeof window !== 'undefined') try { window.cartonesConBingo = cartonesConBingo; } catch (e) {}
 
+    // Sincronizar estadísticas globales (bingoStats)
+    if (state.bingoStats) {
+        bingoStats = state.bingoStats;
+        saveBingoStats(); // Persistir en el espectador
+        // Refrescar lista si está abierta
+        const modal = document.getElementById('statsModal');
+        if (modal && modal.style.display === 'block') {
+            renderBingoStatsList();
+        }
+    }
+
     // Detectar si hay un nuevo bingo en nuestros cartones seguidos (Para Web3)
     if (!isMaster) {
         const nuevosBingos = cartonesConBingo.filter(id => !oldBingos.includes(id));
         if (nuevosBingos.length > 0) {
-            nuevosBingos.forEach(id => incrementBingoStat(id));
+            // Ya no hace falta llamar a incrementBingoStat localmente porque el Master
+            // nos envía el estado actualizado de bingoStats, pero lo mantenemos por si acaso
+            // o para asegurar que se cuente incluso si el broadcast tarda.
+            // Para evitar duplicado, incrementBingoStat debería ser inteligente.
         }
         const trackedBingoGanador = nuevosBingos.find(id => myTrackedCardNumbers.includes(id));
         
@@ -850,6 +865,10 @@ let spectatorSpeakEnabled = (localStorage.getItem('web3Speak') === 'true');
 function toggleSpectatorSound() {
     spectatorSpeakEnabled = !spectatorSpeakEnabled;
     localStorage.setItem('web3Speak', spectatorSpeakEnabled ? 'true' : 'false');
+    
+    // Resume audio context on user gesture for iOS support
+    try { initAudioContext(); } catch(e) {}
+
     const btn = document.getElementById('spectatorSoundToggle');
     if (btn) {
         btn.setAttribute('aria-pressed', spectatorSpeakEnabled ? 'true' : 'false');
@@ -1183,6 +1202,10 @@ function speakWithWebSpeechInternal(text) {
 
 function setVoice(options) {
     const silent = (options && options.silent === true);
+
+    // Resume audio context on user gesture for iOS support
+    try { initAudioContext(); } catch(e) {}
+
     const voiceSelect = document.getElementById('voiceSelect');
     if (!voiceSelect || !voiceSelect.value) {
         selectedVoice = null;
@@ -1494,6 +1517,8 @@ async function reiniciarJuego(options = {}) {
 
 function startStop() {
     lastActivityTime = Date.now(); // Resetear reloj de actividad
+    // Resume audio context on user gesture for iOS support
+    try { initAudioContext(); } catch(e) {}
     if (!isMaster) {
         alert("El control del juego está deshabilitado en esta página. Por favor usa la página principal de control.");
         return;
@@ -1573,10 +1598,10 @@ function anunciarNumero(numero, announceAt) {
     }
 }
 
-function marcarNumero(numero) {
+function marcarNumero(numero, animate = true) {
     const circulo = document.getElementById(`numero${numero}`);
     if (circulo) circulo.classList.add('marcado');
-    if (circulo) {
+    if (circulo && animate) {
         circulo.classList.add('highlight');
         setTimeout(() => {
             try { circulo.classList.remove('highlight'); } catch (e) {}
@@ -1857,6 +1882,9 @@ function verificarTodosLosCartones(options = {}) {
                         try { cartonesConBingo = targetBingos; } catch (e) {}
                         if (typeof window !== 'undefined') try { window.cartonesConBingo = targetBingos; } catch (e) {}
 
+                        // Incrementamos estadísticas de este cartón
+                        incrementBingoStat(numeroCarton);
+
                         // Si el cartón está en la lista de seguimiento, activamos sonido
                         if (myTrackedCardNumbers.includes(numeroCarton)) {
                             algunBingoTrackeadoNuevo = true;
@@ -1978,13 +2006,25 @@ function loadGameState() {
     }
 }
 
-function applyGameStateToUI() {
+function applyGameStateToUI(options = {}) {
+    const skipAnimations = options.skipAnimations === true;
+
     // Reset visual marks
     const circulos = document.querySelectorAll('#numerosContainer .numeroCirculo');
-    circulos.forEach(circulo => circulo.classList.remove('marcado'));
+    circulos.forEach(circulo => {
+        circulo.classList.remove('marcado');
+        // También quitamos highlight si existiera de una animación previa
+        circulo.classList.remove('highlight');
+    });
 
     // Mark drawn numbers
-    numerosSalidos.forEach(marcarNumero);
+    numerosSalidos.forEach((numero, index) => {
+        // En Web3 / actualizaciones de estado, solo animamos el número más reciente
+        // (el último de la lista) para evitar que todos los círculos parpadeen.
+        const isLatest = (index === numerosSalidos.length - 1);
+        const shouldAnimate = !skipAnimations && isLatest;
+        marcarNumero(numero, shouldAnimate);
+    });
 
     // Current number = last drawn
     const numeroDisplay = document.getElementById('numero');
@@ -2137,6 +2177,12 @@ function activateVoiceOnIOS() {
             if (audioCtx && audioCtx.state === 'suspended') {
                 audioCtx.resume().catch(() => {});
             }
+        } catch (e) {}
+
+        // Unlock HTML5 Audio pipeline (needed for Google Premium)
+        try {
+            const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
+            silentAudio.play().catch(() => {});
         } catch (e) {}
 
         // Force load voices and speak a test phrase to unlock speech on iOS
@@ -2559,7 +2605,7 @@ function loadSharedGame(encoded) {
         if (typeof window !== 'undefined') try { window.cartonesConBingo = cartonesConBingo; } catch (e) {}
         currentGameToken = encoded;
 
-        applyGameStateToUI();
+        applyGameStateToUI({ skipAnimations: true });
         updateShareButton();
 
         // Success message (optional UI feedback)
@@ -2707,7 +2753,7 @@ window.onload = () => {
             gameCodeFixed = parseInt(parts[0]);
             numerosSalidos = parts.slice(1).map(Number);
             numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1).filter(n => !numerosSalidos.includes(n));
-            applyGameStateToUI();
+            applyGameStateToUI({ skipAnimations: true });
             if (!isMaster) {
                 initCrossDeviceSync();
             } else if (gameCodeFixed) {
@@ -2724,7 +2770,7 @@ window.onload = () => {
             reiniciarJuego({ allowNewToken: true });
         }
     } else if (restored) {
-        applyGameStateToUI();
+        applyGameStateToUI({ skipAnimations: true });
         if (!isMaster) {
             // Solo sincronizamos si tenemos un código válido restaurado
             if (gameCodeFixed) {

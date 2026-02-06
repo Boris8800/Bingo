@@ -82,10 +82,10 @@ const { JSDOM } = require('jsdom');
     const elems = Array.from(window.document.querySelectorAll('#cartonesContainer > div'));
     console.log('DEBUG: cartones found in DOM:', elems.map(e => e.id));
     const sel = window.document.querySelectorAll('#cartonesContainer > div[id^="carton"]');
-    console.log('DEBUG: selector #cartonesContainer > div[id^="carton"] length=', sel.length);
+    // console.log('DEBUG: selector #cartonesContainer > div[id^="carton"] length=', sel.length);
     // Instrument Array.prototype.push to detect pushes
     const _origPush = Array.prototype.push;
-    Array.prototype.push = function(...a) { try { console.log('DEBUG: Array.push called on', this === window.cartonesConBingo ? 'cartonesConBingo' : this, 'args=', a); } catch(e){}; return _origPush.apply(this, a); };
+    // Array.prototype.push = function(...a) { try { console.log('DEBUG: Array.push called on', this === window.cartonesConBingo ? 'cartonesConBingo' : this, 'args=', a); } catch(e){}; return _origPush.apply(this, a); };
     window.verificarTodosLosCartones({ silent: true });
     // restore push
     Array.prototype.push = _origPush;
