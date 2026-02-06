@@ -286,6 +286,16 @@ function setupMasterListeners() {
             });
         }
         
+        conn.on('data', (data) => {
+            if (data && data.type === 'PAUSE_REQUEST') {
+                console.log('🛑 Solicitud de pausa recibida de espectador');
+                pausarJuegoPorBingo(true); 
+            } else if (data && data.type === 'RESUME_REQUEST') {
+                console.log('▶️ Solicitud de reanudar recibida de espectador');
+                resumeBingoPause();
+            }
+        });
+
         conn.on('close', () => {
             connections = connections.filter(c => c !== conn);
             updateSpectatorCount();
@@ -594,6 +604,9 @@ function applySharedState(state) {
     
     // Actualizamos la interfaz con los nuevos datos
     applyGameStateToUI();
+    
+    // Verificar bingos locales (incluyendo tracked cards)
+    verificarTodosLosCartones({ silent: true }); // silent=true para evitar doble sonido si ya lo manejamos arriba
 
     // If the master provided saved cartones (cards), ensure viewer renders the same
     try {
@@ -630,6 +643,9 @@ function applySharedState(state) {
         if (state.enEjecucion) {
             startStopBtn.textContent = 'Detener';
             actualizarEstadoJuego("enMarcha");
+            // Si el juego está en marcha, ocultar cualquier aviso de pausa por bingo
+            const bpc = document.getElementById('bingoPauseContainer');
+            if (bpc) bpc.style.display = 'none';
         } else {
             startStopBtn.textContent = 'Empezar';
             actualizarEstadoJuego(state.juegoPausado ? "pausado" : "listo");
@@ -1576,6 +1592,11 @@ async function reiniciarJuego(options = {}) {
 
 function startStop() {
     lastActivityTime = Date.now(); // Resetear reloj de actividad
+    
+    // Ocultar alerta de bingo si estaba abierta
+    const container = document.getElementById('bingoPauseContainer');
+    if (container) container.style.display = 'none';
+
     // Resume audio context on user gesture for iOS support
     try { initAudioContext(); } catch(e) {}
     if (!isMaster) {
@@ -1959,9 +1980,13 @@ function verificarTodosLosCartones(options = {}) {
         }
     });
 
-    if (algunBingoTrackeadoNuevo && !silent) {
-        playBingoSoundEffect();
-        speakText("¡Bingo detectado en uno de tus cartones!");
+    if (algunBingoTrackeadoNuevo) {
+        if (!silent) {
+            playBingoSoundEffect();
+            speakText("¡Bingo detectado en uno de tus cartones!");
+        }
+        // Nueva funcionalidad: pausa automática (siempre intentamos pausar si hay un bingo nuevo detectado)
+        pausarJuegoPorBingo();
     }
 
     actualizarListaBingos();
@@ -1971,6 +1996,51 @@ function verificarTodosLosCartones(options = {}) {
     const container = document.getElementById('cartonesGuardadosContainer');
     if (container && !container.hasAttribute('hidden')) {
         mostrarCartonesGuardados();
+    }
+}
+
+// ---- FUNCIONES DE PAUSA POR BINGO ----
+function pausarJuegoPorBingo(remote = false) {
+    // Mostrar UI de pausa en todos los casos (aunque no seamos Master, queremos ver el botón "Continuar")
+    const container = document.getElementById('bingoPauseContainer');
+    if (container) {
+        container.style.display = 'block';
+        if (remote) {
+            const p = container.querySelector('p');
+            if (p) p.textContent = "Un jugador ha cantado BINGO. Juego pausado.";
+        }
+    }
+
+    // Si somos Master, detenemos el sorteo
+    if (isMaster && enEjecucion) {
+        clearInterval(intervalo);
+        enEjecucion = false;
+        const startStopBtn = document.getElementById('startStopBtn');
+        if (startStopBtn) startStopBtn.textContent = 'Empezar';
+        actualizarEstadoJuego("pausado");
+        broadcastState();
+    } else if (!isMaster && !remote) {
+        // Si somos espectador y detectamos bingo nosotros, pedimos pausa al Master
+        if (connToMaster && connToMaster.open) {
+            connToMaster.send({ type: 'PAUSE_REQUEST' });
+        }
+    }
+}
+
+function resumeBingoPause() {
+    const container = document.getElementById('bingoPauseContainer');
+    if (container) container.style.display = 'none';
+
+    // Si somos Master, reanudamos
+    if (isMaster) {
+        if (!enEjecucion) {
+            startStop(); // Esto reanuda el intervalo y cambia estados
+        }
+    } else {
+        // Si somos espectador, pedimos al Master que reanude
+        if (connToMaster && connToMaster.open) {
+            connToMaster.send({ type: 'RESUME_REQUEST' });
+        }
     }
 }
 
