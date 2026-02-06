@@ -2071,22 +2071,7 @@ function generarMiniTableroElement(numeros) {
     // Sort numbers numerically from smallest to largest
     nums.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 
-    // Reorder for vertical display (column-first sorting)
-    // 5 columns, numbers fill vertically small -> large
-    const columns = 5;
-    const rows = Math.ceil(nums.length / columns);
-    const sortedGrid = [];
-    
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < columns; c++) {
-            const i = c * rows + r;
-            if (i < nums.length) {
-                sortedGrid.push(nums[i]);
-            }
-        }
-    }
-
-    sortedGrid.forEach(num => {
+    nums.forEach(num => {
         const cell = document.createElement('div');
         cell.className = 'mini-cell';
         const val = parseInt(num, 10);
