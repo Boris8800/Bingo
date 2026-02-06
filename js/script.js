@@ -502,6 +502,7 @@ async function broadcastState() {
         enEjecucion,
         gameCodeFixed,
         myTrackedCardNumbers,
+        bingoStats: bingoStats || loadBingoStats(),
         preferredVoiceURI: preferredVoiceURI || '',
         announceId: lastAnnounceIdSent,
         announceNumber: lastAnnounceNumber,
@@ -597,6 +598,18 @@ function applySharedState(state) {
         drawCounter = Math.max(drawCounter, state.drawCounter);
     }
     gameCodeFixed = state.gameCodeFixed || gameCodeFixed;
+
+    // Sincronizar estadísticas
+    if (state.bingoStats) {
+        bingoStats = state.bingoStats;
+        saveBingoStats();
+        // Si el modal está abierto, refrescarlo
+        const modal = document.getElementById('statsModal');
+        if (modal && modal.style.display === 'block') {
+            renderBingoStatsList();
+        }
+    }
+
     // Si el Master envía preferencia de voz, intentar aplicarla en Web3
     if (!isMaster && state.preferredVoiceURI) {
         tryApplyRemoteVoice(state.preferredVoiceURI);
@@ -892,7 +905,7 @@ let preferredVoiceURI = 'google-premium';
 // ---- Variables para Nuevas Funcionalidades ----
 let myTrackedCardNumbers = [];
 let audioCtx = null;
-const STATS_KEY = 'bingo_stats_counts_v1';
+const STATS_KEY = 'bingo_stats_counts_v2';
 let bingoStats = null;
 
 // ---- Sound Effects (Synthesized for reliability) ----
@@ -986,6 +999,26 @@ function incrementBingoStat(cartonId) {
     const modal = document.getElementById('statsModal');
     if (modal && modal.style.display === 'block') {
         renderBingoStatsList();
+    }
+    
+    // Si somos Master, difundimos el cambio
+    if (isMaster) {
+        broadcastState();
+    }
+}
+
+function resetBingoStats() {
+    if (isMaster && !confirm("¿Estás seguro de que quieres borrar todas las estadísticas de bingos?")) {
+        return;
+    }
+    
+    bingoStats = {};
+    saveBingoStats();
+    renderBingoStatsList();
+    
+    if (isMaster) {
+        broadcastState();
+        showToast("Estadísticas reseteadas");
     }
 }
 
