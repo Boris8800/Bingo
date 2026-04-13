@@ -768,11 +768,7 @@ async function broadcastState() {
     if (isMaster && peer) {
         connections.forEach(conn => {
             if (conn && conn.open) {
-                try {
-                    conn.send(state);
-                } catch (e) {
-                    console.warn("Could not send to connection", conn.peer, e);
-                }
+                conn.send(state);
             }
         });
     }
@@ -800,7 +796,8 @@ function applySharedState(state) {
         return;
     }
 
-    try { console.log('📲 Sync received:', {drawCounter: state && state.drawCounter, numerosSalidos_len: state && (state.numerosSalidos ? state.numerosSalidos.length : 'undefined')}); } catch (e) {}
+    __applySharedStateCallCount++;
+    try { console.log('TESTHOOK applySharedState called', {count: __applySharedStateCallCount, drawCounter: state && state.drawCounter, numerosSalidos_len: state && (state.numerosSalidos ? state.numerosSalidos.length : 'undefined')}); } catch (e) {}
 
     // Control de versión del estado (drawCounter)
     if (typeof state.drawCounter === 'number') {
@@ -1203,25 +1200,16 @@ function playBingoSoundEffect() {
  * Announce bingo: show banner, try Notifications API, vibrate if mobile, and play sound.
  */
 function announceBingo(cartonId) {
-    // Tono/voz
     try {
-        if (!isMaster) {
-            // En web3.html (jugador), el sonido de BINGO se activa si el interruptor general de sonido está ON
-            // Y si es uno de nuestros cartones seguidos.
-            const speakPref = (localStorage.getItem('web3Speak') === 'true');
-            const isTracked = myTrackedCardNumbers.includes(Number(cartonId));
-            
-            if (speakPref) {
-                playBingoSoundEffect();
-                speakText(`¡Bingo en el cartón ${cartonId}!`);
-            }
-        } else {
-            // En index.html (Master), siempre suena el bingo para avisar al organizador
+        // 4) Tono/voz
+        try {
             playBingoSoundEffect();
             speakText(`¡Bingo! Cartón ${cartonId}.`);
+        } catch (e) {
+            console.warn('Error announcing bingo:', e);
         }
     } catch (e) {
-        console.warn('Error announcing bingo:', e);
+        console.warn('announceBingo failed:', e);
     }
 }
 
