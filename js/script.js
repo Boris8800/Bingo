@@ -659,7 +659,7 @@ function claimToken(code) {
             console.log('✅ Master Peer activo:', id);
             gameCodeFixed = code;
             setupMasterListeners();
-            updateP2PStatus("✅ Activo (Host)", "#28a745");
+            updateP2PStatus(`Activa (${code})`, "#28a745");
             resolve(true);
         });
 
@@ -906,7 +906,7 @@ function intentarConectarConMaster() {
     connToMaster.on('open', () => {
         clearTimeout(connectionTimeout);
         console.log('✅ Conexión establecida con el Master');
-        updateP2PStatus("Conectado", "#28a745");
+        updateP2PStatus(`Activa (${gameCodeFixed})`, "#28a745");
         broadcastPresenceState();
         
         // Notify web3.html if function exists
