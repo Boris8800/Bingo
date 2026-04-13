@@ -4,7 +4,7 @@
 ![Status](https://img.shields.io/badge/status-active-success.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-[**Jugar Ahora**](https://boris8800.github.io/Bingo/)
+[**Jugar Ahora**](https://boris8800.github.io/Bingo//)
 
 Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y adaptable para jugar al Bingo en reuniones familiares o con amigos. Desarrollada con HTML5, CSS3 y JavaScript puro.
 
@@ -36,7 +36,7 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 ## 🚀 Guía Rápida
 
 1. **Jugar como Host (Máster)**:
-   - Abre [https://boris8800.github.io/Bingo/](https://boris8800.github.io/Bingo/).
+   - Abre [https://boris8800.github.io/Bingo//](https://boris8800.github.io/Bingo//).
    - El sistema detectará automáticamente que eres el administrador.
    - Configura tus preferencias (voz, velocidad).
    - Pulsa **"Comenzar"** para iniciar el sorteo.
