@@ -106,8 +106,14 @@ const PRESENCE_WS_URL = (() => {
         if (typeof window !== 'undefined' && window.__BINGO_PRESENCE_WS_URL) {
             return window.__BINGO_PRESENCE_WS_URL;
         }
-        if (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-            return 'ws://localhost:8080';
+        // Use production WebSocket URL if on GitHub Pages or other non-localhost env
+        if (typeof window !== 'undefined' && window.location) {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'ws://localhost:8080';
+            }
+            // Add your production WebSocket URL here if you have one. 
+            // For now, we remain compatible with local dev.
+            return 'wss://bingo-presence-server.onrender.com'; // Placeholder example
         }
     } catch (e) {}
     return '';
@@ -247,10 +253,17 @@ function schedulePresenceReconnect() {
 }
 
 function initPresenceTracking() {
+    // If no WS URL is configured, we can still show a friendly message or fallback
     if (!PRESENCE_WS_URL || typeof WebSocket === 'undefined') {
         const list = document.getElementById('connectedPlayersList');
-        if (list && connectedPlayersMode === 'main') {
-            list.textContent = 'Presencia no disponible en esta configuración';
+        if (list) {
+            list.innerHTML = '';
+            const msg = document.createElement('div');
+            msg.style.padding = '10px';
+            msg.style.opacity = '0.7';
+            msg.style.fontSize = '0.9rem';
+            msg.textContent = 'El servidor de presencia (WS) no está configurado.';
+            list.appendChild(msg);
         }
         return;
     }
