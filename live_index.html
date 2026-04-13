@@ -69,23 +69,21 @@
 
 <div id="speedControl" class="control-box">
     <div class="speed-control-header">
-        <label for="speedPresetSelect">Velocidad: <strong id="speedValue">3.5s</strong></label>
-        <button id="speedUpButton" type="button" class="icon-btn speed-plus-btn" aria-label="Aumentar velocidad">+</button>
+        <label>Velocidad: <strong id="speedValue">3.5s</strong></label>
     </div>
-    <select id="speedPresetSelect" aria-label="Seleccionar velocidad de sorteo">
-        <option value="7000">Muy lenta (7.0s)</option>
-        <option value="6500">6.5s</option>
-        <option value="6000">6.0s</option>
-        <option value="5500">5.5s</option>
-        <option value="5000">5.0s</option>
-        <option value="4500">4.5s</option>
-        <option value="4000">4.0s</option>
-        <option value="3500" selected>3.5s</option>
-        <option value="3000">3.0s</option>
-        <option value="2500">2.5s</option>
-        <option value="2000">2.0s</option>
-        <option value="1500">Muy rápida (1.5s)</option>
-    </select>
+    <div class="speed-controls">
+        <div class="speed-buttons" role="tablist" aria-label="Velocidades">
+            <button class="speed-preset" data-ms="7000">7.0s</button>
+            <button class="speed-preset" data-ms="5000">5.0s</button>
+            <button class="speed-preset active" data-ms="3500">3.5s</button>
+            <button class="speed-preset" data-ms="2500">2.5s</button>
+            <button class="speed-preset" data-ms="1500">1.5s</button>
+        </div>
+        <div class="speed-stepper">
+            <button id="speedDecreaseButton" type="button" class="icon-btn speed-minus-btn" aria-label="Disminuir velocidad">−</button>
+            <button id="speedUpButton" type="button" class="icon-btn speed-plus-btn" aria-label="Aumentar velocidad">+</button>
+        </div>
+    </div>
 </div>
 
 <div id="connectedPlayersContainer" class="control-box">
