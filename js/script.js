@@ -323,7 +323,11 @@ function renderConnectedPlayers(players) {
 
     list.innerHTML = '';
 
-    if (!Array.isArray(players) || players.length === 0) {
+    const visiblePlayers = Array.isArray(players)
+        ? players.filter((player) => Array.isArray(player.trackedCards) && player.trackedCards.length > 0)
+        : [];
+
+    if (visiblePlayers.length === 0) {
         list.textContent = 'No hay jugadores conectados todavía';
         return;
     }
@@ -332,7 +336,7 @@ function renderConnectedPlayers(players) {
     container.style.display = 'grid';
     container.style.gap = '10px';
 
-    players
+    visiblePlayers
         .slice()
         .sort((a, b) => String(a.playerName || '').localeCompare(String(b.playerName || ''), 'es'))
         .forEach((player) => {
