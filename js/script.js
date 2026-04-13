@@ -2199,14 +2199,13 @@ function setDrawSpeed(ms, { persist = true } = {}) {
     const label = document.getElementById('speedValue');
     if (label) label.textContent = formatMs(clamped);
 
-    // Update active state of preset buttons
-    document.querySelectorAll('.speed-preset').forEach(btn => {
-        if (parseInt(btn.dataset.ms) === clamped) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    });
+    // Sync dropdown menu selection
+    const speedSelect = document.getElementById('speedPresetSelect');
+    if (speedSelect) {
+        // Find if this speed is among the options, otherwise set to 'custom'
+        const optionExists = Array.from(speedSelect.options).some(opt => opt.value == clamped);
+        speedSelect.value = optionExists ? clamped : 'custom';
+    }
 
     // If the game is running, apply immediately
     if (enEjecucion) {
@@ -2218,8 +2217,7 @@ function setDrawSpeed(ms, { persist = true } = {}) {
 }
 
 function increaseDrawSpeed() {
-    // Increase speed = decrease interval (but keep button consistent with label '+')
-    // We add 500ms to interval for "Decrease Speed", subtract for "Increase Speed"
+    // Increase speed = decrease interval
     setDrawSpeed(drawIntervalMs - 500);
 }
 
@@ -2227,23 +2225,24 @@ function decreaseDrawSpeed() {
     setDrawSpeed(drawIntervalMs + 500);
 }
 
-// Iniciar escuchadores de velocidad
+// Draw speed listener initialization
 document.addEventListener('DOMContentLoaded', () => {
-    // Escuchar botones preset
-    document.querySelectorAll('.speed-preset').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const ms = parseInt(btn.dataset.ms);
-            setDrawSpeed(ms);
+    const speedSelect = document.getElementById('speedPresetSelect');
+    if (speedSelect) {
+        speedSelect.addEventListener('change', (e) => {
+            if (e.target.value !== 'custom') {
+                const ms = parseInt(e.target.value);
+                setDrawSpeed(ms);
+            }
         });
-    });
+    }
 
-    // Escuchar stepper
-    const speedDownBtn = document.getElementById('speedDecreaseButton');
     const speedUpBtn = document.getElementById('speedUpButton');
-    if (speedDownBtn) speedDownBtn.onclick = decreaseDrawSpeed;
-    if (speedUpBtn) speedUpBtn.onclick = increaseDrawSpeed;
+    if (speedUpBtn) {
+        speedUpBtn.onclick = increaseDrawSpeed;
+    }
     
-    // Sincronizar UI inicial
+    // Initial UI Sync
     setDrawSpeed(drawIntervalMs, { persist: false });
 });
 

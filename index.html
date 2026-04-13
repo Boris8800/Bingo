@@ -82,20 +82,16 @@
 <div id="speedControl" class="control-box">
     <div class="speed-control-header">
         <label>Velocidad: <strong id="speedValue">3.5s</strong></label>
+        <button id="speedUpButton" type="button" class="icon-btn speed-plus-btn" title="Aumentar velocidad (más rápido)">+</button>
     </div>
-    <div class="speed-controls">
-        <div class="speed-buttons" role="tablist" aria-label="Velocidades">
-            <button class="speed-preset" data-ms="7000">7.0s</button>
-            <button class="speed-preset" data-ms="5000">5.0s</button>
-            <button class="speed-preset active" data-ms="3500">3.5s</button>
-            <button class="speed-preset" data-ms="2500">2.5s</button>
-            <button class="speed-preset" data-ms="1500">1.5s</button>
-        </div>
-        <div class="speed-stepper">
-            <button id="speedDecreaseButton" type="button" class="icon-btn speed-minus-btn" aria-label="Disminuir velocidad">−</button>
-            <button id="speedUpButton" type="button" class="icon-btn speed-plus-btn" aria-label="Aumentar velocidad">+</button>
-        </div>
-    </div>
+    <select id="speedPresetSelect">
+        <option value="7000">⏱️ Muy Lento (7.0s)</option>
+        <option value="5000">🐢 Lento (5.0s)</option>
+        <option value="3500" selected>⚖️ Estándar (3.5s)</option>
+        <option value="2500">🏃 Rápido (2.5s)</option>
+        <option value="1500">⚡ Súper Rápido (1.5s)</option>
+        <option value="custom">⚙️ Personalizado (Stepper)</option>
+    </select>
 </div>
 
 <div id="historial">
