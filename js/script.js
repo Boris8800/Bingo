@@ -170,7 +170,7 @@ function renderConnectedPlayers(players) {
     list.innerHTML = '';
 
     if (!Array.isArray(players) || players.length === 0) {
-        list.textContent = 'No hay jugadores conectados todavía';
+        list.textContent = 'No hay espectadores conectados todavía';
         return;
     }
 
