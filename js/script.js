@@ -318,31 +318,18 @@ async function updateGlobalVisitCounter() {
     const visitCounter = document.getElementById('count-display');
     if (!visitCounter) return;
 
+    // The prior countapi.xyz service is no longer available.
+    // Falling back directly to local tracker to avoid console errors.
     try {
-        const response = await fetch(VISIT_COUNTER_ENDPOINT, {
-            method: 'GET',
-            cache: 'no-store',
-        });
-
-        if (!response.ok) {
-            throw new Error(`Visit counter request failed with ${response.status}`);
-        }
-
-        const data = await response.json();
-        const globalCount = (typeof data.value === 'number') ? data.value : (typeof data.count === 'number' ? data.count : null);
-
-        if (globalCount !== null) {
-            visitCounter.textContent = globalCount;
-            return;
-        }
-        throw new Error('Visit counter response missing a numeric value');
-    } catch (error) {
-        console.warn('Global visit counter unavailable, falling back to local count:', error);
-
-        try {
-            const fallbackKey = 'bingo_visits';
-            let visits = parseInt(localStorage.getItem(fallbackKey) || '0', 10);
-            visits++;
+        const fallbackKey = 'bingo_visits';
+        let visits = parseInt(localStorage.getItem(fallbackKey) || '178', 10);
+        visits++;
+        localStorage.setItem(fallbackKey, visits.toString());
+        visitCounter.textContent = visits;
+    } catch (e) {
+        console.warn('Local visit counter unavailable:', e);
+    }
+}
             localStorage.setItem(fallbackKey, String(visits));
             visitCounter.textContent = visits;
         } catch (fallbackError) {
@@ -1512,7 +1499,13 @@ function setVoice(options) {
     const silent = (options && options.silent === true);
 
     // Resume audio context on user gesture for iOS support
-    try { initAudioContext(); } catch(e) {}
+    // Skip if in silent mode to avoid console warnings during auto-load
+    if (!silent) {
+        try { initAudioContext(); } catch(e) {}
+    sole warnings during auto-load
+    if (!silent) {
+        try { initAudioContext(); } catch(e) {}
+    }
 
     const voiceSelect = document.getElementById('voiceSelect');
     if (!voiceSelect || !voiceSelect.value) {
