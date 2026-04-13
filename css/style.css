@@ -642,7 +642,7 @@ button:hover {
     flex-wrap: wrap;
 }
 
-/* Speed slider - uses .control-box for layout */
+/* Speed control - menu + button layout */
 #speedControl {
     display: flex;
     flex-direction: column;
@@ -650,15 +650,32 @@ button:hover {
     justify-content: center;
 }
 
-#speedControl label {
+.speed-control-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 90%; /* Ensure label spans efficiently in the flex column */
+    width: 90%;
     max-width: 400px;
     margin-bottom: 10px;
+    gap: 12px;
+}
+
+#speedControl label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     color: var(--text-primary);
     font-weight: 600;
+    margin-bottom: 0;
+}
+
+.speed-plus-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    font-size: 1.1rem;
+    line-height: 1;
+    flex: 0 0 auto;
 }
 
 #speedControl label strong {
@@ -667,60 +684,27 @@ button:hover {
     text-align: right;
 }
 
-#speedSlider {
-    /* Fill its container */
+#speedPresetSelect {
     width: 90%; /* Match label width */
     max-width: 400px;
-    height: 36px;
-    background: transparent;
-    -webkit-appearance: none;
-    appearance: none;
+    min-height: 44px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
     cursor: pointer;
-    display: block;
+    box-shadow: var(--shadow-sm);
 }
 
-/* Track */
-#speedSlider::-webkit-slider-runnable-track {
-    height: 8px;
-    background: linear-gradient(90deg, rgba(14,50,75,0.15), rgba(255,152,0,0.12));
-    border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
-}
-#speedSlider::-moz-range-track {
-    height: 8px;
-    background: linear-gradient(90deg, rgba(14,50,75,0.15), rgba(255,152,0,0.12));
-    border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
-}
-
-/* Thumb (bigger for touch) */
-#speedSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: var(--btn-secondary);
-    border: 2px solid #fff;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    margin-top: -7px; /* centers the thumb on the track */
-}
-#speedSlider::-moz-range-thumb {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: var(--btn-secondary);
-    border: 2px solid #fff;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-#speedSlider:focus {
+#speedPresetSelect:focus {
     outline: none;
-    box-shadow: 0 0 0 6px color-mix(in srgb, var(--btn-secondary) 12%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--btn-secondary) 12%, transparent);
 }
 
 @media (max-width: 420px) {
-    #speedSlider { width: calc(100% - 32px); height: 32px; }
-    #speedControl label { gap: 8px; }
+    .speed-control-header { width: 100%; }
+    #speedPresetSelect { width: calc(100% - 24px); }
 }
 
 #ultimosNumeros {

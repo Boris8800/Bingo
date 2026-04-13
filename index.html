@@ -85,8 +85,24 @@
 </div>
 
 <div id="speedControl" class="control-box">
-    <label for="speedSlider">Velocidad: <strong id="speedValue">3.5s</strong></label>
-    <input id="speedSlider" type="range" min="1500" max="7000" step="500" value="3500" aria-label="Velocidad de sorteo en milisegundos" />
+    <div class="speed-control-header">
+        <label for="speedPresetSelect">Velocidad: <strong id="speedValue">3.5s</strong></label>
+        <button id="speedUpButton" type="button" class="icon-btn speed-plus-btn" aria-label="Aumentar velocidad">+</button>
+    </div>
+    <select id="speedPresetSelect" aria-label="Seleccionar velocidad de sorteo">
+        <option value="7000">Muy lenta (7.0s)</option>
+        <option value="6500">6.5s</option>
+        <option value="6000">6.0s</option>
+        <option value="5500">5.5s</option>
+        <option value="5000">5.0s</option>
+        <option value="4500">4.5s</option>
+        <option value="4000">4.0s</option>
+        <option value="3500" selected>3.5s</option>
+        <option value="3000">3.0s</option>
+        <option value="2500">2.5s</option>
+        <option value="2000">2.0s</option>
+        <option value="1500">Muy rápida (1.5s)</option>
+    </select>
 </div>
 
 <div id="historial">

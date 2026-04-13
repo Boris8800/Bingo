@@ -2198,6 +2198,8 @@ function setDrawSpeed(ms, { persist = true } = {}) {
 
     const slider = document.getElementById('speedSlider');
     if (slider) slider.value = String(clamped);
+    const presetSelect = document.getElementById('speedPresetSelect');
+    if (presetSelect) presetSelect.value = String(clamped);
     const label = document.getElementById('speedValue');
     if (label) label.textContent = formatMs(clamped);
 
@@ -2209,6 +2211,11 @@ function setDrawSpeed(ms, { persist = true } = {}) {
 
     if (persist) saveGameState();
 }
+
+function increaseDrawSpeed() {
+    setDrawSpeed(drawIntervalMs - 500);
+}
+
 document.addEventListener('click', function (event) {
     const msgVerificacion = document.getElementById('mensajeVerificacion');
     const msgCarton = document.getElementById('mensajeVerificacionCarton');
@@ -3165,13 +3172,24 @@ window.onload = () => {
 
     setupCartonesGuardadosToggle();
 
-    // Speed slider
+    // Speed menu/button
     const speedSlider = document.getElementById('speedSlider');
     if (speedSlider) {
         speedSlider.addEventListener('input', (e) => {
             const value = parseInt(e.target.value, 10);
             setDrawSpeed(value);
         });
+    }
+    const speedPresetSelect = document.getElementById('speedPresetSelect');
+    if (speedPresetSelect) {
+        speedPresetSelect.addEventListener('change', (e) => {
+            const value = parseInt(e.target.value, 10);
+            setDrawSpeed(value);
+        });
+    }
+    const speedUpButton = document.getElementById('speedUpButton');
+    if (speedUpButton) {
+        speedUpButton.addEventListener('click', () => increaseDrawSpeed());
     }
 
     // Default UI - Set to 3.5 seconds as default (don't persist until after load)
