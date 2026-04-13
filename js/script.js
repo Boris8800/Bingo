@@ -891,19 +891,23 @@ function intentarConectarConMaster() {
     
     updateP2PStatus(`Buscando Host (${gameCodeFixed})...`, "#ffc107");
 
-    connToMaster = peer.connect(masterId);
+    const activeConnection = peer.connect(masterId);
+    connToMaster = activeConnection;
     
     // Safety timeout for connection (increased to 15s for slow networks)
     const connectionTimeout = setTimeout(() => {
-        if (connToMaster && !connToMaster.open) {
+        if (connToMaster === activeConnection && !activeConnection.open) {
             console.warn('⌛ Tiempo de espera agotado conectando al Master.');
             updateP2PStatus("Host no responde (reintentando)", "#dc3545");
-            connToMaster.close();
+            try { activeConnection.close(); } catch (e) {}
+            if (connToMaster === activeConnection) {
+                connToMaster = null;
+            }
             setTimeout(intentarConectarConMaster, 5000);
         }
     }, 15000);
 
-    connToMaster.on('open', () => {
+    activeConnection.on('open', () => {
         clearTimeout(connectionTimeout);
         console.log('✅ Conexión establecida con el Master');
         updateP2PStatus(`Activa (${gameCodeFixed})`, "#28a745");
@@ -915,22 +919,28 @@ function intentarConectarConMaster() {
         }
     });
     
-    connToMaster.on('data', (data) => {
+    activeConnection.on('data', (data) => {
         console.log('📲 Actualización P2P recibida');
         applySharedState(data);
     });
     
-    connToMaster.on('error', (err) => {
+    activeConnection.on('error', (err) => {
         clearTimeout(connectionTimeout);
         console.error('❌ Error en conexión con Master:', err);
         updateP2PStatus('Error de conexión', '#dc3545');
+        if (connToMaster === activeConnection) {
+            connToMaster = null;
+        }
         setTimeout(intentarConectarConMaster, 8000);
     });
 
-    connToMaster.on('close', () => {
+    activeConnection.on('close', () => {
         clearTimeout(connectionTimeout);
         console.warn('Conexión cerrada. Reintentando...');
         updateP2PStatus('Reconectando...', '#ffc107');
+        if (connToMaster === activeConnection) {
+            connToMaster = null;
+        }
         setTimeout(intentarConectarConMaster, 4000);
     });
 }
