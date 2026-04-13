@@ -178,6 +178,8 @@
 
         <div id="myCardsTrackerContainer" class="control-box">
             <h3>Seguir mis Cartones</h3>
+            <label for="playerNameInput">Tu nombre:</label>
+            <input type="text" id="playerNameInput" placeholder="Escribe tu nombre">
             <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 12px;">
                 <input id="myCardNumbersInput" placeholder="Ej: 5, 23, 41" type="text" />
                 <button onclick="trackMyCards()" class="btn">Seguir</button>
@@ -291,7 +293,7 @@
     </div>
 
     <script>window.__IS_MASTER = false;</script>
-    <script src="js/script.js?v=8"></script>
+    <script src="js/script.js?v=10"></script>
     <script>
         function loadNewGameFromToken() {
             const input = document.getElementById('newTokenInput');
@@ -324,7 +326,7 @@
         <button id="openStatsBtn" class="btn-secondary" type="button" onclick="openStatsModal()">Estadísticas</button>
     </div>
     <div id="visit-counter" style="text-align: center; margin-bottom: 20px; font-family: sans-serif; font-size: 0.9rem; color: var(--text-secondary); opacity: 0.8;">
-        Visitas: <span id="count-display"></span>
+        Visitas globales: <span id="count-display"></span>
     </div>
     <footer style="text-align: center; margin-top: 40px; padding: 20px; font-size: 0.85em; opacity: 0.6;">
         © Boris8800 - v8

@@ -79,6 +79,11 @@
     <div id="spectatorCountDisplay" style="margin-top: 4px; opacity: 0.8;">Espectadores: 0</div>
 </div>
 
+<div id="connectedPlayersContainer" class="control-box">
+    <h3>Jugadores Conectados</h3>
+    <div id="connectedPlayersList">No hay jugadores conectados todavía</div>
+</div>
+
 <div id="speedControl" class="control-box">
     <label for="speedSlider">Velocidad: <strong id="speedValue">3.5s</strong></label>
     <input id="speedSlider" type="range" min="1500" max="7000" step="500" value="3500" aria-label="Velocidad de sorteo en milisegundos" />
@@ -310,7 +315,7 @@
     <button id="openStatsBtn" class="btn-secondary" type="button" onclick="openStatsModal()">Estadísticas</button>
 </div>
 <div id="visit-counter" style="text-align: center; margin-bottom: 20px; font-family: sans-serif; font-size: 0.9rem; color: var(--text-secondary); opacity: 0.8;">
-    Visitas: <span id="count-display"></span>
+    Visitas globales: <span id="count-display"></span>
 </div>
 
 <!-- Modal de Compartir (Web 2) -->
@@ -451,7 +456,7 @@
     </div>
 </div>
 
-<script src="js/script.js?v=5"></script>
+<script src="js/script.js?v=7"></script>
 <script>
     // Enable audio context on user click to unlock Web Audio API
     function enableAudioOnClick() {

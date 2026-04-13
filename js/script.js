@@ -100,6 +100,257 @@ let lastAnnounceIdSent = -1;
 let lastAnnounceNumber = null;
 let lastAnnounceAt = 0;
 let lastAnnounceIdApplied = -1;
+const VISIT_COUNTER_ENDPOINT = 'https://api.countapi.xyz/hit/boris8800.github.io/bingo-global-visits';
+const PRESENCE_WS_URL = (() => {
+    try {
+        if (typeof window !== 'undefined' && window.__BINGO_PRESENCE_WS_URL) {
+            return window.__BINGO_PRESENCE_WS_URL;
+        }
+        if (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+            return 'ws://localhost:8080';
+        }
+    } catch (e) {}
+    return '';
+})();
+const PRESENCE_HEARTBEAT_MS = 5000;
+let presenceSocket = null;
+let presenceReconnectTimer = null;
+let presenceHeartbeatTimer = null;
+let presenceSessionId = null;
+let connectedPlayers = [];
+let connectedPlayersMode = 'main';
+
+function getPresenceSessionId() {
+    if (presenceSessionId) return presenceSessionId;
+    try {
+        const stored = sessionStorage.getItem('bingo_presence_session_id');
+        if (stored) {
+            presenceSessionId = stored;
+            return presenceSessionId;
+        }
+    } catch (e) {}
+
+    const generated = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `presence-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    presenceSessionId = generated;
+    try { sessionStorage.setItem('bingo_presence_session_id', generated); } catch (e) {}
+    return presenceSessionId;
+}
+
+function getTrackedPlayerName() {
+    const input = document.getElementById('playerNameInput');
+    if (input && input.value.trim()) return input.value.trim();
+    try {
+        return localStorage.getItem('bingo_player_name') || '';
+    } catch (e) {
+        return '';
+    }
+}
+
+function getTrackedPlayerCards() {
+    return Array.isArray(myTrackedCardNumbers) ? myTrackedCardNumbers.slice() : [];
+}
+
+function getPresencePayload() {
+    return {
+        sessionId: getPresenceSessionId(),
+        playerName: getTrackedPlayerName(),
+        trackedCards: getTrackedPlayerCards(),
+        gameCode: gameCodeFixed || null,
+        page: (typeof window !== 'undefined' && window.__IS_MASTER === false) ? 'web3' : 'main',
+        updatedAt: Date.now(),
+    };
+}
+
+function renderConnectedPlayers(players) {
+    const list = document.getElementById('connectedPlayersList');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    if (!Array.isArray(players) || players.length === 0) {
+        list.textContent = 'No hay jugadores conectados todavía';
+        return;
+    }
+
+    const container = document.createElement('div');
+    container.style.display = 'grid';
+    container.style.gap = '10px';
+
+    players
+        .slice()
+        .sort((a, b) => String(a.playerName || '').localeCompare(String(b.playerName || ''), 'es'))
+        .forEach((player) => {
+            const card = document.createElement('div');
+            card.style.padding = '12px 14px';
+            card.style.borderRadius = '12px';
+            card.style.background = 'var(--bg-card)';
+            card.style.border = '1px solid var(--border-color)';
+            card.style.boxShadow = 'var(--shadow-sm)';
+
+            const name = document.createElement('div');
+            name.style.fontWeight = '700';
+            name.style.marginBottom = '6px';
+            name.textContent = player.playerName ? player.playerName : 'Sin nombre';
+
+            const cards = document.createElement('div');
+            cards.style.fontSize = '0.9rem';
+            cards.style.color = 'var(--text-secondary)';
+            const trackedCards = Array.isArray(player.trackedCards) ? player.trackedCards : [];
+            cards.textContent = trackedCards.length ? `Cartones: ${trackedCards.join(', ')}` : 'Cartones: ---';
+
+            card.appendChild(name);
+            card.appendChild(cards);
+            container.appendChild(card);
+        });
+
+    list.appendChild(container);
+}
+
+function broadcastPresenceState() {
+    if (!presenceSocket || presenceSocket.readyState !== WebSocket.OPEN) return;
+    presenceSocket.send(JSON.stringify({
+        type: 'presence-upsert',
+        ...getPresencePayload(),
+    }));
+}
+
+function clearPresenceHeartbeat() {
+    if (presenceHeartbeatTimer) {
+        clearInterval(presenceHeartbeatTimer);
+        presenceHeartbeatTimer = null;
+    }
+}
+
+function clearPresenceReconnectTimer() {
+    if (presenceReconnectTimer) {
+        clearTimeout(presenceReconnectTimer);
+        presenceReconnectTimer = null;
+    }
+}
+
+function sendPresenceRemoval() {
+    if (!presenceSocket || presenceSocket.readyState !== WebSocket.OPEN) return;
+    presenceSocket.send(JSON.stringify({
+        type: 'presence-remove',
+        sessionId: getPresenceSessionId(),
+    }));
+}
+
+function schedulePresenceReconnect() {
+    if (!PRESENCE_WS_URL || presenceReconnectTimer) return;
+    presenceReconnectTimer = setTimeout(() => {
+        presenceReconnectTimer = null;
+        initPresenceTracking();
+    }, 2500);
+}
+
+function initPresenceTracking() {
+    if (!PRESENCE_WS_URL || typeof WebSocket === 'undefined') {
+        const list = document.getElementById('connectedPlayersList');
+        if (list && connectedPlayersMode === 'main') {
+            list.textContent = 'Presencia no disponible en esta configuración';
+        }
+        return;
+    }
+
+    const isWeb3 = (typeof window !== 'undefined' && window.__IS_MASTER === false) || document.body?.getAttribute('data-page') === 'web3';
+    connectedPlayersMode = isWeb3 ? 'web3' : 'main';
+
+    if (presenceSocket && (presenceSocket.readyState === WebSocket.OPEN || presenceSocket.readyState === WebSocket.CONNECTING)) {
+        if (connectedPlayersMode === 'web3') {
+            broadcastPresenceState();
+        }
+        return;
+    }
+
+    clearPresenceReconnectTimer();
+    try {
+        presenceSocket = new WebSocket(PRESENCE_WS_URL);
+    } catch (e) {
+        console.warn('No se pudo abrir el canal de presencia:', e);
+        schedulePresenceReconnect();
+        return;
+    }
+
+    presenceSocket.addEventListener('open', () => {
+        if (connectedPlayersMode === 'main') {
+            presenceSocket.send(JSON.stringify({ type: 'presence-subscribe' }));
+        } else {
+            broadcastPresenceState();
+            clearPresenceHeartbeat();
+            presenceHeartbeatTimer = setInterval(() => {
+                if (presenceSocket && presenceSocket.readyState === WebSocket.OPEN) {
+                    presenceSocket.send(JSON.stringify({
+                        type: 'presence-heartbeat',
+                        ...getPresencePayload(),
+                    }));
+                }
+            }, PRESENCE_HEARTBEAT_MS);
+        }
+    });
+
+    presenceSocket.addEventListener('message', (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'presence-snapshot') {
+                connectedPlayers = Array.isArray(data.players) ? data.players : [];
+                renderConnectedPlayers(connectedPlayers);
+            }
+        } catch (e) {
+            console.warn('Mensaje de presencia inválido:', e);
+        }
+    });
+
+    presenceSocket.addEventListener('close', () => {
+        clearPresenceHeartbeat();
+        schedulePresenceReconnect();
+    });
+
+    presenceSocket.addEventListener('error', () => {
+        clearPresenceHeartbeat();
+        schedulePresenceReconnect();
+    });
+}
+
+async function updateGlobalVisitCounter() {
+    const visitCounter = document.getElementById('count-display');
+    if (!visitCounter) return;
+
+    try {
+        const response = await fetch(VISIT_COUNTER_ENDPOINT, {
+            method: 'GET',
+            cache: 'no-store',
+        });
+
+        if (!response.ok) {
+            throw new Error(`Visit counter request failed with ${response.status}`);
+        }
+
+        const data = await response.json();
+        const globalCount = (typeof data.value === 'number') ? data.value : (typeof data.count === 'number' ? data.count : null);
+
+        if (globalCount !== null) {
+            visitCounter.textContent = globalCount;
+            return;
+        }
+        throw new Error('Visit counter response missing a numeric value');
+    } catch (error) {
+        console.warn('Global visit counter unavailable, falling back to local count:', error);
+
+        try {
+            const fallbackKey = 'bingo_visits';
+            let visits = parseInt(localStorage.getItem(fallbackKey) || '0', 10);
+            visits++;
+            localStorage.setItem(fallbackKey, String(visits));
+            visitCounter.textContent = visits;
+        } catch (fallbackError) {
+            console.warn('Local visit counter fallback failed:', fallbackError);
+            visitCounter.textContent = '1';
+        }
+    }
+}
 
 /**
  * Verifica si un código de juego está siendo usado por un Master.
@@ -317,6 +568,10 @@ function releaseClaim() {
 }
 
 window.addEventListener('beforeunload', () => {
+    try { sendPresenceRemoval(); } catch (e) {}
+    try { clearPresenceHeartbeat(); } catch (e) {}
+    try { clearPresenceReconnectTimer(); } catch (e) {}
+    try { if (presenceSocket) presenceSocket.close(); } catch (e) {}
     try { releaseClaim(); } catch (e) {}
 });
 
@@ -1297,13 +1552,21 @@ function setVoice(options) {
 
 // ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
 function trackMyCards() {
+    const nameEl = document.getElementById('playerNameInput');
     const inputEl = document.getElementById('myCardNumbersInput');
     if (!inputEl) {
         console.error("Elemento 'myCardNumbersInput' no encontrado.");
         return;
     }
+    const playerName = nameEl ? nameEl.value.trim() : getTrackedPlayerName();
+    if (!playerName) {
+        showToast('Escribe tu nombre antes de guardar');
+        if (nameEl) nameEl.focus();
+        return;
+    }
     const inputText = inputEl.value;
     myTrackedCardNumbers = validateCardNumbers(inputText);
+    try { localStorage.setItem('bingo_player_name', playerName); } catch (e) {}
 
     // Permitir añadir incluso en marcha: verificamos estado actual
     verificarTodosLosCartones({ silent: true });
@@ -1311,6 +1574,7 @@ function trackMyCards() {
     actualizarMisCartonesBingoDisplay();
     inputEl.value = myTrackedCardNumbers.join(', ');
     saveGameState();
+    broadcastPresenceState();
 
     // Notificación de guardado
     showToast("¡Guardado y Verificado!");
@@ -1327,6 +1591,15 @@ function trackMyCards() {
 
     // Después de guardar los cartones, reanudar la sincronización si estaba pausada.
     try { resumeCrossDeviceSyncAfterTracking(); } catch (e) { console.warn('No se pudo reanudar sincronización:', e); }
+}
+
+function restoreTrackedPlayerName() {
+    const nameEl = document.getElementById('playerNameInput');
+    if (!nameEl) return;
+    try {
+        const storedName = localStorage.getItem('bingo_player_name');
+        if (storedName) nameEl.value = storedName;
+    } catch (e) {}
 }
 
 function validateCardNumbers(input) {
@@ -1532,14 +1805,19 @@ function resumeCrossDeviceSyncAfterTracking() {
 }
 
 function attachTrackingInputHandlers() {
+    const nameEl = document.getElementById('playerNameInput');
     const inputEl = document.getElementById('myCardNumbersInput');
-    if (!inputEl) return;
+    if (!inputEl && !nameEl) return;
     
     // Cuando el usuario hace click o pone el foco, pausamos la sincronización
     const pauseHandler = () => {
         try { pauseCrossDeviceSyncForTracking(); } catch (e) { console.warn(e); }
     };
 
+    if (nameEl) {
+        nameEl.addEventListener('focus', pauseHandler);
+        nameEl.addEventListener('click', pauseHandler);
+    }
     inputEl.addEventListener('focus', pauseHandler);
     inputEl.addEventListener('click', pauseHandler);
     
@@ -2970,14 +3248,11 @@ window.onload = () => {
         }
     }
 
-    // New lightweight Visit Counter (Number only)
-    const visitCounter = document.getElementById('count-display');
-    if (visitCounter) {
-        let visits = parseInt(localStorage.getItem('bingo_visits') || '0', 10);
-        visits++;
-        localStorage.setItem('bingo_visits', visits);
-        visitCounter.textContent = visits;
-    }
+    // Global visit counter shared through the hosted counter API, with a local fallback.
+    updateGlobalVisitCounter();
+
+    try { restoreTrackedPlayerName(); } catch (e) {}
+    try { initPresenceTracking(); } catch (e) { console.warn('initPresenceTracking failed', e); }
 
     // Update share button with current token
     updateShareButton();
