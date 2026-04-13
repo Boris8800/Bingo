@@ -66,14 +66,14 @@ function updateP2PStatus(status, color = "inherit") {
 }
 
 /**
- * Actualiza el contador de espectadores en el Master
+ * Actualiza el contador de jugadores en el Master
  */
 function updateSpectatorCount() {
     if (!isMaster) return;
     const el = document.getElementById('spectatorCountDisplay');
     if (el) {
         const activeConns = connections.filter(c => c && c.open).length;
-        el.textContent = `Espectadores: ${activeConns}`;
+        el.textContent = `Jugadores: ${activeConns}`;
     }
 }
 
@@ -94,7 +94,7 @@ function showToast(message) {
 let lastDrawCounterReceived = -1; 
 let drawCounter = 0;
 let gameCodeFixed = null;
-let lastConnectedGameCode = null; // Para detectar cambio de token en espectadores
+let lastConnectedGameCode = null; // Para detectar cambio de token en jugadores
 const AUDIO_SYNC_DELAY_MS = 500;
 let lastAnnounceIdSent = -1;
 let lastAnnounceNumber = null;
@@ -170,7 +170,7 @@ function renderConnectedPlayers(players) {
     list.innerHTML = '';
 
     if (!Array.isArray(players) || players.length === 0) {
-        list.textContent = 'No hay espectadores conectados todavía';
+        list.textContent = 'No hay jugadores conectados todavía';
         return;
     }
 
@@ -517,7 +517,7 @@ function claimToken(code) {
 
 function setupMasterListeners() {
     peer.on('connection', (conn) => {
-        console.log('🤝 Espectador conectado:', conn.peer);
+        console.log('🤝 Jugador conectado:', conn.peer);
         connections.push(conn);
         
         // Notify Master UI if possible
@@ -539,10 +539,10 @@ function setupMasterListeners() {
         
         conn.on('data', (data) => {
             if (data && data.type === 'PAUSE_REQUEST') {
-                console.log('🛑 Solicitud de pausa recibida de espectador');
+                console.log('🛑 Solicitud de pausa recibida de jugador');
                 pausarJuegoPorBingo(true); 
             } else if (data && data.type === 'RESUME_REQUEST') {
-                console.log('▶️ Solicitud de reanudar recibida de espectador');
+                console.log('▶️ Solicitud de reanudar recibida de jugador');
                 resumeBingoPause();
             }
         });
@@ -601,31 +601,31 @@ window.addEventListener('storage', (event) => {
  */
 function initCrossDeviceSync() {
     if (isMaster || !gameCodeFixed) return;
-    // Si el espectador está intentando conectarse a un token distinto, limpiar historial local
+    // Si el jugador está intentando conectarse a un token distinto, limpiar historial local
     if (lastConnectedGameCode !== gameCodeFixed) {
         clearLocalHistory();
         lastConnectedGameCode = gameCodeFixed;
     }
     if (peer && !peer.destroyed) { try { peer.destroy(); } catch (e) {} }
     
-    console.log("🚀 Iniciando conexión de espectador...");
+    console.log("🚀 Iniciando conexión de jugador...");
     updateP2PStatus("Iniciando P2P...", "#ffc107");
     
     peer = new Peer();
     
     peer.on('open', (id) => {
-        console.log('📡 Mi ID de Espectador:', id);
+        console.log('📡 Mi ID de Jugador:', id);
         intentarConectarConMaster();
     });
 
     peer.on('disconnected', () => {
-        console.warn('Espectador desconectado del servidor. Reconectando...');
+        console.warn('Jugador desconectado del servidor. Reconectando...');
         updateP2PStatus("Reconectando...", "#ffc107");
         peer.reconnect();
     });
 
     peer.on('error', (err) => {
-        console.error('❌ Error Peer Espectador:', err.type, err);
+        console.error('❌ Error Peer Jugador:', err.type, err);
         if (err.type === 'peer-unavailable') {
             const attemptedId = `${PEER_PREFIX}-${gameCodeFixed}`;
             updateP2PStatus(`Host no encontrado (${attemptedId})`, "#dc3545");
@@ -920,7 +920,7 @@ function applySharedState(state) {
         }
     }
 
-    // Después de aplicar UI, si somos espectador y tiene activado sonido, leer nuevos números
+    // Después de aplicar UI, si somos jugador y tiene activado sonido, leer nuevos números
     if (!isMaster) {
         const speakPref = (localStorage.getItem('web3Speak') === 'true');
         let usedAnnounce = false;
@@ -1135,7 +1135,7 @@ let drawIntervalMs = 3500;
 let voices = [];
 let selectedVoice = null;
 
-// Preferencia de sonido para espectadores (Web3)
+// Preferencia de sonido para jugadores (Web3)
 let spectatorSpeakEnabled = (localStorage.getItem('web3Speak') === 'true');
 
 function toggleSpectatorSound() {
@@ -1537,7 +1537,7 @@ function setVoice(options) {
     }
     
     saveGameState();
-    // Notificar a los espectadores la nueva preferencia de voz
+    // Notificar a los jugadores la nueva preferencia de voz
     try {
         if (isMaster) {
             broadcastState();
@@ -1776,7 +1776,7 @@ function showTrackedCardPreview(cartonId) {
 }
 
 function pauseCrossDeviceSyncForTracking() {
-    if (isMaster) return; // solo tiene sentido para espectadores
+    if (isMaster) return; // solo tiene sentido para jugadores
     if (syncPausedByTracking) return;
     syncPausedByTracking = true;
     try {
@@ -2265,13 +2265,13 @@ function actualizarEstadoJuego(estado) {
         case "enMarcha": estadoJuegoDiv.textContent = "✅ Juego en marcha ✅"; estadoJuegoDiv.className = "enMarcha"; break;
         case "pausado": estadoJuegoDiv.textContent = "❌ Juego pausado ❌"; estadoJuegoDiv.className = "pausado"; break;
         case "listo":
-            // No mostrar el mensaje de 'Juego listo' en vistas que no sean Master (Web 3 espectador)
+            // No mostrar el mensaje de 'Juego listo' en vistas que no sean Master (Web 3 jugador)
             if (typeof window !== 'undefined' && window.__IS_MASTER) {
                 estadoJuegoDiv.style.display = 'block';
                 estadoJuegoDiv.textContent = "ℹ️ Juego listo. ¡Presiona Empezar! ℹ️";
                 estadoJuegoDiv.className = "listo";
             } else {
-                // Espectadores no ven este aviso
+                // Jugadores no ven este aviso
                 estadoJuegoDiv.textContent = "";
                 estadoJuegoDiv.className = "";
                 estadoJuegoDiv.style.display = 'none';
@@ -2380,7 +2380,7 @@ function pausarJuegoPorBingo(remote = false) {
         actualizarEstadoJuego("pausado");
         broadcastState();
     } else if (!isMaster && !remote) {
-        // Si somos espectador y detectamos bingo nosotros, pedimos pausa al Master
+        // Si somos jugador y detectamos bingo nosotros, pedimos pausa al Master
         if (connToMaster && connToMaster.open) {
             connToMaster.send({ type: 'PAUSE_REQUEST' });
         }
@@ -2397,7 +2397,7 @@ function resumeBingoPause() {
             startStop(); // Esto reanuda el intervalo y cambia estados
         }
     } else {
-        // Si somos espectador, pedimos al Master que reanude
+        // Si somos jugador, pedimos al Master que reanude
         if (connToMaster && connToMaster.open) {
             connToMaster.send({ type: 'RESUME_REQUEST' });
         }
@@ -3127,7 +3127,7 @@ window.onload = () => {
     
     if (page === 'web3' || isExplicitWeb3) {
         isMaster = false;
-        // Inicializar estado del botón de sonido para espectadores
+        // Inicializar estado del botón de sonido para jugadores
         try {
             const btn = document.getElementById('spectatorSoundToggle');
             if (btn) {

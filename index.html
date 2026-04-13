@@ -45,7 +45,7 @@
 
         // Función para avisar que alguien se conectó
         function onSpectatorJoined() {
-            showToast("¡Un espectador se ha conectado!");
+            showToast("¡Un jugador se ha conectado!");
         }
     </script>
 </head>
@@ -76,7 +76,7 @@
 </div>
 <div id="p2pStatusMaster" style="font-size: 0.8em; margin-top: 8px; font-weight: bold; color: var(--text-secondary);">
     Estado Sincronización: <span id="p2pStatusText">Inactivo</span>
-    <div id="spectatorCountDisplay" style="margin-top: 4px; opacity: 0.8;">Espectadores: 0</div>
+    <div id="spectatorCountDisplay" style="margin-top: 4px; opacity: 0.8;">Jugadores: 0</div>
 </div>
 
 <div id="speedControl" class="control-box">
@@ -134,8 +134,8 @@
 </div>
 
 <div id="connectedPlayersContainer" class="control-box">
-    <h3>Espectadores Conectados</h3>
-    <div id="connectedPlayersList">No hay espectadores conectados todavía</div>
+    <h3>Jugadores Conectados</h3>
+    <div id="connectedPlayersList">No hay jugadores conectados todavía</div>
 </div>
 
 
@@ -372,7 +372,7 @@
         <div style="max-height:60vh; overflow:auto; padding-right:6px;">
             <section>
                 <h3>Visión general</h3>
-                <p>Este es un juego de Bingo en el que un equipo (Web1 - Host / Máster) controla el sorteo de números, y los espectadores (Web3) pueden conectarse y seguirlo en tiempo real. Puedes jugar desde el PC (Host) o desde móviles/otros dispositivos (Invitados).</p>
+                <p>Este es un juego de Bingo en el que un equipo (Web1 - Host / Máster) controla el sorteo de números, y los jugadores (Web3) pueden conectarse y seguirlo en tiempo real. Puedes jugar desde el PC (Host) o desde móviles/otros dispositivos (Invitados).</p>
             </section>
 
             <section>
@@ -381,7 +381,7 @@
                 <ul>
                     <li>Genera números automáticamente (1–90) con control de velocidad y opciones de pausa/reinicio.</li>
                     <li>Sintetizador de voz (se intenta usar voces premium como Google Premium) y desbloqueo de audio en iOS.</li>
-                    <li>Sincronización multi-dispositivo: BroadcastChannel, LocalStorage fallback y PeerJS (WebRTC) para espectadores.</li>
+                    <li>Sincronización multi-dispositivo: BroadcastChannel, LocalStorage fallback y PeerJS (WebRTC) para jugadores.</li>
                     <li>Seguir cartones, alertas de Bingo, estadísticas sincronizadas y exportación a PDF.</li>
                 </ul>
                 <p><a href="README.md" target="_blank" rel="noopener">Ver README completo</a></p>
@@ -392,7 +392,7 @@
                 <ul>
                     <li><strong>Comenzar / Detener:</strong> Inicia o detiene el sorteo automático de números.</li>
                     <li><strong>Reiniciar:</strong> Limpia la partida y restablece los números disponibles (1–90).</li>
-                    <li><strong>Compartir:</strong> Genera el código/QR que los espectadores usarán para conectarse via WebRTC (PeerJS).</li>
+                    <li><strong>Compartir:</strong> Genera el código/QR que los jugadores usarán para conectarse via WebRTC (PeerJS).</li>
                     <li><strong>Velocidad:</strong> Ajusta la velocidad del sorteo mediante el control deslizante.</li>
                 </ul>
             </section>
@@ -423,12 +423,12 @@
 
             <section>
                 <h3>Sincronización (Web3)</h3>
-                <p>El sistema usa PeerJS (WebRTC) para conectar espectadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Seguir".</p>
+                <p>El sistema usa PeerJS (WebRTC) para conectar jugadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Seguir".</p>
             </section>
 
             <section>
                 <h3>Estadísticas</h3>
-                <p>El juego mantiene un contador de bingos por cartón. Las estadísticas están sincronizadas entre el host y los espectadores y pueden resetearse desde el modal de estadísticas con el botón "Resetear Estadísticas".</p>
+                <p>El juego mantiene un contador de bingos por cartón. Las estadísticas están sincronizadas entre el host y los jugadores y pueden resetearse desde el modal de estadísticas con el botón "Resetear Estadísticas".</p>
             </section>
 
             <section>
@@ -437,15 +437,15 @@
             </section>
 
             <section>
-                <h3>Modo espectador</h3>
-                <p>Los espectadores pueden conectarse con el código que genera el Host o mediante el QR. La vista del espectador recibe el estado del juego y muestra los números en tiempo real. Si se detecta un Bingo en un cartón seguido, la vista puede notificar y pedir la pausa al Host.</p>
+                <h3>Modo jugador</h3>
+                <p>Los jugadores pueden conectarse con el código que genera el Host o mediante el QR. La vista del jugador recibe el estado del juego y muestra los números en tiempo real. Si se detecta un Bingo en un cartón seguido, la vista puede notificar y pedir la pausa al Host.</p>
             </section>
 
             <section>
                 <h3>Buenas prácticas</h3>
                 <ul>
-                    <li>Como Host, asegúrate de compartir el código con tiempo y confirmar que los espectadores están conectados antes de empezar.</li>
-                    <li>Si hay muchos espectadores, la conectividad puede tardar unos segundos; espera a que el contador de espectadores suba.</li>
+                    <li>Como Host, asegúrate de compartir el código con tiempo y confirmar que los jugadores están conectados antes de empezar.</li>
+                    <li>Si hay muchos jugadores, la conectividad puede tardar unos segundos; espera a que el contador de jugadores suba.</li>
                     <li>Usa el botón de activar sonido en iOS si no escuchas anuncios por voz.</li>
                 </ul>
             </section>
@@ -453,7 +453,7 @@
             <section>
                 <h3>Problemas comunes</h3>
                 <ul>
-                    <li>Si un espectador no recibe números: comprobar código, conexión de red y que la página tenga permiso para WebRTC.</li>
+                    <li>Si un jugador no recibe números: comprobar código, conexión de red y que la página tenga permiso para WebRTC.</li>
                     <li>Si el audio no suena en móvil iOS: toca la pantalla o pulsa el botón de sonido para desbloquear el AudioContext.</li>
                 </ul>
             </section>

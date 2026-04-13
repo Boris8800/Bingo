@@ -142,7 +142,7 @@
     
 
     <main class="center">
-        <div class="view-mode-badge">ESPECTADOR</div>
+        <div class="view-mode-badge">JUGADOR</div>
 
         <div id="numeroContainer" role="status" aria-live="polite">
             <div id="numero">--</div>
@@ -211,7 +211,7 @@
             <div id="listaCartonesGuardados" class="saved-cards-grid"></div>
         </section>
 
-        <!-- enlace de volver eliminado en Web 3 (espectador) -->
+        <!-- enlace de volver eliminado en Web 3 (jugador) -->
     </main>
 
     <!-- RECURSOS OCULTOS PARA SCRIPT.JS -->
@@ -349,7 +349,7 @@
             <div style="max-height:60vh; overflow:auto; padding-right:6px;">
                 <section>
                     <h3>Visión general</h3>
-                    <p>Este es un juego de Bingo en el que un equipo (Web1 - Host / Máster) controla el sorteo de números, y los espectadores (Web3) pueden conectarse y seguirlo en tiempo real. Puedes jugar desde el PC (Host) o desde móviles/otros dispositivos (Invitados).</p>
+                    <p>Este es un juego de Bingo en el que un equipo (Web1 - Host / Máster) controla el sorteo de números, y los jugadores (Web3) pueden conectarse y seguirlo en tiempo real. Puedes jugar desde el PC (Host) o desde móviles/otros dispositivos (Invitados).</p>
                 </section>
 
                 <section>
@@ -357,7 +357,7 @@
                     <ul>
                         <li><strong>Comenzar / Detener:</strong> Inicia o detiene el sorteo automático de números.</li>
                         <li><strong>Reiniciar:</strong> Limpia la partida y restablece los números disponibles (1–90).</li>
-                        <li><strong>Compartir:</strong> Genera el código/QR que los espectadores usarán para conectarse via WebRTC (PeerJS).</li>
+                        <li><strong>Compartir:</strong> Genera el código/QR que los jugadores usarán para conectarse via WebRTC (PeerJS).</li>
                         <li><strong>Velocidad:</strong> Ajusta la velocidad del sorteo mediante el control deslizante.</li>
                     </ul>
                 </section>
@@ -388,12 +388,12 @@
 
                 <section>
                     <h3>Sincronización (Web3)</h3>
-                    <p>El sistema usa PeerJS (WebRTC) para conectar espectadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Seguir".</p>
+                    <p>El sistema usa PeerJS (WebRTC) para conectar jugadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Seguir".</p>
                 </section>
 
                 <section>
                     <h3>Estadísticas</h3>
-                    <p>El juego mantiene un contador de bingos por cartón. Las estadísticas están sincronizadas entre el host y los espectadores y pueden resetearse desde el modal de estadísticas con el botón "Resetear Estadísticas".</p>
+                    <p>El juego mantiene un contador de bingos por cartón. Las estadísticas están sincronizadas entre el host y los jugadores y pueden resetearse desde el modal de estadísticas con el botón "Resetear Estadísticas".</p>
                 </section>
 
                 <section>
@@ -402,15 +402,15 @@
                 </section>
 
                 <section>
-                    <h3>Modo espectador</h3>
-                    <p>Los espectadores pueden conectarse con el código que genera el Host o mediante el QR. La vista del espectador recibe el estado del juego y muestra los números en tiempo real. Si se detecta un Bingo en un cartón seguido, la vista puede notificar y pedir la pausa al Host.</p>
+                    <h3>Modo jugador</h3>
+                    <p>Los jugadores pueden conectarse con el código que genera el Host o mediante el QR. La vista del jugador recibe el estado del juego y muestra los números en tiempo real. Si se detecta un Bingo en un cartón seguido, la vista puede notificar y pedir la pausa al Host.</p>
                 </section>
 
                 <section>
                     <h3>Buenas prácticas</h3>
                     <ul>
-                        <li>Como Host, asegúrate de compartir el código con tiempo y confirmar que los espectadores están conectados antes de empezar.</li>
-                        <li>Si hay muchos espectadores, la conectividad puede tardar unos segundos; espera a que el contador de espectadores suba.</li>
+                        <li>Como Host, asegúrate de compartir el código con tiempo y confirmar que los jugadores están conectados antes de empezar.</li>
+                        <li>Si hay muchos jugadores, la conectividad puede tardar unos segundos; espera a que el contador de jugadores suba.</li>
                         <li>Usa el botón de activar sonido en iOS si no escuchas anuncios por voz.</li>
                     </ul>
                 </section>
@@ -418,7 +418,7 @@
                 <section>
                     <h3>Problemas comunes</h3>
                     <ul>
-                        <li>Si un espectador no recibe números: comprobar código, conexión de red y que la página tenga permiso para WebRTC.</li>
+                        <li>Si un jugador no recibe números: comprobar código, conexión de red y que la página tenga permiso para WebRTC.</li>
                         <li>Si el audio no suena en móvil iOS: toca la pantalla o pulsa el botón de sonido para desbloquear el AudioContext.</li>
                     </ul>
                 </section>
