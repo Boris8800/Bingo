@@ -31,7 +31,7 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 - **Sincronización Multi-Dispositivo (P2P)**: Gracias a la integración con **PeerJS (WebRTC)**, puedes conectar tu PC (Host) con móviles (Invitados) de forma directa (Peer-to-Peer) sin necesidad de un servidor backend. ¡Ideal para GitHub Pages!
 - **Audio sincronizado (P2P)**: El host envía el timestamp para que el anuncio por voz suene al mismo tiempo en Web3.
 - **Tokens 2–4 Dígitos (progresivo)**: El sistema intentará reservar códigos cortos (2 dígitos) y, si están ocupados, escalará automáticamente a códigos más largos (3 o 4 dígitos) para reducir colisiones globales.
-- **Modo Espectador**: Tus amigos pueden seguir el juego sincronizado desde sus propios dispositivos (`web3.html`).
+- **Modo Jugador**: Tus amigos pueden seguir el juego sincronizado desde sus propios dispositivos (`web3.html`).
 
 ## 🚀 Guía Rápida
 
@@ -81,14 +81,14 @@ python3 -m http.server 8000
 ## 📂 Estructura del Proyecto
 
 - `index.html`: **Core del Juego**. Lógica principal, tablero y controles de host.
-- `web3.html`: **Vista de Cliente**. Interfaz simplificada para espectadores remotos.
+- `web3.html`: **Vista de Cliente**. Interfaz simplificada para jugadores remotos.
 - `js/script.js`: **Cerebro**. Contiene toda la lógica de estado, sorteo, PDF y sincronización.
 - `css/style.css`: **Estilos**. Variables CSS modernas para temas y diseño responsive.
 
 ## 🔄 Sistema de Sincronización en Tiempo Real (Web3)
 
 ### Token Inteligente
-El juego utiliza un sistema de token automático para sincronizar el estado entre el host (Web1) y los espectadores (Web3):
+El juego utiliza un sistema de token automático para sincronizar el estado entre el host (Web1) y los jugadores (Web3):
 
 **Formato del Token (hash URL):**
 ```
@@ -130,10 +130,10 @@ Sortea número 3 → Token: 22+1+2+3   ✅ Detecta +3, marca número 3
 ...
 ```
 
-## 🎯 Características de Web3 (Espectador)
+## 🎯 Características de Web3 (Jugador)
 
 ### Seguir Cartones
-Los espectadores (Web3) pueden ahora rastrear sus propios cartones:
+Los jugadores (Web3) pueden ahora rastrear sus propios cartones:
 - **Ingresa tus números**: Introduce los números de tu cartón separados por comas (ej: 7, 15, 23).
 - **Control de Sincronización Inteligente**: Al hacer click en la caja de texto para editar tus cartones, la sincronización se **pausa automáticamente** para evitar que los números entrantes borren lo que estás escribiendo. Se reanuda al pulsar "Seguir".
 - **Seguimiento automático**: El sistema marca automáticamente tus números conforme el host los sorteó.
@@ -159,7 +159,7 @@ Los espectadores (Web3) pueden ahora rastrear sus propios cartones:
    - Sortea #2 → Token: `22+1+2`
    - Sortea #3 → Token: `22+1+2+3`
 
-**Frontend (Web3 - Espectador):**
+**Frontend (Web3 - Jugador):**
 1. Se carga con URL hash: `web3.html#22+1+2+3`
 2. Extrae código base: `22`
 3. Espera por el siguiente: `+4`
@@ -363,5 +363,5 @@ A continuación se detalla la base de datos completa de cartones integrados en e
 | 247 | 4,9,14,20,22,33,38,47,53,54,64,65,71,85,86 |
 | 248 | 8,10,19,23,29,31,39,41,48,51,55,66,77,82,90 |
 
-*Nota: Para ver la lista completa de números de cada cartón, consulta los elementos `<div data-numeros="...">` en [index.html](index.html). Los 248 cartones han sido verificados y están sincronizados entre la versión Máster y Espectador.*
+*Nota: Para ver la lista completa de números de cada cartón, consulta los elementos `<div data-numeros="...">` en [index.html](index.html). Los 248 cartones han sido verificados y están sincronizados entre la versión Máster y Jugador.*
 ```
