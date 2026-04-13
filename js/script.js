@@ -113,10 +113,14 @@ const PRESENCE_WS_URL = (() => {
     return '';
 })();
 const PRESENCE_HEARTBEAT_MS = 5000;
+const PRESENCE_LOCAL_STORAGE_KEY = 'bingo_presence_registry_v1';
+const PRESENCE_LOCAL_CHANNEL_NAME = 'bingo_presence_v1';
 let presenceSocket = null;
 let presenceReconnectTimer = null;
 let presenceHeartbeatTimer = null;
 let presenceSessionId = null;
+let presenceLocalChannel = null;
+let presenceLocalListenersAttached = false;
 let connectedPlayers = [];
 let connectedPlayersMode = 'main';
 
@@ -161,6 +165,131 @@ function getPresencePayload() {
         page: (typeof window !== 'undefined' && window.__IS_MASTER === false) ? 'web3' : 'main',
         updatedAt: Date.now(),
     };
+}
+
+function hasWebSocketPresence() {
+    return !!PRESENCE_WS_URL && typeof WebSocket !== 'undefined';
+}
+
+function loadLocalPresenceRegistry() {
+    try {
+        const raw = localStorage.getItem(PRESENCE_LOCAL_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveLocalPresenceRegistry(registry) {
+    try {
+        localStorage.setItem(PRESENCE_LOCAL_STORAGE_KEY, JSON.stringify(registry));
+    } catch (e) {
+        console.warn('No se pudo guardar la presencia local:', e);
+    }
+}
+
+function normalizePresenceEntry(entry) {
+    return {
+        sessionId: String(entry.sessionId || ''),
+        playerName: typeof entry.playerName === 'string' ? entry.playerName.trim() : '',
+        trackedCards: Array.isArray(entry.trackedCards)
+            ? entry.trackedCards.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0)
+            : [],
+        gameCode: entry.gameCode == null ? null : String(entry.gameCode),
+        page: typeof entry.page === 'string' ? entry.page : null,
+        updatedAt: Number(entry.updatedAt) || Date.now(),
+    };
+}
+
+function collectLocalPresencePlayers() {
+    const registry = loadLocalPresenceRegistry();
+    const now = Date.now();
+    let changed = false;
+
+    Object.keys(registry).forEach((sessionId) => {
+        const entry = registry[sessionId];
+        if (!entry || !entry.updatedAt || now - Number(entry.updatedAt) > 15000) {
+            delete registry[sessionId];
+            changed = true;
+        }
+    });
+
+    if (changed) saveLocalPresenceRegistry(registry);
+
+    return Object.values(registry)
+        .map(normalizePresenceEntry)
+        .sort((a, b) => String(a.playerName || '').localeCompare(String(b.playerName || ''), 'es'));
+}
+
+function renderLocalPresencePlayers() {
+    connectedPlayers = collectLocalPresencePlayers();
+    renderConnectedPlayers(connectedPlayers);
+}
+
+function upsertLocalPresence() {
+    const payload = normalizePresenceEntry(getPresencePayload());
+    const registry = loadLocalPresenceRegistry();
+    registry[payload.sessionId] = payload;
+    saveLocalPresenceRegistry(registry);
+    renderLocalPresencePlayers();
+
+    if (presenceLocalChannel) {
+        try {
+            presenceLocalChannel.postMessage({ type: 'presence-sync', action: 'upsert', payload });
+        } catch (e) {}
+    }
+}
+
+function removeLocalPresence() {
+    const sessionId = getPresenceSessionId();
+    const registry = loadLocalPresenceRegistry();
+    if (registry[sessionId]) {
+        delete registry[sessionId];
+        saveLocalPresenceRegistry(registry);
+    }
+    renderLocalPresencePlayers();
+
+    if (presenceLocalChannel) {
+        try {
+            presenceLocalChannel.postMessage({ type: 'presence-sync', action: 'remove', sessionId });
+        } catch (e) {}
+    }
+}
+
+function handleLocalPresenceBroadcast(event) {
+    const data = event && event.data ? event.data : null;
+    if (!data || data.type !== 'presence-sync') return;
+    renderLocalPresencePlayers();
+}
+
+function handleLocalPresenceStorage(event) {
+    if (!event || event.key !== PRESENCE_LOCAL_STORAGE_KEY) return;
+    renderLocalPresencePlayers();
+}
+
+function initLocalPresenceTracking() {
+    clearPresenceReconnectTimer();
+    clearPresenceHeartbeat();
+
+    if (!presenceLocalListenersAttached) {
+        presenceLocalListenersAttached = true;
+        try {
+            window.addEventListener('storage', handleLocalPresenceStorage);
+        } catch (e) {}
+    }
+
+    if (!presenceLocalChannel && typeof BroadcastChannel !== 'undefined') {
+        try {
+            presenceLocalChannel = new BroadcastChannel(PRESENCE_LOCAL_CHANNEL_NAME);
+            presenceLocalChannel.addEventListener('message', handleLocalPresenceBroadcast);
+        } catch (e) {
+            presenceLocalChannel = null;
+        }
+    }
+
+    upsertLocalPresence();
+    presenceHeartbeatTimer = setInterval(upsertLocalPresence, PRESENCE_HEARTBEAT_MS);
 }
 
 function renderConnectedPlayers(players) {
@@ -247,16 +376,13 @@ function schedulePresenceReconnect() {
 }
 
 function initPresenceTracking() {
-    if (!PRESENCE_WS_URL || typeof WebSocket === 'undefined') {
-        const list = document.getElementById('connectedPlayersList');
-        if (list && connectedPlayersMode === 'main') {
-            list.textContent = 'Presencia no disponible en esta configuración';
-        }
-        return;
-    }
-
     const isWeb3 = (typeof window !== 'undefined' && window.__IS_MASTER === false) || document.body?.getAttribute('data-page') === 'web3';
     connectedPlayersMode = isWeb3 ? 'web3' : 'main';
+
+    if (!hasWebSocketPresence()) {
+        initLocalPresenceTracking();
+        return;
+    }
 
     if (presenceSocket && (presenceSocket.readyState === WebSocket.OPEN || presenceSocket.readyState === WebSocket.CONNECTING)) {
         if (connectedPlayersMode === 'web3') {
@@ -548,6 +674,7 @@ function releaseClaim() {
 
 window.addEventListener('beforeunload', () => {
     try { sendPresenceRemoval(); } catch (e) {}
+    try { removeLocalPresence(); } catch (e) {}
     try { clearPresenceHeartbeat(); } catch (e) {}
     try { clearPresenceReconnectTimer(); } catch (e) {}
     try { if (presenceSocket) presenceSocket.close(); } catch (e) {}
