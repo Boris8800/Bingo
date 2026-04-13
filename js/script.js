@@ -797,6 +797,10 @@ function initCrossDeviceSync() {
         clearLocalHistory();
         lastConnectedGameCode = gameCodeFixed;
     }
+    if (connToMaster) {
+        try { connToMaster.close(); } catch (e) {}
+        connToMaster = null;
+    }
     if (peer && !peer.destroyed) { try { peer.destroy(); } catch (e) {} }
     
     console.log("🚀 Iniciando conexión de jugador...");
