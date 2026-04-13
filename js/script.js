@@ -167,6 +167,31 @@ function getPresencePayload() {
     };
 }
 
+function syncConnectedPlayersFromConnections() {
+    if (!isMaster) return;
+    connectedPlayers = connections
+        .map((conn) => conn && conn._presenceInfo ? conn._presenceInfo : null)
+        .filter(Boolean)
+        .sort((a, b) => String(a.playerName || '').localeCompare(String(b.playerName || ''), 'es'));
+    renderConnectedPlayers(connectedPlayers);
+    updateSpectatorCount();
+}
+
+function storeConnectionPresence(conn, payload) {
+    if (!conn) return;
+    conn._presenceInfo = normalizePresenceEntry({
+        ...payload,
+        updatedAt: Date.now(),
+    });
+    syncConnectedPlayersFromConnections();
+}
+
+function clearConnectionPresence(conn) {
+    if (!conn) return;
+    conn._presenceInfo = null;
+    syncConnectedPlayersFromConnections();
+}
+
 function hasWebSocketPresence() {
     return !!PRESENCE_WS_URL && typeof WebSocket !== 'undefined';
 }
@@ -338,11 +363,27 @@ function renderConnectedPlayers(players) {
 }
 
 function broadcastPresenceState() {
-    if (!presenceSocket || presenceSocket.readyState !== WebSocket.OPEN) return;
-    presenceSocket.send(JSON.stringify({
+    const payload = {
         type: 'presence-upsert',
         ...getPresencePayload(),
-    }));
+    };
+
+    if (connToMaster && connToMaster.open && !isMaster) {
+        try {
+            connToMaster.send(payload);
+        } catch (e) {
+            console.warn('No se pudo enviar la presencia al host:', e);
+        }
+    }
+
+    if (presenceSocket && presenceSocket.readyState === WebSocket.OPEN) {
+        presenceSocket.send(JSON.stringify(payload));
+        return;
+    }
+
+    if (!hasWebSocketPresence()) {
+        upsertLocalPresence();
+    }
 }
 
 function clearPresenceHeartbeat() {
@@ -360,11 +401,24 @@ function clearPresenceReconnectTimer() {
 }
 
 function sendPresenceRemoval() {
-    if (!presenceSocket || presenceSocket.readyState !== WebSocket.OPEN) return;
-    presenceSocket.send(JSON.stringify({
+    const payload = {
         type: 'presence-remove',
-        sessionId: getPresenceSessionId(),
-    }));
+        ...getPresencePayload(),
+    };
+
+    if (connToMaster && connToMaster.open && !isMaster) {
+        try {
+            connToMaster.send(payload);
+        } catch (e) {}
+    }
+
+    if (presenceSocket && presenceSocket.readyState === WebSocket.OPEN) {
+        presenceSocket.send(JSON.stringify(payload));
+    }
+
+    if (!hasWebSocketPresence()) {
+        removeLocalPresence();
+    }
 }
 
 function schedulePresenceReconnect() {
@@ -379,8 +433,16 @@ function initPresenceTracking() {
     const isWeb3 = (typeof window !== 'undefined' && window.__IS_MASTER === false) || document.body?.getAttribute('data-page') === 'web3';
     connectedPlayersMode = isWeb3 ? 'web3' : 'main';
 
+    if (isMaster) {
+        syncConnectedPlayersFromConnections();
+        return;
+    }
+
+    if (connToMaster && connToMaster.open) {
+        broadcastPresenceState();
+    }
+
     if (!hasWebSocketPresence()) {
-        initLocalPresenceTracking();
         return;
     }
 
@@ -624,6 +686,13 @@ function setupMasterListeners() {
     peer.on('connection', (conn) => {
         console.log('🤝 Jugador conectado:', conn.peer);
         connections.push(conn);
+
+        storeConnectionPresence(conn, {
+            playerName: 'Conectando...',
+            trackedCards: [],
+            gameCode: gameCodeFixed || null,
+            page: 'web3',
+        });
         
         // Notify Master UI if possible
         if (typeof onSpectatorJoined === 'function') {
@@ -635,14 +704,24 @@ function setupMasterListeners() {
         // Enviar estado actual inmediatamente
         if (conn.open) {
             broadcastState();
+            syncConnectedPlayersFromConnections();
         } else {
             conn.on('open', () => {
                 broadcastState();
+                syncConnectedPlayersFromConnections();
                 updateSpectatorCount();
             });
         }
         
         conn.on('data', (data) => {
+            if (data && data.type === 'presence-upsert') {
+                storeConnectionPresence(conn, data);
+                return;
+            }
+            if (data && data.type === 'presence-remove') {
+                clearConnectionPresence(conn);
+                return;
+            }
             if (data && data.type === 'PAUSE_REQUEST') {
                 console.log('🛑 Solicitud de pausa recibida de jugador');
                 pausarJuegoPorBingo(true); 
@@ -654,10 +733,12 @@ function setupMasterListeners() {
 
         conn.on('close', () => {
             connections = connections.filter(c => c !== conn);
+            clearConnectionPresence(conn);
             updateSpectatorCount();
         });
         conn.on('error', () => {
             connections = connections.filter(c => c !== conn);
+            clearConnectionPresence(conn);
             updateSpectatorCount();
         });
     });
@@ -822,6 +903,7 @@ function intentarConectarConMaster() {
         clearTimeout(connectionTimeout);
         console.log('✅ Conexión establecida con el Master');
         updateP2PStatus("Conectado", "#28a745");
+        broadcastPresenceState();
         
         // Notify web3.html if function exists
         if (typeof onConnectionCompleted === 'function') {
@@ -1711,6 +1793,7 @@ function restoreTrackedPlayerName() {
     try {
         const storedName = localStorage.getItem('bingo_player_name');
         if (storedName) nameEl.value = storedName;
+        broadcastPresenceState();
     } catch (e) {}
 }
 
@@ -1929,9 +2012,21 @@ function attachTrackingInputHandlers() {
     if (nameEl) {
         nameEl.addEventListener('focus', pauseHandler);
         nameEl.addEventListener('click', pauseHandler);
+        nameEl.addEventListener('change', () => {
+            try {
+                const currentName = nameEl.value.trim();
+                if (currentName) {
+                    localStorage.setItem('bingo_player_name', currentName);
+                }
+            } catch (e) {}
+            broadcastPresenceState();
+        });
     }
     inputEl.addEventListener('focus', pauseHandler);
     inputEl.addEventListener('click', pauseHandler);
+    inputEl.addEventListener('change', () => {
+        broadcastPresenceState();
+    });
     
     // No reanudamos en blur: reanudamos explícitamente cuando presionan "Seguir"
 }
