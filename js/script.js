@@ -330,14 +330,6 @@ async function updateGlobalVisitCounter() {
         console.warn('Local visit counter unavailable:', e);
     }
 }
-            localStorage.setItem(fallbackKey, String(visits));
-            visitCounter.textContent = visits;
-        } catch (fallbackError) {
-            console.warn('Local visit counter fallback failed:', fallbackError);
-            visitCounter.textContent = '1';
-        }
-    }
-}
 
 /**
  * Verifica si un código de juego está siendo usado por un Master.
@@ -1201,12 +1193,15 @@ function playBingoSoundEffect() {
  */
 function announceBingo(cartonId) {
     try {
-        // 4) Tono/voz
-        try {
+        if (!isMaster) {
+            const speakPref = (localStorage.getItem('web3Speak') === 'true');
+            if (speakPref) {
+                playBingoSoundEffect();
+                speakText(`¡Bingo en el cartón ${cartonId}!`);
+            }
+        } else {
             playBingoSoundEffect();
             speakText(`¡Bingo! Cartón ${cartonId}.`);
-        } catch (e) {
-            console.warn('Error announcing bingo:', e);
         }
     } catch (e) {
         console.warn('announceBingo failed:', e);
@@ -1500,9 +1495,6 @@ function setVoice(options) {
 
     // Resume audio context on user gesture for iOS support
     // Skip if in silent mode to avoid console warnings during auto-load
-    if (!silent) {
-        try { initAudioContext(); } catch(e) {}
-    sole warnings during auto-load
     if (!silent) {
         try { initAudioContext(); } catch(e) {}
     }
