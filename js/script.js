@@ -2227,7 +2227,7 @@ function trackMyCards() {
     broadcastPresenceState();
 
     // Notificación de guardado: omitimos visuales para viewers (web3)
-    const isViewerPage = (typeof window !== 'undefined' && window.__IS_MASTER === false);
+    const isViewerPage = (typeof window !== 'undefined' && window.__IS_MASTER === false) || (typeof document !== 'undefined' && document.body && document.body.getAttribute && document.body.getAttribute('data-page') === 'web3');
     if (!isViewerPage) {
         showToast(myTrackedCardNumbers.length
             ? `Guardado y sincronizado: ${myTrackedCardNumbers.length} cartones`
