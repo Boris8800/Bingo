@@ -235,6 +235,15 @@ node make.js --p2p
 
 - Estado actual: los ajustes de conexión están comprometidos y empujados a la rama `main`.
 
+### 🔊 Mejoras recientes en sincronización de audio (Host ↔ Viewers)
+
+- El Host ahora soporta sincronización por conexión: los viewers envían métricas de jitter y el Host puede ajustar un `recommendedAudioDelay` por conexión para reducir el desfasaje.
+- Los viewers calculan un `audioSyncOffsetMs` local usando pings de tiempo del Host y aplican una `dynamicAudioDelayExtraMs` basada en la desviación estándar del jitter para mayor robustez.
+- Se envían periódicamente `AUDIO_PING` y los viewers reportan `AUDIO_JITTER_REPORT` (mean/stddev) al Host; el Host responde con `SPECTATOR_SOUND_ACK` incluyendo el retraso recomendado.
+- UI del Host: nuevo panel `connectionMetrics` muestra por-connection: delay recomendado, último jitter y media (útil para diagnósticos en tiempo real).
+
+Estas mejoras mejoran significativamente la percepción de sincronía en anuncios por voz en partidas con múltiple dispositivos y redes variables.
+
 Si quieres, puedo: añadir pruebas Playwright para verificación real de WebRTC, o limpiar/extraer los hooks de prueba antes de publicar una release. ¿Qué prefieres?
 
 ---
