@@ -2201,14 +2201,6 @@ function trackMyCards() {
         console.warn("Elemento 'myCardNumbersInput' no encontrado — usando valores almacenados.");
     }
 
-    // Ask for confirmation before saving
-    try {
-        const confirmed = window.confirm('¿Guardar y sincronizar estos cartones?');
-        if (!confirmed) return;
-    } catch (e) {
-        console.error("Confirmation error:", e);
-    }
-
     const playerName = nameEl ? nameEl.value.trim() : getTrackedPlayerName();
     
     // If name is missing, ask for it (especially important for Web3)
@@ -2247,29 +2239,28 @@ function trackMyCards() {
     saveGameState();
     broadcastPresenceState();
 
-    // Notificación de guardado: omitimos visuales para viewers (web3)
+    // Notificación de guardado: mostramos green message bajo la sección
     const isViewerPage = (typeof window !== 'undefined' && window.__IS_MASTER === false) || (typeof document !== 'undefined' && document.body && document.body.getAttribute && document.body.getAttribute('data-page') === 'web3');
+    
+    // Si no es master, omitimos el toast visual de arriba pero mostramos el mensaje en trackerMsg
     if (!isViewerPage) {
         showToast(myTrackedCardNumbers.length
             ? `Guardado y sincronizado: ${myTrackedCardNumbers.length} cartones`
             : 'Guardado y sincronizado');
+    }
 
-        const msgEl = document.getElementById('trackerMsg');
-        if (msgEl) {
-            setStatusMessage(msgEl, 'is-success');
-            msgEl.textContent = myTrackedCardNumbers.length
-                ? `✓ Guardado y enviado (${myTrackedCardNumbers.length} cartones)`
-                : '✓ Guardado y enviado';
-            msgEl.style.color = "";
-            msgEl.style.fontSize = "0.8em";
-            setTimeout(() => {
-                msgEl.textContent = "";
-                msgEl.classList.remove('status-message', 'is-success', 'is-error', 'is-warning');
-            }, 2000);
-        }
-    } else {
-        // Confirmation for Web3
-        showToast("¡Configuración guardada!");
+    const msgEl = document.getElementById('trackerMsg');
+    if (msgEl) {
+        setStatusMessage(msgEl, 'is-success');
+        msgEl.textContent = myTrackedCardNumbers.length
+            ? `✓ Guardado y enviado (${myTrackedCardNumbers.length} cartones)`
+            : '✓ Guardado y enviado';
+        msgEl.style.color = "#28a745"; // Ensure green color
+        msgEl.style.fontSize = "0.8em";
+        setTimeout(() => {
+            msgEl.textContent = "";
+            msgEl.classList.remove('status-message', 'is-success', 'is-error', 'is-warning');
+        }, 3000);
     }
 
     // Después de guardar los cartones, reanudar la sincronización si estaba pausada.
