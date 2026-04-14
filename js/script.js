@@ -1188,7 +1188,15 @@ function applySharedState(state) {
             }
 
     __applySharedStateCallCount++;
-    try { console.log('TESTHOOK applySharedState called', {count: __applySharedStateCallCount, drawCounter: state && state.drawCounter, numerosSalidos_len: state && (state.numerosSalidos ? state.numerosSalidos.length : 'undefined')}); } catch (e) {}
+    try {
+        console.log('TESTHOOK applySharedState called', {
+            count: __applySharedStateCallCount,
+            local_drawCounter: drawCounter,
+            incoming_drawCounter: state && state.drawCounter,
+            incoming_numeros_len: state && (state.numerosSalidos ? state.numerosSalidos.length : 'undefined'),
+            local_numeros_len: numerosSalidos ? numerosSalidos.length : 0,
+        });
+    } catch (e) {}
 
     // Control de versión del estado (drawCounter)
     if (typeof state.drawCounter === 'number') {
