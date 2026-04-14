@@ -1170,9 +1170,9 @@ function applySharedState(state) {
         return;
     }
             // Session expired notification from master
-            if (data && data.type === 'SESSION_EXPIRED') {
+            if (state && state.type === 'SESSION_EXPIRED') {
                 try {
-                    const code = data.code || '?';
+                    const code = state.code || '?';
                     // Show a centered banner asking user to restart
                     try {
                         const el = document.getElementById('initialNameBanner');
