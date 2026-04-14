@@ -47,6 +47,30 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
    - Ingresa el código de 2–4 dígitos o escanea el QR.
    - El dispositivo se conectará al canal del Host y recibirá los números en tiempo real conforme vayan saliendo.
 
+   ## 🆘 Ayuda — Cómo funciona Bingo Virtual (versión simple)
+
+   1) Roles:
+   - Host (Máster): controla el sorteo desde un PC. Pulsa "Comenzar" para iniciar.
+   - Jugadores (Web3): siguen el sorteo desde móviles o tablets usando el código que comparte el Host.
+
+   2) Compartir el juego:
+   - El Host pulsa "Compartir" y obtiene un código (2–4 dígitos) o un QR.
+   - Los jugadores ingresan el código en la sección Web3 o escanean el QR.
+
+   3) Qué pasa después:
+   - Cada vez que el Host saca un número, todos los jugadores lo reciben casi al mismo tiempo.
+   - Si activas sonido en tu móvil, la voz anunciará los números sincronizados con el Host.
+
+   4) Mi nombre y seguimiento:
+   - En Web3 te pedimos tu nombre al entrar; eso activa el sonido y mejora la sincronía.
+   - Puedes introducir tus números para que el sistema te avise si haces ¡BINGO!.
+
+   5) Problemas comunes:
+   - "Sincronización: Expirado": el Host cerró la sesión; recarga la página y pide un nuevo código.
+   - Si no oyes la voz, toca la pantalla para activar el audio (iOS/Android requieren gesto de usuario).
+
+   Si quieres una explicación técnica más completa, sigue leyendo la sección "Detalles Técnicos de Sincronización".
+
 ## 🛠️ Detalles Técnicos de Sincronización
 
 Este proyecto utiliza tres capas de sincronización para asegurar que nadie se pierda ningún número:
