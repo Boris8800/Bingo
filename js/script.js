@@ -1999,7 +1999,7 @@ function trackMyCards() {
     }
     const playerName = nameEl ? nameEl.value.trim() : getTrackedPlayerName();
     if (!playerName) {
-        showToast('Escribe tu nombre antes de guardar');
+        showToast('Escribe tu nombre para enviar tus datos');
         if (nameEl) nameEl.focus();
         return;
     }
@@ -2015,8 +2015,8 @@ function trackMyCards() {
 
     window.lastPlayerAction = 'guardado';
     window.lastPlayerStatusMessage = myTrackedCardNumbers.length
-        ? `Guardado y sincronizado: ${myTrackedCardNumbers.length} cartones`
-        : 'Guardado sin cartones';
+        ? `Enviado a Jugadores Conectados: ${myTrackedCardNumbers.length} cartones`
+        : 'Enviado a Jugadores Conectados';
     window.lastVerifiedCarton = null;
     window.lastVerifiedResult = '';
     window.lastVerifiedMissing = [];
@@ -2027,14 +2027,14 @@ function trackMyCards() {
 
     // Notificación de guardado
     showToast(myTrackedCardNumbers.length
-        ? `Guardado y sincronizado: ${myTrackedCardNumbers.length} cartones`
-        : 'Guardado y sincronizado');
+        ? `Enviado a Jugadores Conectados: ${myTrackedCardNumbers.length} cartones`
+        : 'Enviado a Jugadores Conectados');
     
     const msgEl = document.getElementById('trackerMsg');
     if (msgEl) {
         msgEl.textContent = myTrackedCardNumbers.length
-            ? `✓ Guardado y enviado (${myTrackedCardNumbers.length} cartones)`
-            : '✓ Guardado y enviado';
+            ? `✓ Enviado a Jugadores Conectados (${myTrackedCardNumbers.length} cartones)`
+            : '✓ Enviado a Jugadores Conectados';
         msgEl.style.color = "#28a745";
         msgEl.style.fontSize = "0.8em";
         setTimeout(() => {
@@ -2576,7 +2576,7 @@ function verificarCarton() {
                     mensajeVerificacionCarton.style.color = "green";
 
                         window.lastPlayerAction = 'verificado';
-                        window.lastPlayerStatusMessage = `Verificado: cartón ${numeroCarton} con bingo`;
+                        window.lastPlayerStatusMessage = `Verificado y enviado a Jugadores Conectados: cartón ${numeroCarton} con bingo`;
                         window.lastVerifiedCarton = numeroCarton;
                         window.lastVerifiedResult = 'BINGO';
                         window.lastVerifiedMissing = [];
@@ -2601,7 +2601,7 @@ function verificarCarton() {
                     mensajeVerificacionCarton.innerHTML = `Faltan: <span style="color:red">${faltantes.join(', ')}</span>`;
 
                     window.lastPlayerAction = 'verificado';
-                    window.lastPlayerStatusMessage = `Verificado: cartón ${numeroCarton} sin bingo`;
+                    window.lastPlayerStatusMessage = `Verificado y enviado a Jugadores Conectados: cartón ${numeroCarton} sin bingo`;
                     window.lastVerifiedCarton = numeroCarton;
                     window.lastVerifiedResult = 'SIN_BINGO';
                     window.lastVerifiedMissing = faltantes.slice();
