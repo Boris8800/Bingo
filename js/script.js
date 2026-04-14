@@ -24,6 +24,10 @@ let viewerPeerReconnectTimer = null;
 let viewerPeerReconnectAttempts = 0;
 const VIEWER_PEER_RECONNECT_BASE_MS = 2000;
 const VIEWER_PEER_RECONNECT_MAX_MS = 30000;
+let viewerMasterConnectRetryTimer = null;
+let viewerMasterConnectRetryAttempts = 0;
+const VIEWER_MASTER_CONNECT_BASE_MS = 2000;
+const VIEWER_MASTER_CONNECT_MAX_MS = 15000;
 // Test hook: allows tests to inject an internal Peer instance (only used in tests)
 function __setInternalPeerForTests(p) {
     try { peer = p; } catch (e) { console.warn('Could not set internal peer for tests:', e); }
@@ -119,6 +123,45 @@ function clearViewerPeerReconnectTimer() {
 function resetViewerPeerReconnectState() {
     viewerPeerReconnectAttempts = 0;
     clearViewerPeerReconnectTimer();
+}
+
+function clearViewerMasterConnectRetryTimer() {
+    if (viewerMasterConnectRetryTimer) {
+        clearTimeout(viewerMasterConnectRetryTimer);
+        viewerMasterConnectRetryTimer = null;
+    }
+}
+
+function resetViewerMasterConnectRetryState() {
+    viewerMasterConnectRetryAttempts = 0;
+    clearViewerMasterConnectRetryTimer();
+}
+
+function scheduleViewerMasterConnectRetry(statusMessage, color = '#ffc107') {
+    if (isMaster) return;
+    if (viewerMasterConnectRetryTimer) return;
+
+    viewerMasterConnectRetryAttempts = Math.min(viewerMasterConnectRetryAttempts + 1, 5);
+    const delayMs = Math.min(
+        VIEWER_MASTER_CONNECT_BASE_MS * Math.pow(2, viewerMasterConnectRetryAttempts - 1),
+        VIEWER_MASTER_CONNECT_MAX_MS
+    );
+
+    updateP2PStatus(statusMessage || 'Reconectando...', color);
+    viewerMasterConnectRetryTimer = setTimeout(() => {
+        viewerMasterConnectRetryTimer = null;
+        try {
+            if (connToMaster) {
+                try { connToMaster.close(); } catch (e) {}
+                connToMaster = null;
+            }
+        } catch (e) {}
+        try {
+            intentarConectarConMaster();
+        } catch (e) {
+            console.warn('No se pudo reintentar la conexión al Master:', e);
+        }
+    }, delayMs);
 }
 
 function scheduleViewerPeerRestart(statusMessage, kind = '#ffc107') {
@@ -963,9 +1006,11 @@ window.addEventListener('storage', (event) => {
 function initCrossDeviceSync() {
     if (isMaster || !gameCodeFixed) return;
     clearViewerPeerReconnectTimer();
+    clearViewerMasterConnectRetryTimer();
     // Si el jugador está intentando conectarse a un token distinto, limpiar historial local
     if (lastConnectedGameCode !== gameCodeFixed) {
         viewerPeerReconnectAttempts = 0;
+        viewerMasterConnectRetryAttempts = 0;
         clearLocalHistory();
         lastConnectedGameCode = gameCodeFixed;
     }
@@ -983,6 +1028,7 @@ function initCrossDeviceSync() {
     peer.on('open', (id) => {
         console.log('📡 Mi ID de Jugador:', id);
         resetViewerPeerReconnectState();
+        resetViewerMasterConnectRetryState();
         intentarConectarConMaster();
     });
 
@@ -996,8 +1042,8 @@ function initCrossDeviceSync() {
         if (err.type === 'peer-unavailable') {
             const attemptedId = `${PEER_PREFIX}-${gameCodeFixed}`;
             updateP2PStatus(`Host no encontrado (${attemptedId})`, "#dc3545");
-            // Reintentar en un momento por si el host está tardando en subir
-            setTimeout(intentarConectarConMaster, 6000);
+            // Reintentar con backoff sin acumular timers
+            scheduleViewerMasterConnectRetry(`Host no encontrado (${attemptedId})`, "#dc3545");
         } else if (err.type === 'network' || err.type === 'server-error') {
             scheduleViewerPeerRestart('Servidor P2P temporalmente no disponible', '#ffc107');
         } else {
@@ -1074,12 +1120,11 @@ function intentarConectarConMaster() {
     const connectionTimeout = setTimeout(() => {
         if (connToMaster === activeConnection && !activeConnection.open) {
             console.warn('⌛ Tiempo de espera agotado conectando al Master.');
-            updateP2PStatus("Host no responde (reintentando)", "#dc3545");
             try { activeConnection.close(); } catch (e) {}
             if (connToMaster === activeConnection) {
                 connToMaster = null;
             }
-            setTimeout(intentarConectarConMaster, 5000);
+            scheduleViewerMasterConnectRetry("Host no responde (reintentando)", "#dc3545");
         }
     }, 15000);
 
@@ -1160,21 +1205,19 @@ function intentarConectarConMaster() {
     activeConnection.on('error', (err) => {
         clearTimeout(connectionTimeout);
         console.error('❌ Error en conexión con Master:', err);
-        updateP2PStatus('Error de conexión', '#dc3545');
         if (connToMaster === activeConnection) {
             connToMaster = null;
         }
-        setTimeout(intentarConectarConMaster, 8000);
+        scheduleViewerMasterConnectRetry('Error de conexión', '#dc3545');
     });
 
     activeConnection.on('close', () => {
         clearTimeout(connectionTimeout);
         console.warn('Conexión cerrada. Reintentando...');
-        updateP2PStatus('Reconectando...', '#ffc107');
         if (connToMaster === activeConnection) {
             connToMaster = null;
         }
-        setTimeout(intentarConectarConMaster, 4000);
+        scheduleViewerMasterConnectRetry('Reconectando...', '#ffc107');
     });
 }
 
