@@ -46,6 +46,52 @@
             }
         });
 
+        // Initial name banner behavior
+        function hideInitialNameBanner() {
+            const b = document.getElementById('initialNameBanner');
+            if (b) b.style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('initialNameBtn');
+            const input = document.getElementById('initialPlayerName');
+            if (btn && input) {
+                btn.addEventListener('click', () => {
+                    const val = input.value && input.value.trim();
+                    if (val) {
+                        try { localStorage.setItem('bingo_player_name', val); } catch (e) {}
+                        const nameInput = document.getElementById('playerNameInput');
+                        if (nameInput) nameInput.value = val;
+
+                        // Enable spectator sound preference and try to resume audio
+                        try { localStorage.setItem('web3Speak', 'true'); } catch (e) {}
+                        try { if (typeof window !== 'undefined' && window.spectatorSpeakEnabled !== undefined) window.spectatorSpeakEnabled = true; } catch(e){}
+                        try { if (typeof initAudioContext === 'function') initAudioContext(); } catch(e){}
+
+                        // If P2P connection exists, notify master we want synced audio (best-effort)
+                        try {
+                            const payload = { type: 'SPECTATOR_SOUND', enabled: true };
+                            if (typeof connToMaster !== 'undefined' && connToMaster && connToMaster.open) {
+                                try { connToMaster.send(payload); } catch(e) {}
+                            } else if (typeof syncChannel !== 'undefined' && syncChannel) {
+                                try { syncChannel.postMessage(payload); } catch(e) {}
+                            }
+                        } catch (e) {}
+
+                        hideInitialNameBanner();
+                    } else {
+                        // Focus input if empty
+                        input.focus();
+                    }
+                });
+
+                // Allow Enter key
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') btn.click();
+                });
+            }
+        });
+
         function onConnectionCompleted() {
             const statusText = document.getElementById('p2pStatusText');
             if (statusText) {
@@ -112,6 +158,39 @@
             border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.04);
         }
+
+        /* Global centered banners/alerts */
+        .global-banner {
+            position: fixed;
+            left: 50%;
+            top: 12%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            padding: 14px 18px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            min-width: 280px;
+            max-width: 90%;
+        }
+
+        .connection-toast {
+            position: fixed !important;
+            left: 50% !important;
+            top: 20% !important;
+            transform: translateX(-50%) !important;
+            z-index: 2100 !important;
+            background: rgba(0,0,0,0.85) !important;
+            color: #fff !important;
+            padding: 12px 16px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35) !important;
+            text-align: center !important;
+            max-width: 90% !important;
+        }
     </style>
 </head>
 <body data-page="web3">
@@ -142,6 +221,14 @@
     
 
     <main class="center">
+        <!-- Banner inicial que pide nombre al entrar -->
+        <div id="initialNameBanner" class="global-banner" role="dialog" aria-live="polite">
+            <div style="font-weight:700; margin-bottom:8px;">Ingresa tu nombre</div>
+            <div style="display:flex; gap:8px; justify-content:center; align-items:center;">
+                <input id="initialPlayerName" type="text" placeholder="Tu nombre" style="padding:8px 10px; border-radius:6px; border:1px solid var(--border-color); min-width:160px;" />
+                <button id="initialNameBtn" class="btn">Entrar</button>
+            </div>
+        </div>
         <div class="view-mode-badge">JUGADOR</div>
 
         <div id="numeroContainer" role="status" aria-live="polite">

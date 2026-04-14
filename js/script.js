@@ -73,7 +73,7 @@ function updateSpectatorCount() {
     const el = document.getElementById('spectatorCountDisplay');
     if (el) {
         const activeConns = connections.filter(c => c && c.open).length;
-        el.textContent = `Jugadores: ${activeConns}`;
+        el.textContent = `Jugadores conectados: ${activeConns}`;
     }
 }
 
@@ -96,6 +96,16 @@ let drawCounter = 0;
 let gameCodeFixed = null;
 let lastConnectedGameCode = null; // Para detectar cambio de token en jugadores
 const AUDIO_SYNC_DELAY_MS = 500;
+// How often Master sends audio sync pings to viewers (ms)
+const AUDIO_PING_INTERVAL_MS = 10000;
+
+let audioPingTimer = null;
+// Viewer-side jitter tracking (ms)
+window.audioJitterSamples = window.audioJitterSamples || [];
+window.audioJitterMaxSamples = 20;
+window.audioEstimatedJitterMs = window.audioEstimatedJitterMs || 0;
+// Dynamic audio delay base (master recommends AUDIO_SYNC_DELAY_MS; viewers can add safety margin)
+window.dynamicAudioDelayExtraMs = window.dynamicAudioDelayExtraMs || 0;
 let lastAnnounceIdSent = -1;
 let lastAnnounceNumber = null;
 let lastAnnounceAt = 0;
@@ -628,6 +638,15 @@ function checkInactivity() {
         
         showToast(`Sesión ${expiredCode} cerrada por inactividad`);
         updateP2PStatus(`Expirado (${expiredCode})`, "#dc3545");
+
+        // Notify all viewers that session expired and they should restart
+        try {
+            const msg = { type: 'SESSION_EXPIRED', code: expiredCode };
+            // P2P connections
+            connections.forEach(c => { try { if (c && c.open) c.send(msg); } catch(e){} });
+            // BroadcastChannel fallback
+            try { if (typeof syncChannel !== 'undefined' && syncChannel) syncChannel.postMessage(msg); } catch(e){}
+        } catch (e) {}
         
         const startStopBtn = document.getElementById('startStopBtn');
         if (startStopBtn) startStopBtn.textContent = 'Empezar';
@@ -726,6 +745,33 @@ function setupMasterListeners() {
                 clearConnectionPresence(conn);
                 return;
             }
+            // Spectator sound sync request from viewer
+            if (data && data.type === 'SPECTATOR_SOUND') {
+                try {
+                    // Update server-side record for this connection
+                    conn._spectatorSoundEnabled = !!data.enabled;
+                    // Reply with acknowledgement containing server timestamp and recommended audio delay
+                    const ack = { type: 'SPECTATOR_SOUND_ACK', ts: Date.now(), audioDelay: AUDIO_SYNC_DELAY_MS };
+                    // If we have a per-connection recommendation, prefer it
+                    try { ack.audioDelay = conn._recommendedAudioDelay || AUDIO_SYNC_DELAY_MS; } catch(e) {}
+                    if (conn && conn.open) {
+                        try { conn.send(ack); } catch (e) {}
+                    }
+                } catch (e) {}
+            }
+            // Viewer reports: audio jitter metrics
+            if (data && data.type === 'AUDIO_JITTER_REPORT') {
+                try {
+                    conn._lastJitterReport = data;
+                    // Optionally adjust master-side recommended audioDelay per-connection
+                    const reportedStd = Number(data.stddev || 0);
+                    if (reportedStd && Number.isFinite(reportedStd)) {
+                        // Increase per-connection recommended delay slightly
+                        conn._recommendedAudioDelay = Math.max(AUDIO_SYNC_DELAY_MS, Math.round(AUDIO_SYNC_DELAY_MS + 1.0 * reportedStd));
+                    }
+                    console.log('📈 Received AUDIO_JITTER_REPORT from', conn.peer, data);
+                } catch (e) {}
+            }
             if (data && data.type === 'PAUSE_REQUEST') {
                 console.log('🛑 Solicitud de pausa recibida de jugador');
                 pausarJuegoPorBingo(true); 
@@ -746,6 +792,40 @@ function setupMasterListeners() {
             updateSpectatorCount();
         });
     });
+
+    // Start periodic audio pings to viewers to help them re-sync audio timing
+    try {
+        if (audioPingTimer) clearInterval(audioPingTimer);
+        audioPingTimer = setInterval(() => {
+            try {
+                const now = Date.now();
+                connections.forEach(c => {
+                    try {
+                        const perDelay = (c && c._recommendedAudioDelay) ? c._recommendedAudioDelay : AUDIO_SYNC_DELAY_MS;
+                        const ping = { type: 'AUDIO_PING', ts: now, audioDelay: perDelay };
+                        if (c && c.open) c.send(ping);
+                    } catch(e) {}
+                });
+                renderConnectionMetrics();
+            } catch (e) {}
+        }, AUDIO_PING_INTERVAL_MS);
+    } catch (e) {}
+}
+
+function renderConnectionMetrics() {
+    try {
+        const el = document.getElementById('connectionMetrics');
+        if (!el) return;
+        if (!connections || connections.length === 0) { el.textContent = 'No hay conexiones activas'; return; }
+        const rows = connections.map(c => {
+            const peer = c && c.peer ? c.peer : 'unknown';
+            const jitter = (c && c._lastJitterReport && c._lastJitterReport.stddev) ? c._lastJitterReport.stddev : '-';
+            const mean = (c && c._lastJitterReport && c._lastJitterReport.mean) ? c._lastJitterReport.mean : '-';
+            const rec = (c && c._recommendedAudioDelay) ? c._recommendedAudioDelay : AUDIO_SYNC_DELAY_MS;
+            return `${peer}: delay ${rec}ms | jitter ${jitter}ms | mean ${mean}ms`;
+        });
+        el.innerHTML = rows.join('<br>');
+    } catch (e) {}
 }
 
 function releaseClaim() {
@@ -925,6 +1005,62 @@ function intentarConectarConMaster() {
     
     activeConnection.on('data', (data) => {
         console.log('📲 Actualización P2P recibida');
+        try {
+            if (data && data.type === 'SPECTATOR_SOUND_ACK') {
+                try { window.lastAudioSyncServerTs = Number(data.ts) || Date.now(); } catch (e) { window.lastAudioSyncServerTs = Date.now(); }
+                try { window.audioSyncOffsetMs = (Number(data.ts) + Number(data.audioDelay || 0)) - Date.now(); } catch (e) { window.audioSyncOffsetMs = 0; }
+                console.log('🔊 Received SPECTATOR_SOUND_ACK, audioSyncOffsetMs=', window.audioSyncOffsetMs);
+                if (typeof onSpectatorSoundAck === 'function') {
+                    try { onSpectatorSoundAck(data); } catch (e) {}
+                }
+                return;
+            }
+
+            // Handle periodic audio ping from master
+            if (data && data.type === 'AUDIO_PING') {
+                try {
+                    // Recalculate offset based on ping
+                    const serverTs = Number(data.ts) || Date.now();
+                    const recAudioDelay = Number(data.audioDelay || 0);
+                    window.lastAudioSyncServerTs = serverTs;
+                    // Compute one-way skew estimation = serverTs - recvTime
+                    const recvTime = Date.now();
+                    const skew = serverTs - recvTime; // positive if server ahead of client
+                    // Store sample and compute jitter as RMS of deltas
+                    try {
+                        const samples = window.audioJitterSamples || [];
+                        samples.push(skew);
+                        if (samples.length > window.audioJitterMaxSamples) samples.shift();
+                        window.audioJitterSamples = samples;
+                        // compute mean and stddev
+                        const mean = samples.reduce((a,b)=>a+b,0)/samples.length;
+                        const variance = samples.reduce((a,b)=>a+Math.pow(b-mean,2),0)/samples.length;
+                        const stddev = Math.sqrt(variance);
+                        window.audioEstimatedJitterMs = Math.round(stddev);
+                        // dynamic extra margin (1.5x stddev)
+                        window.dynamicAudioDelayExtraMs = Math.round(Math.max(0, 1.5 * stddev));
+                    } catch (e) { window.audioEstimatedJitterMs = 0; window.dynamicAudioDelayExtraMs = 0; }
+
+                    // Final applied offset uses server recommended delay + dynamic extra margin
+                    window.audioSyncOffsetMs = (serverTs + recAudioDelay + (window.dynamicAudioDelayExtraMs||0)) - recvTime;
+                    // Send aggregated jitter report to master periodically (after enough samples)
+                    try {
+                        const samples = window.audioJitterSamples || [];
+                        if (samples.length >= 10 && connToMaster && connToMaster.open) {
+                            const mean = samples.reduce((a,b)=>a+b,0)/samples.length;
+                            const variance = samples.reduce((a,b)=>a+Math.pow(b-mean,2),0)/samples.length;
+                            const stddev = Math.sqrt(variance);
+                            const report = { type: 'AUDIO_JITTER_REPORT', mean: Math.round(mean), stddev: Math.round(stddev), samples: samples.length };
+                            try { connToMaster.send(report); } catch(e) {}
+                            // reset samples after report
+                            window.audioJitterSamples = [];
+                        }
+                    } catch (e) {}
+                    console.log('🔁 AUDIO_PING received, audioSyncOffsetMs=', window.audioSyncOffsetMs, 'jitterMs=', window.audioEstimatedJitterMs, 'extraMs=', window.dynamicAudioDelayExtraMs);
+                    return;
+                } catch (e) {}
+            }
+        } catch (e) {}
         applySharedState(data);
     });
     
@@ -1014,6 +1150,23 @@ function applySharedState(state) {
         console.log('Sync ignored: Currently editing tracked cards');
         return;
     }
+            // Session expired notification from master
+            if (data && data.type === 'SESSION_EXPIRED') {
+                try {
+                    const code = data.code || '?';
+                    // Show a centered banner asking user to restart
+                    try {
+                        const el = document.getElementById('initialNameBanner');
+                        if (el) {
+                            el.style.display = 'block';
+                            el.querySelector('div') && (el.querySelector('div').textContent = `Sesión expirada (${code}). Reinicie el juego`);
+                        } else {
+                            showToast && showToast(`Sesión expirada (${code}). Reinicie el juego`);
+                        }
+                    } catch (e) { try { showToast(`Sesión expirada (${code}). Reinicie el juego`); } catch (e) {} }
+                } catch (e) {}
+                return;
+            }
 
     __applySharedStateCallCount++;
     try { console.log('TESTHOOK applySharedState called', {count: __applySharedStateCallCount, drawCounter: state && state.drawCounter, numerosSalidos_len: state && (state.numerosSalidos ? state.numerosSalidos.length : 'undefined')}); } catch (e) {}
@@ -1683,6 +1836,18 @@ function scheduleSpeakAt(text, whenMs) {
 
 function speakText(text) {
     if (!text) return;
+
+    // If this is a viewer and we have an audio sync offset from the master,
+    // schedule playback to align with the host timing.
+    try {
+        if (!isMaster && Number.isFinite(window.audioSyncOffsetMs)) {
+            // Ensure extra safety margin from dynamic jitter estimate
+            const offset = Math.max(0, Number(window.audioSyncOffsetMs));
+            const whenMs = Date.now() + offset;
+            scheduleSpeakAt(text, whenMs);
+            return;
+        }
+    } catch (e) {}
 
     if (preferredVoiceURI === 'google-premium') {
         // Cancelar audio anterior si existe
