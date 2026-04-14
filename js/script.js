@@ -2200,6 +2200,11 @@ function trackMyCards() {
         console.warn("Elemento 'myCardNumbersInput' no encontrado — usando valores almacenados.");
     }
     const playerName = nameEl ? nameEl.value.trim() : getTrackedPlayerName();
+    // Ask for confirmation before saving
+    try {
+        const confirmed = (typeof window !== 'undefined') ? window.confirm('¿Guardar y sincronizar estos cartones?') : true;
+        if (!confirmed) return;
+    } catch (e) {}
     if (!playerName) {
         showToast('Escribe tu nombre antes de guardar');
         if (nameEl) nameEl.focus();
