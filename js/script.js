@@ -63,6 +63,12 @@ function updateP2PStatus(status, color = "inherit") {
         if (color) el.style.color = color;
     }
     updateSpectatorCount();
+    try {
+        const dbg = document.getElementById('p2pDebugText');
+        if (dbg) dbg.textContent = status;
+        const web3Dbg = document.getElementById('web3DebugText');
+        if (web3Dbg && typeof status === 'string') web3Dbg.textContent = status;
+    } catch (e) {}
 }
 
 /**
@@ -742,6 +748,7 @@ function setupMasterListeners() {
         }
         
         conn.on('data', (data) => {
+            console.log('Master received data from', conn.peer, 'type=', data && data.type);
             if (data && data.type === 'presence-upsert') {
                 storeConnectionPresence(conn, data);
                 return;
@@ -952,8 +959,14 @@ function clearLocalHistory() {
 function intentarConectarConMaster() {
     if (isMaster) return;
     if (!gameCodeFixed) {
+    console.log('broadcastState: sending state to', connections.length, 'connections');
         updateP2PStatus("Sin Código", "#dc3545");
-        return;
+        try {
+            console.log('broadcastState: conn id=', conn.peer, 'open=', !!conn.open);
+            if (conn.open) conn.send({type:'SHARED_STATE', state});
+        } catch (ex) {
+            console.error('broadcastState: send error for', conn.peer, ex);
+        }
     }
 
     if (!peer || peer.destroyed) {
@@ -999,6 +1012,7 @@ function intentarConectarConMaster() {
     activeConnection.on('open', () => {
         clearTimeout(connectionTimeout);
         console.log('✅ Conexión establecida con el Master');
+        try { window.__viewerConnPeer = activeConnection.peer; } catch(e){}
         updateP2PStatus(`Activa (${gameCodeFixed})`, "#28a745");
         broadcastPresenceState();
         
@@ -1009,7 +1023,7 @@ function intentarConectarConMaster() {
     });
     
     activeConnection.on('data', (data) => {
-        console.log('📲 Actualización P2P recibida');
+        console.log('📲 Actualización P2P recibida', data && data.type);
         try {
             if (data && data.type === 'SPECTATOR_SOUND_ACK') {
                 try { window.lastAudioSyncServerTs = Number(data.ts) || Date.now(); } catch (e) { window.lastAudioSyncServerTs = Date.now(); }
