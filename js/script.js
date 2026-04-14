@@ -2192,6 +2192,26 @@ function setVoice(options) {
 
 // ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
 function trackMyCards() {
+    // Ensure any leftover fullscreen dark overlays are removed when the user clicks "Seguir"
+    try {
+        const idsToRemove = ['iosVoiceActivateBanner', 'initialNameBanner'];
+        idsToRemove.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+        });
+        // Remove any full-screen dark overlays created dynamically (very targeted)
+        Array.from(document.querySelectorAll('div')).forEach(d => {
+            try {
+                const s = d.style || {};
+                const bg = (s.background || s.backgroundColor || '').toString();
+                const w = (s.width || '').toString();
+                const h = (s.height || '').toString();
+                if (bg.includes('rgba(0,0,0') && w.trim() === '100%' && h.trim() === '100%') {
+                    if (d.parentNode) d.parentNode.removeChild(d);
+                }
+            } catch (e) {}
+        });
+    } catch (e) {}
     const nameEl = document.getElementById('playerNameInput');
     const inputEl = document.getElementById('myCardNumbersInput');
     if (!inputEl) {
