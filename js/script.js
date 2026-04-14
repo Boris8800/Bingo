@@ -1415,14 +1415,10 @@ function applySharedState(state) {
                     const code = state.code || '?';
                     // Show a centered banner asking user to restart
                     try {
-                        const el = document.getElementById('initialNameBanner');
-                        if (el) {
-                            el.style.display = 'block';
-                            el.querySelector('div') && (el.querySelector('div').textContent = `Sesión expirada (${code}). Reinicie el juego`);
-                        } else {
-                            showToast && showToast(`Sesión expirada (${code}). Reinicie el juego`);
-                        }
-                    } catch (e) { try { showToast(`Sesión expirada (${code}). Reinicie el juego`); } catch (e) {} }
+                        // Avoid showing the persistent centered banner in multi-window/web3 setups.
+                        // Use a toast notification instead so it doesn't block or persist across windows.
+                        showToast && showToast(`Sesión expirada (${code}). Reinicie el juego`);
+                    } catch (e) { try { console.warn('Failed to show toast for session expired'); } catch (e) {} }
                 } catch (e) {}
                 return;
             }
