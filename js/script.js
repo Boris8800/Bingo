@@ -20,6 +20,10 @@ const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastCha
 // 2. Variables de Control de Estado de Red (P2P via PeerJS)
 let isMaster = (typeof window !== 'undefined' && window.__IS_MASTER === false) ? false : true;
 let peer = null;
+let viewerPeerReconnectTimer = null;
+let viewerPeerReconnectAttempts = 0;
+const VIEWER_PEER_RECONNECT_BASE_MS = 2000;
+const VIEWER_PEER_RECONNECT_MAX_MS = 30000;
 // Test hook: allows tests to inject an internal Peer instance (only used in tests)
 function __setInternalPeerForTests(p) {
     try { peer = p; } catch (e) { console.warn('Could not set internal peer for tests:', e); }
@@ -103,6 +107,38 @@ function setStatusMessage(element, kind) {
     element.classList.add('status-message');
     element.classList.remove('is-success', 'is-error', 'is-warning');
     if (kind) element.classList.add(kind);
+}
+
+function clearViewerPeerReconnectTimer() {
+    if (viewerPeerReconnectTimer) {
+        clearTimeout(viewerPeerReconnectTimer);
+        viewerPeerReconnectTimer = null;
+    }
+}
+
+function resetViewerPeerReconnectState() {
+    viewerPeerReconnectAttempts = 0;
+    clearViewerPeerReconnectTimer();
+}
+
+function scheduleViewerPeerRestart(statusMessage, kind = '#ffc107') {
+    if (isMaster) return;
+    if (viewerPeerReconnectTimer) return;
+
+    viewerPeerReconnectAttempts = Math.min(viewerPeerReconnectAttempts + 1, 5);
+    const delayMs = Math.min(
+        VIEWER_PEER_RECONNECT_BASE_MS * Math.pow(2, viewerPeerReconnectAttempts - 1),
+        VIEWER_PEER_RECONNECT_MAX_MS
+    );
+
+    updateP2PStatus(statusMessage || 'Reconectando...', kind);
+    viewerPeerReconnectTimer = setTimeout(() => {
+        viewerPeerReconnectTimer = null;
+        try { if (connToMaster) { try { connToMaster.close(); } catch (e) {} connToMaster = null; } } catch (e) {}
+        try { if (peer && !peer.destroyed) peer.destroy(); } catch (e) {}
+        peer = null;
+        try { initCrossDeviceSync(); } catch (e) { console.warn('No se pudo reiniciar la conexión P2P del jugador:', e); }
+    }, delayMs);
 }
 let lastDrawCounterReceived = -1; 
 let drawCounter = 0;
@@ -926,8 +962,10 @@ window.addEventListener('storage', (event) => {
  */
 function initCrossDeviceSync() {
     if (isMaster || !gameCodeFixed) return;
+    clearViewerPeerReconnectTimer();
     // Si el jugador está intentando conectarse a un token distinto, limpiar historial local
     if (lastConnectedGameCode !== gameCodeFixed) {
+        viewerPeerReconnectAttempts = 0;
         clearLocalHistory();
         lastConnectedGameCode = gameCodeFixed;
     }
@@ -944,13 +982,13 @@ function initCrossDeviceSync() {
     
     peer.on('open', (id) => {
         console.log('📡 Mi ID de Jugador:', id);
+        resetViewerPeerReconnectState();
         intentarConectarConMaster();
     });
 
     peer.on('disconnected', () => {
-        console.warn('Jugador desconectado del servidor. Reconectando...');
-        updateP2PStatus("Reconectando...", "#ffc107");
-        peer.reconnect();
+        console.warn('Jugador desconectado del servidor. Reintentando con backoff...');
+        scheduleViewerPeerRestart('Servidor P2P temporalmente no disponible', '#ffc107');
     });
 
     peer.on('error', (err) => {
@@ -960,6 +998,8 @@ function initCrossDeviceSync() {
             updateP2PStatus(`Host no encontrado (${attemptedId})`, "#dc3545");
             // Reintentar en un momento por si el host está tardando en subir
             setTimeout(intentarConectarConMaster, 6000);
+        } else if (err.type === 'network' || err.type === 'server-error') {
+            scheduleViewerPeerRestart('Servidor P2P temporalmente no disponible', '#ffc107');
         } else {
             updateP2PStatus("Error de Conexión", "#dc3545");
         }
@@ -1001,14 +1041,8 @@ function clearLocalHistory() {
 function intentarConectarConMaster() {
     if (isMaster) return;
     if (!gameCodeFixed) {
-    console.log('broadcastState: sending state to', connections.length, 'connections');
         updateP2PStatus("Sin Código", "#dc3545");
-        try {
-            console.log('broadcastState: conn id=', conn.peer, 'open=', !!conn.open);
-            if (conn.open) conn.send({type:'SHARED_STATE', state});
-        } catch (ex) {
-            console.error('broadcastState: send error for', conn.peer, ex);
-        }
+        return;
     }
 
     if (!peer || peer.destroyed) {
@@ -1018,9 +1052,7 @@ function intentarConectarConMaster() {
     }
 
     if (peer.disconnected) {
-        updateP2PStatus("Reconectando a Servidor...", "#ffc107");
-        peer.reconnect();
-        setTimeout(intentarConectarConMaster, 3000);
+        scheduleViewerPeerRestart("Reconectando a Servidor...", "#ffc107");
         return;
     }
 
