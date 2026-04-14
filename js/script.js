@@ -225,6 +225,8 @@ let presenceLocalChannel = null;
 let presenceLocalListenersAttached = false;
 let connectedPlayers = [];
 let connectedPlayersMode = 'main';
+let relaySyncEnabled = false;
+let relayJoinedToken = null;
 
 function getPresenceSessionId() {
     if (presenceSessionId) return presenceSessionId;
@@ -546,6 +548,43 @@ function clearPresenceReconnectTimer() {
     }
 }
 
+function setRelaySyncEnabled(enabled, reason) {
+    relaySyncEnabled = !!enabled;
+    if (relaySyncEnabled) {
+        console.warn('Relay sync enabled:', reason || 'fallback activated');
+        if (!isMaster) {
+            updateP2PStatus(reason || 'Usando sincronización de respaldo', '#ffc107');
+        }
+        relayJoinedToken = null;
+        try { syncRelayChannel(); } catch (e) { console.warn('No se pudo sincronizar el canal relay:', e); }
+    }
+}
+
+function syncRelayChannel() {
+    if (!presenceSocket || presenceSocket.readyState !== WebSocket.OPEN) return;
+    if (!gameCodeFixed) return;
+
+    const token = String(gameCodeFixed);
+    if (relayJoinedToken !== token) {
+        try {
+            presenceSocket.send(JSON.stringify({ type: 'join', token }));
+            relayJoinedToken = token;
+        } catch (e) {
+            console.warn('No se pudo unir al canal relay:', e);
+        }
+    }
+}
+
+function sendRelayState(state) {
+    if (!presenceSocket || presenceSocket.readyState !== WebSocket.OPEN) return;
+    if (!gameCodeFixed) return;
+    try {
+        presenceSocket.send(JSON.stringify({ type: 'update', token: String(gameCodeFixed), state }));
+    } catch (e) {
+        console.warn('No se pudo enviar el estado por relay:', e);
+    }
+}
+
 function sendPresenceRemoval() {
     const payload = {
         type: 'presence-remove',
@@ -581,7 +620,9 @@ function initPresenceTracking() {
 
     if (isMaster) {
         syncConnectedPlayersFromConnections();
-        return;
+        if (!hasWebSocketPresence()) {
+            return;
+        }
     }
 
     if (connToMaster && connToMaster.open) {
@@ -609,6 +650,7 @@ function initPresenceTracking() {
     }
 
     presenceSocket.addEventListener('open', () => {
+        syncRelayChannel();
         if (connectedPlayersMode === 'main') {
             presenceSocket.send(JSON.stringify({ type: 'presence-subscribe' }));
         } else {
@@ -620,6 +662,9 @@ function initPresenceTracking() {
                         type: 'presence-heartbeat',
                         ...getPresencePayload(),
                     }));
+                    if (relaySyncEnabled && !isMaster) {
+                        syncRelayChannel();
+                    }
                 }
             }, PRESENCE_HEARTBEAT_MS);
         }
@@ -631,6 +676,13 @@ function initPresenceTracking() {
             if (data.type === 'presence-snapshot') {
                 connectedPlayers = Array.isArray(data.players) ? data.players : [];
                 renderConnectedPlayers(connectedPlayers);
+                return;
+            }
+
+            if (data.type === 'update' && data.state && !isMaster) {
+                if (relaySyncEnabled) {
+                    applySharedState(data.state);
+                }
             }
         } catch (e) {
             console.warn('Mensaje de presencia inválido:', e);
@@ -811,6 +863,7 @@ function claimToken(code) {
             gameCodeFixed = code;
             setupMasterListeners();
             updateP2PStatus(`Activa (${code})`, "#28a745");
+            try { syncRelayChannel(); } catch (e) {}
             resolve(true);
         });
 
@@ -1042,9 +1095,17 @@ function initCrossDeviceSync() {
         if (err.type === 'peer-unavailable') {
             const attemptedId = `${PEER_PREFIX}-${gameCodeFixed}`;
             updateP2PStatus(`Host no encontrado (${attemptedId})`, "#dc3545");
+            if (hasWebSocketPresence()) {
+                setRelaySyncEnabled(true, 'Usando sincronización de respaldo');
+                return;
+            }
             // Reintentar con backoff sin acumular timers
             scheduleViewerMasterConnectRetry(`Host no encontrado (${attemptedId})`, "#dc3545");
         } else if (err.type === 'network' || err.type === 'server-error') {
+            if (hasWebSocketPresence()) {
+                setRelaySyncEnabled(true, 'Servidor P2P temporalmente no disponible');
+                return;
+            }
             scheduleViewerPeerRestart('Servidor P2P temporalmente no disponible', '#ffc107');
         } else {
             updateP2PStatus("Error de Conexión", "#dc3545");
@@ -1208,6 +1269,10 @@ function intentarConectarConMaster() {
         if (connToMaster === activeConnection) {
             connToMaster = null;
         }
+        if (err && (err.type === 'network' || err.type === 'server-error' || err.type === 'peer-unavailable')) {
+            setRelaySyncEnabled(true, 'Servidor P2P temporalmente no disponible');
+            return;
+        }
         scheduleViewerMasterConnectRetry('Error de conexión', '#dc3545');
     });
 
@@ -1216,6 +1281,10 @@ function intentarConectarConMaster() {
         console.warn('Conexión cerrada. Reintentando...');
         if (connToMaster === activeConnection) {
             connToMaster = null;
+        }
+        if (hasWebSocketPresence()) {
+            setRelaySyncEnabled(true, 'Usando sincronización de respaldo');
+            return;
         }
         scheduleViewerMasterConnectRetry('Reconectando...', '#ffc107');
     });
@@ -1262,6 +1331,10 @@ async function broadcastState() {
                 conn.send(state);
             }
         });
+    }
+
+    if (isMaster && presenceSocket && presenceSocket.readyState === WebSocket.OPEN) {
+        sendRelayState(state);
     }
 
     // Sincronización Local (BroadcastChannel)
