@@ -71,6 +71,9 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 
    Si quieres una explicación técnica más completa, sigue leyendo la sección "Detalles Técnicos de Sincronización".
 
+   Contacto / Soporte
+   - Si necesitas ayuda o quieres reportar un problema, escribe a: B80008800@gmail.com
+
 ## 🛠️ Detalles Técnicos de Sincronización
 
 Este proyecto utiliza tres capas de sincronización para asegurar que nadie se pierda ningún número:
