@@ -333,8 +333,13 @@ function renderConnectedPlayers(players) {
 
     list.innerHTML = '';
 
+    // Only show players that are on the same page (e.g., 'web3' viewers on the web3 page)
     const visiblePlayers = Array.isArray(players)
-        ? players.filter((player) => Array.isArray(player.trackedCards) && player.trackedCards.length > 0)
+        ? players.filter((player) => {
+            const samePage = typeof player.page === 'string' ? player.page === connectedPlayersMode : true;
+            const hasCards = Array.isArray(player.trackedCards) && player.trackedCards.length > 0;
+            return samePage && hasCards;
+        })
         : [];
 
     if (visiblePlayers.length === 0) {
