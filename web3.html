@@ -52,9 +52,21 @@
             if (b) b.style.display = 'none';
         }
 
+        function restoreInitialNameBanner() {
+            const bannerInput = document.getElementById('initialPlayerName');
+            const nameInput = document.getElementById('playerNameInput');
+            let storedName = '';
+            try { storedName = localStorage.getItem('bingo_player_name') || ''; } catch (e) {}
+
+            if (bannerInput && storedName) bannerInput.value = storedName;
+            if (nameInput && storedName) nameInput.value = storedName;
+            if (storedName) hideInitialNameBanner();
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('initialNameBtn');
             const input = document.getElementById('initialPlayerName');
+            restoreInitialNameBanner();
             if (btn && input) {
                 btn.addEventListener('click', () => {
                     const val = input.value && input.value.trim();
