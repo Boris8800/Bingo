@@ -177,6 +177,15 @@ function getPresencePayload() {
         sessionId: getPresenceSessionId(),
         playerName: getTrackedPlayerName(),
         trackedCards: getTrackedPlayerCards(),
+        trackedCardsSummary: Array.isArray(myTrackedCardNumbers) && myTrackedCardNumbers.length > 0
+            ? myTrackedCardNumbers.join(', ')
+            : '',
+        lastAction: window.lastPlayerAction || 'presence-updated',
+        lastStatusMessage: window.lastPlayerStatusMessage || '',
+        lastVerifiedCarton: window.lastVerifiedCarton || null,
+        lastVerifiedResult: window.lastVerifiedResult || '',
+        lastVerifiedMissing: Array.isArray(window.lastVerifiedMissing) ? window.lastVerifiedMissing.slice() : [],
+        lastVerifiedAt: window.lastVerifiedAt || null,
         gameCode: gameCodeFixed || null,
         page: (typeof window !== 'undefined' && window.__IS_MASTER === false) ? 'web3' : 'main',
         updatedAt: Date.now(),
@@ -237,6 +246,15 @@ function normalizePresenceEntry(entry) {
         trackedCards: Array.isArray(entry.trackedCards)
             ? entry.trackedCards.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0)
             : [],
+        trackedCardsSummary: typeof entry.trackedCardsSummary === 'string' ? entry.trackedCardsSummary : '',
+        lastAction: typeof entry.lastAction === 'string' ? entry.lastAction : 'presence-updated',
+        lastStatusMessage: typeof entry.lastStatusMessage === 'string' ? entry.lastStatusMessage : '',
+        lastVerifiedCarton: entry.lastVerifiedCarton == null || entry.lastVerifiedCarton === '' ? null : Number(entry.lastVerifiedCarton),
+        lastVerifiedResult: typeof entry.lastVerifiedResult === 'string' ? entry.lastVerifiedResult : '',
+        lastVerifiedMissing: Array.isArray(entry.lastVerifiedMissing)
+            ? entry.lastVerifiedMissing.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0)
+            : [],
+        lastVerifiedAt: entry.lastVerifiedAt == null || entry.lastVerifiedAt === '' ? null : Number(entry.lastVerifiedAt),
         gameCode: entry.gameCode == null ? null : String(entry.gameCode),
         page: typeof entry.page === 'string' ? entry.page : null,
         updatedAt: Number(entry.updatedAt) || Date.now(),
@@ -379,8 +397,25 @@ function renderConnectedPlayers(players) {
             const trackedCards = Array.isArray(player.trackedCards) ? player.trackedCards : [];
             cards.textContent = trackedCards.length ? `Cartones: ${trackedCards.join(', ')}` : 'Cartones: ---';
 
+            const status = document.createElement('div');
+            status.style.fontSize = '0.82rem';
+            status.style.color = 'var(--text-secondary)';
+            status.style.marginTop = '6px';
+            const statusParts = [];
+            if (player.lastStatusMessage) statusParts.push(player.lastStatusMessage);
+            if (player.lastAction && player.lastAction !== 'presence-updated') statusParts.push(`Acción: ${player.lastAction}`);
+            if (player.lastVerifiedCarton) {
+                const verifiedText = player.lastVerifiedResult ? player.lastVerifiedResult : 'verificado';
+                statusParts.push(`Cartón ${player.lastVerifiedCarton}: ${verifiedText}`);
+                if (Array.isArray(player.lastVerifiedMissing) && player.lastVerifiedMissing.length > 0) {
+                    statusParts.push(`Faltan: ${player.lastVerifiedMissing.join(', ')}`);
+                }
+            }
+            status.textContent = statusParts.length ? statusParts.join(' | ') : 'Sin estado adicional';
+
             card.appendChild(name);
             card.appendChild(cards);
+            card.appendChild(status);
             container.appendChild(card);
         });
 
@@ -1977,15 +2012,29 @@ function trackMyCards() {
     
     actualizarMisCartonesBingoDisplay();
     inputEl.value = myTrackedCardNumbers.join(', ');
+
+    window.lastPlayerAction = 'guardado';
+    window.lastPlayerStatusMessage = myTrackedCardNumbers.length
+        ? `Guardado y sincronizado: ${myTrackedCardNumbers.length} cartones`
+        : 'Guardado sin cartones';
+    window.lastVerifiedCarton = null;
+    window.lastVerifiedResult = '';
+    window.lastVerifiedMissing = [];
+    window.lastVerifiedAt = Date.now();
+
     saveGameState();
     broadcastPresenceState();
 
     // Notificación de guardado
-    showToast("¡Guardado y Verificado!");
+    showToast(myTrackedCardNumbers.length
+        ? `Guardado y sincronizado: ${myTrackedCardNumbers.length} cartones`
+        : 'Guardado y sincronizado');
     
     const msgEl = document.getElementById('trackerMsg');
     if (msgEl) {
-        msgEl.textContent = "✓ Guardado";
+        msgEl.textContent = myTrackedCardNumbers.length
+            ? `✓ Guardado y enviado (${myTrackedCardNumbers.length} cartones)`
+            : '✓ Guardado y enviado';
         msgEl.style.color = "#28a745";
         msgEl.style.fontSize = "0.8em";
         setTimeout(() => {
@@ -2525,6 +2574,13 @@ function verificarCarton() {
                     if (numerosEnCarton.length > 0 && faltantes.length === 0) { // ¡Bingo detectado!
                     mensajeVerificacionCarton.textContent = "¡BINGO!";
                     mensajeVerificacionCarton.style.color = "green";
+
+                        window.lastPlayerAction = 'verificado';
+                        window.lastPlayerStatusMessage = `Verificado: cartón ${numeroCarton} con bingo`;
+                        window.lastVerifiedCarton = numeroCarton;
+                        window.lastVerifiedResult = 'BINGO';
+                        window.lastVerifiedMissing = [];
+                        window.lastVerifiedAt = Date.now();
                     
                     // Anuncio vocal y sonoro del resultado (siempre en verificación manual)
                     playBingoSoundEffect();
@@ -2543,7 +2599,16 @@ function verificarCarton() {
                 } else {
                     // Informar qué números faltan para cantar Bingo
                     mensajeVerificacionCarton.innerHTML = `Faltan: <span style="color:red">${faltantes.join(', ')}</span>`;
+
+                    window.lastPlayerAction = 'verificado';
+                    window.lastPlayerStatusMessage = `Verificado: cartón ${numeroCarton} sin bingo`;
+                    window.lastVerifiedCarton = numeroCarton;
+                    window.lastVerifiedResult = 'SIN_BINGO';
+                    window.lastVerifiedMissing = faltantes.slice();
+                    window.lastVerifiedAt = Date.now();
                 }
+
+                try { broadcastPresenceState(); } catch (e) {}
             }
         }
     }
