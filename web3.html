@@ -382,11 +382,6 @@
 
     <script>window.__IS_MASTER = false;</script>
     <script src="js/script.js?v=10"></script>
-    <!-- Footer metrics (moved from main) -->
-    <div id="webFooterMetrics" style="width:100%; text-align:center; margin:14px 0; color:var(--text-secondary); font-size:0.95rem;">
-        <div>ec779ca5-2de0-4f9f-9b4b-d3007b6f7e7a: delay 500ms | jitter -ms | mean -ms</div>
-        <div style="margin-top:6px;">P2P Debug: <span id="p2pDebugText">idle</span></div>
-    </div>
     <script>
         function loadNewGameFromToken() {
             const input = document.getElementById('newTokenInput');
@@ -522,6 +517,12 @@
                 </section>
             </div>
         </div>
+    </div>
+
+    <!-- Footer metrics (end of page) -->
+    <div id="webFooterMetrics" style="width:100%; text-align:center; margin:14px 0; color:var(--text-secondary); font-size:0.95rem;">
+        <div>ec779ca5-2de0-4f9f-9b4b-d3007b6f7e7a: delay 500ms | jitter -ms | mean -ms</div>
+        <div style="margin-top:6px;">P2P Debug: <span id="p2pDebugText">idle</span></div>
     </div>
 </body>
 </html>
