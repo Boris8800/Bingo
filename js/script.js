@@ -2194,9 +2194,10 @@ function setVoice(options) {
 function trackMyCards() {
     const nameEl = document.getElementById('playerNameInput');
     const inputEl = document.getElementById('myCardNumbersInput');
+    // If the input element is missing (different page variant like web3),
+    // do not abort — fall back to stored values and continue.
     if (!inputEl) {
-        console.error("Elemento 'myCardNumbersInput' no encontrado.");
-        return;
+        console.warn("Elemento 'myCardNumbersInput' no encontrado — usando valores almacenados.");
     }
     const playerName = nameEl ? nameEl.value.trim() : getTrackedPlayerName();
     if (!playerName) {
