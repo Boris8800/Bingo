@@ -2097,52 +2097,89 @@ function scheduleSpeakAt(text, whenMs) {
     }, delay);
 }
 
-function speakText(text) {
-    if (!text) return;
+let speechQueue = [];
+let isSpeaking = false;
 
-    // If this is a viewer and we have an audio sync offset from the master,
-    // schedule playback to align with the host timing.
+function speakText(text) {
+    if (!text || typeof text !== 'string') return;
+
+    // Use a queue to prevent cutting off announcements
+    speechQueue.push(String(text));
+    processSpeechQueue();
+}
+
+function processSpeechQueue() {
+    if (isSpeaking || speechQueue.length === 0) return;
+
+    const text = speechQueue.shift();
+    isSpeaking = true;
+
+    // Determine target play time (mostly for viewers)
+    let targetTime = Date.now();
     try {
         if (!isMaster && Number.isFinite(window.audioSyncOffsetMs)) {
-            // Ensure extra safety margin from dynamic jitter estimate
             const offset = Math.max(0, Number(window.audioSyncOffsetMs));
-            const whenMs = Date.now() + offset;
-            scheduleSpeakAt(text, whenMs);
-            return;
+            targetTime = Date.now() + offset;
         }
     } catch (e) {}
 
-    if (preferredVoiceURI === 'google-premium') {
-        // Cancelar audio anterior si existe
-        if (backgroundAudio) {
-            backgroundAudio.pause();
-            backgroundAudio = null;
+    const playSpeech = () => {
+        if (preferredVoiceURI === 'google-premium') {
+            // Google Premium TTS fallback
+            const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=es&client=tw-ob`;
+            const audio = new Audio(url);
+            
+            audio.onended = () => {
+                isSpeaking = false;
+                processSpeechQueue();
+            };
+            audio.onerror = () => {
+                isSpeaking = false;
+                speakWithWebSpeechInternal(text, true); // retry with regular TTS
+            };
+            audio.play().catch(e => {
+                console.warn("Google Premium failed, trying regular voice:", e);
+                isSpeaking = false;
+                speakWithWebSpeechInternal(text, true);
+            });
+        } else {
+            speakWithWebSpeechInternal(text, true);
         }
-        
-        // Usar el truco de Google Translate TTS (Voz de muy alta calidad)
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=es&client=tw-ob`;
-        backgroundAudio = new Audio(url);
-        backgroundAudio.play().catch(e => {
-            console.warn("Error con Google Premium TTS, reintentando con voz normal:", e);
-            speakWithWebSpeechInternal(text);
-        });
+    };
+
+    const delay = Math.max(0, targetTime - Date.now());
+    if (delay > 0) {
+        setTimeout(playSpeech, delay);
     } else {
-        speakWithWebSpeechInternal(text);
+        playSpeech();
     }
 }
 
-function speakWithWebSpeechInternal(text) {
-    if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance(text);
-        if (selectedVoice && selectedVoice.voiceURI !== 'google-premium') {
-            msg.voice = selectedVoice;
-            msg.lang = selectedVoice.lang;
-        } else {
-            msg.lang = 'es-ES';
-        }
-        window.speechSynthesis.speak(msg);
+function speakWithWebSpeechInternal(text, isFromQueue = false) {
+    if (!window.speechSynthesis) {
+        isSpeaking = false;
+        processSpeechQueue();
+        return;
     }
+
+    const msg = new SpeechSynthesisUtterance(text);
+    if (selectedVoice && selectedVoice.voiceURI !== 'google-premium') {
+        msg.voice = selectedVoice;
+        msg.lang = selectedVoice.lang;
+    } else {
+        msg.lang = 'es-ES';
+    }
+
+    msg.onend = () => {
+        isSpeaking = false;
+        processSpeechQueue();
+    };
+    msg.onerror = () => {
+        isSpeaking = false;
+        processSpeechQueue();
+    };
+
+    window.speechSynthesis.speak(msg);
 }
 
 function setVoice(options) {
@@ -2479,10 +2516,15 @@ function resumeCrossDeviceSyncAfterTracking() {
     }
 }
 
+let trackingHandlersAttached = false;
 function attachTrackingInputHandlers() {
+    if (trackingHandlersAttached) return;
+    
     const nameEl = document.getElementById('playerNameInput');
     const inputEl = document.getElementById('myCardNumbersInput');
     if (!inputEl && !nameEl) return;
+    
+    trackingHandlersAttached = true;
     
     // Cuando el usuario hace click o pone el foco, pausamos la sincronización
     const pauseHandler = () => {
