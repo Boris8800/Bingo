@@ -2192,33 +2192,48 @@ function setVoice(options) {
 
 // ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
 function trackMyCards() {
+    console.log("trackMyCards called");
     const nameEl = document.getElementById('playerNameInput');
     const inputEl = document.getElementById('myCardNumbersInput');
-    // If the input element is missing (different page variant like web3),
-    // do not abort — fall back to stored values and continue.
+
+    // Handle missing input scenario (Web3)
     if (!inputEl) {
         console.warn("Elemento 'myCardNumbersInput' no encontrado — usando valores almacenados.");
     }
-    const playerName = nameEl ? nameEl.value.trim() : getTrackedPlayerName();
+
     // Ask for confirmation before saving
     try {
-        const confirmed = (typeof window !== 'undefined') ? window.confirm('¿Guardar y sincronizar estos cartones?') : true;
+        const confirmed = window.confirm('¿Guardar y sincronizar estos cartones?');
         if (!confirmed) return;
-    } catch (e) {}
-    if (!playerName) {
-        showToast('Escribe tu nombre antes de guardar');
-        if (nameEl) nameEl.focus();
-        return;
+    } catch (e) {
+        console.error("Confirmation error:", e);
     }
-    const inputText = inputEl.value;
+
+    const playerName = nameEl ? nameEl.value.trim() : getTrackedPlayerName();
+    
+    // If name is missing, ask for it (especially important for Web3)
+    let finalPlayerName = playerName;
+    if (!finalPlayerName) {
+        const promptName = window.prompt("Escribe tu nombre para participar:");
+        if (promptName && promptName.trim()) {
+            finalPlayerName = promptName.trim();
+            if (nameEl) nameEl.value = finalPlayerName;
+        } else {
+            showToast('Escribe tu nombre antes de guardar');
+            if (nameEl) nameEl.focus();
+            return;
+        }
+    }
+
+    const inputText = inputEl ? inputEl.value : (myTrackedCardNumbers.join(', '));
     myTrackedCardNumbers = validateCardNumbers(inputText);
-    try { localStorage.setItem('bingo_player_name', playerName); } catch (e) {}
+    try { localStorage.setItem('bingo_player_name', finalPlayerName); } catch (e) {}
 
     // Permitir añadir incluso en marcha: verificamos estado actual
     verificarTodosLosCartones({ silent: true });
     
     actualizarMisCartonesBingoDisplay();
-    inputEl.value = myTrackedCardNumbers.join(', ');
+    if (inputEl) inputEl.value = myTrackedCardNumbers.join(', ');
 
     window.lastPlayerAction = 'guardado';
     window.lastPlayerStatusMessage = myTrackedCardNumbers.length
@@ -2252,6 +2267,9 @@ function trackMyCards() {
                 msgEl.classList.remove('status-message', 'is-success', 'is-error', 'is-warning');
             }, 2000);
         }
+    } else {
+        // Confirmation for Web3
+        showToast("¡Configuración guardada!");
     }
 
     // Después de guardar los cartones, reanudar la sincronización si estaba pausada.
