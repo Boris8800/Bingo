@@ -77,9 +77,6 @@
 <div id="p2pStatusMaster" style="font-size: 0.8em; margin-top: 8px; font-weight: bold; color: var(--text-secondary);">
     Estado Sincronización: <span id="p2pStatusText">Inactivo</span>
     <div id="spectatorCountDisplay" style="margin-top: 4px; opacity: 0.8;">Jugadores conectados: 0</div>
-    <div id="connectionMetrics" style="margin-top:8px; font-size:0.8rem; color:var(--text-secondary);"></div>
-    <!-- P2P debug panel moved to web3 footer -->
-</div>
 
 <div id="speedControl" class="control-box">
     <div class="speed-control-header">
@@ -470,7 +467,7 @@
 
 <script src="js/script.js?v=7"></script>
 <!-- Footer metrics line (debug) -->
-<div id="footerMetrics" style="width:100%; text-align:center; margin:12px 0; color:var(--text-secondary); font-size:0.9rem;">59af82c7-f481-4655-aeab-277c37b0b3d7: delay 500ms | jitter -ms | mean -ms</div>
+<div id="connectionMetrics" style="width:100%; text-align:center; margin:12px 0; color:var(--text-secondary); font-size:0.9rem;"></div>
 <script>
     // Enable audio context on user click to unlock Web Audio API
     function enableAudioOnClick() {

@@ -70,7 +70,11 @@ function updateP2PStatus(status, color = "inherit") {
         el.textContent = status;
         if (color) el.style.color = color;
     }
-    updateSpectatorCount();
+    if (isMaster) {
+        syncConnectedPlayersFromConnections();
+    } else {
+        updateSpectatorCount();
+    }
     try {
         const dbg = document.getElementById('p2pDebugText');
         if (dbg) dbg.textContent = status;
@@ -82,12 +86,22 @@ function updateP2PStatus(status, color = "inherit") {
 /**
  * Actualiza el contador de jugadores en el Master
  */
-function updateSpectatorCount() {
+function updateSpectatorCount(playerList = null) {
     if (!isMaster) return;
     const el = document.getElementById('spectatorCountDisplay');
     if (el) {
-        const activeConns = connections.filter(c => c && c.open).length;
-        el.textContent = `Jugadores conectados: ${activeConns}`;
+        // Use provided list or fallback to global connectedPlayers (Relay) and connections (P2P)
+        const sourceList = playerList || connectedPlayers;
+        
+        // Filter to only web3 viewers with matching game code
+        const activeWeb3Players = sourceList.filter(p => {
+            if (p.page !== 'web3') return false;
+            if (gameCodeFixed && p.gameCode && String(p.gameCode) !== String(gameCodeFixed)) return false;
+            return true;
+        });
+        
+        const count = activeWeb3Players.length;
+        el.textContent = `Jugadores conectados: ${count}`;
     }
 }
 
@@ -282,12 +296,35 @@ function getPresencePayload() {
 
 function syncConnectedPlayersFromConnections() {
     if (!isMaster) return;
-    connectedPlayers = connections
-        .map((conn) => conn && conn._presenceInfo ? conn._presenceInfo : null)
-        .filter(Boolean)
-        .sort((a, b) => String(a.playerName || '').localeCompare(String(b.playerName || ''), 'es'));
-    renderConnectedPlayers(connectedPlayers);
-    updateSpectatorCount();
+    
+    // Create a set of session IDs from P2P connections
+    const p2pSessions = new Set();
+    const p2pPlayers = connections
+        .map((conn) => {
+            if (conn && conn._presenceInfo) {
+                p2pSessions.add(conn._presenceInfo.sessionId);
+                return conn._presenceInfo;
+            }
+            return null;
+        })
+        .filter(Boolean);
+
+    // Filter connectedPlayers (from Relay) to only include ones not in P2P list to avoid duplicates
+    // unless we want to combine them anyway. Usually P2P info is more "fresh".
+    const combined = [...p2pPlayers];
+    
+    // Add relay players who aren't already represented in P2P
+    connectedPlayers.forEach(p => {
+        if (!p2pSessions.has(p.sessionId)) {
+            combined.push(p);
+        }
+    });
+
+    // Final list for rendering
+    const finalPlayers = combined.sort((a, b) => String(a.playerName || '').localeCompare(String(b.playerName || ''), 'es'));
+    
+    renderConnectedPlayers(finalPlayers);
+    updateSpectatorCount(finalPlayers);
 }
 
 function storeConnectionPresence(conn, payload) {
@@ -448,6 +485,17 @@ function renderConnectedPlayers(players) {
     // Only show players that are on the same page (e.g., 'web3' viewers on the web3 page)
     const visiblePlayers = Array.isArray(players)
         ? players.filter((player) => {
+            // Master wants to see everyone who has a game code matching (or if no code yet)
+            if (isMaster) {
+                // If master hasn't started/shared a fixed game code, it might be null
+                if (gameCodeFixed && player.gameCode && String(player.gameCode) !== String(gameCodeFixed)) return false;
+                
+                // Only show web3 players on the master list
+                if (player.page !== 'web3') return false;
+                
+                return true;
+            }
+            
             const samePage = typeof player.page === 'string' ? player.page === connectedPlayersMode : true;
             const hasCards = Array.isArray(player.trackedCards) && player.trackedCards.length > 0;
             return samePage && hasCards;
@@ -616,7 +664,8 @@ function schedulePresenceReconnect() {
 
 function initPresenceTracking() {
     const isWeb3 = (typeof window !== 'undefined' && window.__IS_MASTER === false) || document.body?.getAttribute('data-page') === 'web3';
-    connectedPlayersMode = isWeb3 ? 'web3' : 'main';
+    // The master always wants to see the web3 (viewer) connected players
+    connectedPlayersMode = (isMaster) ? 'web3' : (isWeb3 ? 'web3' : 'main');
 
     if (isMaster) {
         syncConnectedPlayersFromConnections();
@@ -651,7 +700,8 @@ function initPresenceTracking() {
 
     presenceSocket.addEventListener('open', () => {
         syncRelayChannel();
-        if (connectedPlayersMode === 'main') {
+        // Master also subscribes to updates to see web3 players via relay
+        if (isMaster || connectedPlayersMode === 'main') {
             presenceSocket.send(JSON.stringify({ type: 'presence-subscribe' }));
         } else {
             broadcastPresenceState();
@@ -1000,7 +1050,7 @@ function setupMasterListeners() {
 
 function renderConnectionMetrics() {
     try {
-        const el = document.getElementById('connectionMetrics');
+        const el = document.getElementById('connectionMetrics') || document.getElementById('webFooterMetrics');
         if (!el) return;
         if (!connections || connections.length === 0) { el.textContent = 'No hay conexiones activas'; return; }
         const rows = connections.map(c => {
