@@ -97,6 +97,13 @@ function showToast(message) {
         }, 500);
     }, 3000);
 }
+
+function setStatusMessage(element, kind) {
+    if (!element) return;
+    element.classList.add('status-message');
+    element.classList.remove('is-success', 'is-error', 'is-warning');
+    if (kind) element.classList.add(kind);
+}
 let lastDrawCounterReceived = -1; 
 let drawCounter = 0;
 let gameCodeFixed = null;
@@ -1999,7 +2006,7 @@ function trackMyCards() {
     }
     const playerName = nameEl ? nameEl.value.trim() : getTrackedPlayerName();
     if (!playerName) {
-        showToast('Escribe tu nombre para enviar tus datos');
+        showToast('Escribe tu nombre antes de guardar');
         if (nameEl) nameEl.focus();
         return;
     }
@@ -2015,8 +2022,8 @@ function trackMyCards() {
 
     window.lastPlayerAction = 'guardado';
     window.lastPlayerStatusMessage = myTrackedCardNumbers.length
-        ? `Enviado a Jugadores Conectados: ${myTrackedCardNumbers.length} cartones`
-        : 'Enviado a Jugadores Conectados';
+        ? `Guardado y sincronizado: ${myTrackedCardNumbers.length} cartones`
+        : 'Guardado sin cartones';
     window.lastVerifiedCarton = null;
     window.lastVerifiedResult = '';
     window.lastVerifiedMissing = [];
@@ -2027,18 +2034,20 @@ function trackMyCards() {
 
     // Notificación de guardado
     showToast(myTrackedCardNumbers.length
-        ? `Enviado a Jugadores Conectados: ${myTrackedCardNumbers.length} cartones`
-        : 'Enviado a Jugadores Conectados');
+        ? `Guardado y sincronizado: ${myTrackedCardNumbers.length} cartones`
+        : 'Guardado y sincronizado');
     
     const msgEl = document.getElementById('trackerMsg');
     if (msgEl) {
+        setStatusMessage(msgEl, 'is-success');
         msgEl.textContent = myTrackedCardNumbers.length
-            ? `✓ Enviado a Jugadores Conectados (${myTrackedCardNumbers.length} cartones)`
-            : '✓ Enviado a Jugadores Conectados';
-        msgEl.style.color = "#28a745";
+            ? `✓ Guardado y enviado (${myTrackedCardNumbers.length} cartones)`
+            : '✓ Guardado y enviado';
+        msgEl.style.color = "";
         msgEl.style.fontSize = "0.8em";
         setTimeout(() => {
             msgEl.textContent = "";
+            msgEl.classList.remove('status-message', 'is-success', 'is-error', 'is-warning');
         }, 2000);
     }
 
@@ -2527,6 +2536,8 @@ function verificarCarton() {
     const cartonDisplayContainer = document.getElementById('cartonDisplayContainer');
     if (!cartonVerificar || !mensajeVerificacionCarton || !cartonDisplayContainer) return;
 
+    setStatusMessage(mensajeVerificacionCarton, 'is-warning');
+
     let numeroCartonInput = cartonVerificar.value.trim();
     if (!numeroCartonInput) return;
 
@@ -2537,17 +2548,17 @@ function verificarCarton() {
 
     if (isNaN(numeroCarton) || numeroCarton < 1) {
         mensajeVerificacionCarton.textContent = "Número de cartón inválido.";
-        mensajeVerificacionCarton.style.color = "red";
+        setStatusMessage(mensajeVerificacionCarton, 'is-error');
     } else {
         const cartonElement = document.getElementById(`carton${numeroCarton}`);
         if (!cartonElement) {
             mensajeVerificacionCarton.textContent = `No se encontró el cartón ${numeroCarton}.`;
-            mensajeVerificacionCarton.style.color = "red";
+            setStatusMessage(mensajeVerificacionCarton, 'is-error');
         } else {
             const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
             if (!numerosEnCartonAttr || numerosEnCartonAttr.trim() === "") {
                 mensajeVerificacionCarton.textContent = "El cartón está vacío.";
-                mensajeVerificacionCarton.style.color = "red";
+                setStatusMessage(mensajeVerificacionCarton, 'is-error');
             } else {
                 const numerosEnCarton = numerosEnCartonAttr.split(',').map(Number).filter(n => n > 0 && !isNaN(n));
                 const faltantes = numerosEnCarton.filter(num => !numerosSalidos.includes(num));
@@ -2573,10 +2584,10 @@ function verificarCarton() {
 
                     if (numerosEnCarton.length > 0 && faltantes.length === 0) { // ¡Bingo detectado!
                     mensajeVerificacionCarton.textContent = "¡BINGO!";
-                    mensajeVerificacionCarton.style.color = "green";
+                        setStatusMessage(mensajeVerificacionCarton, 'is-success');
 
                         window.lastPlayerAction = 'verificado';
-                        window.lastPlayerStatusMessage = `Verificado y enviado a Jugadores Conectados: cartón ${numeroCarton} con bingo`;
+                        window.lastPlayerStatusMessage = `Verificado: cartón ${numeroCarton} con bingo`;
                         window.lastVerifiedCarton = numeroCarton;
                         window.lastVerifiedResult = 'BINGO';
                         window.lastVerifiedMissing = [];
@@ -2599,9 +2610,10 @@ function verificarCarton() {
                 } else {
                     // Informar qué números faltan para cantar Bingo
                     mensajeVerificacionCarton.innerHTML = `Faltan: <span style="color:red">${faltantes.join(', ')}</span>`;
+                    setStatusMessage(mensajeVerificacionCarton, 'is-warning');
 
                     window.lastPlayerAction = 'verificado';
-                    window.lastPlayerStatusMessage = `Verificado y enviado a Jugadores Conectados: cartón ${numeroCarton} sin bingo`;
+                    window.lastPlayerStatusMessage = `Verificado: cartón ${numeroCarton} sin bingo`;
                     window.lastVerifiedCarton = numeroCarton;
                     window.lastVerifiedResult = 'SIN_BINGO';
                     window.lastVerifiedMissing = faltantes.slice();
