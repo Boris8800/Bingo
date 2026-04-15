@@ -549,6 +549,19 @@ function renderConnectedPlayers(players) {
             }
             status.textContent = statusParts.length ? statusParts.join(' | ') : 'Sin estado adicional';
 
+            // Auto-clear transient 'Conectando...' or empty default status after 1 second
+            (function(s, c, nameEl) {
+                const txt = s.textContent || '';
+                if (txt.includes('Conectando') || txt === 'Sin estado adicional') {
+                    setTimeout(() => {
+                        try {
+                            // Only clear if still the same transient text
+                            if (s.textContent === txt) s.textContent = '';
+                        } catch (e) {}
+                    }, 1000);
+                }
+            })(status, cards, name);
+
             card.appendChild(name);
             card.appendChild(cards);
             card.appendChild(status);
