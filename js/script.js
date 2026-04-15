@@ -144,46 +144,66 @@ function hidePausedIndicator() {
 
     let wasRunningBeforeHidden = false;
 
+    function doPause(reasonText) {
+        try {
+            if (enEjecucion) {
+                wasRunningBeforeHidden = true;
+                juegoPausado = true;
+                clearInterval(intervalo);
+                intervalo = null;
+                enEjecucion = false;
+                const startStopBtn = document.getElementById('startStopBtn');
+                if (startStopBtn) startStopBtn.textContent = 'Empezar';
+                showToast('Juego en pausa' + (reasonText ? ` (${reasonText})` : ''));
+                showPausedIndicator();
+                saveGameState();
+            } else {
+                wasRunningBeforeHidden = false;
+            }
+        } catch (e) { console.warn('pause error', e); }
+    }
+
+    function tryResume() {
+        try {
+            if (wasRunningBeforeHidden) {
+                // do not auto-resume here; keep banner and allow manual resume
+                // If you prefer auto-resume, uncomment the block below
+                /*
+                if (!enEjecucion) {
+                    enEjecucion = true;
+                    juegoPausado = false;
+                    const ms = (typeof drawIntervalMs === 'number' && drawIntervalMs > 0) ? drawIntervalMs : 3500;
+                    intervalo = setInterval(() => { try { drawNextNumberTick(); } catch (e) {} }, ms);
+                    const startStopBtn = document.getElementById('startStopBtn');
+                    if (startStopBtn) startStopBtn.textContent = 'Pausar';
+                    showToast('Juego reanudado');
+                    hidePausedIndicator();
+                }
+                */
+                // reset the flag so subsequent focus/visibility events don't auto-resume
+                wasRunningBeforeHidden = false;
+            }
+        } catch (e) { console.warn('resume error', e); }
+    }
+
     document.addEventListener('visibilitychange', () => {
         try {
             if (document.hidden) {
-                // If the game is running, pause it and remember state
-                if (enEjecucion) {
-                    wasRunningBeforeHidden = true;
-                    juegoPausado = true;
-                    clearInterval(intervalo);
-                    intervalo = null;
-                    enEjecucion = false;
-                    const startStopBtn = document.getElementById('startStopBtn');
-                    if (startStopBtn) startStopBtn.textContent = 'Empezar';
-                    showToast('Juego en pausa (pestaña oculta)');
-                    saveGameState();
-                } else {
-                    wasRunningBeforeHidden = false;
-                }
+                doPause('pestaña oculta');
             } else {
-                // Page became visible again — resume only if it was running before
-                if (wasRunningBeforeHidden) {
-                    // resume execution loop if allowed
-                    if (!enEjecucion) {
-                        try {
-                            // restore state and restart interval loop
-                            enEjecucion = true;
-                            juegoPausado = false;
-                            // Start the draw interval only if drawIntervalMs exists
-                            const ms = (typeof drawIntervalMs === 'number' && drawIntervalMs > 0) ? drawIntervalMs : 3500;
-                            intervalo = setInterval(() => {
-                                try { drawNextNumberTick(); } catch (e) {}
-                            }, ms);
-                            const startStopBtn = document.getElementById('startStopBtn');
-                            if (startStopBtn) startStopBtn.textContent = 'Pausar';
-                            showToast('Juego reanudado');
-                        } catch (e) { console.warn('No se pudo reanudar juego automáticamente:', e); }
-                    }
-                }
-                wasRunningBeforeHidden = false;
+                tryResume();
             }
         } catch (e) {}
+    });
+
+    // Also handle window blur (e.g., switching apps or minimizing)
+    window.addEventListener('blur', () => {
+        try { doPause('segundo plano'); } catch (e) {}
+    });
+
+    // On focus, attempt resume handling (same behaviour as visibilitychange)
+    window.addEventListener('focus', () => {
+        try { tryResume(); } catch (e) {}
     });
 })();
 
