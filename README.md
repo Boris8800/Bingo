@@ -43,8 +43,8 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
    - Usa **"Compartir"** para generar el código de juego (2–4 dígitos según disponibilidad).
 
 2. **Jugar como Invitado (Móvil/Tablet)**:
-   - Abre la web y ve a la sección **Web 3** o escanea el QR generado por el Host.
-   - Ingresa el código de 2–4 dígitos o escanea el QR.
+   - Abre la web y ve a la sección **Web 3** o escanea el QR generado por el Host con la cámara del móvil.
+   - Ingresa el código de 2–4 dígitos o escanea el QR con la cámara del móvil.
    - El dispositivo se conectará al canal del Host y recibirá los números en tiempo real conforme vayan saliendo.
 
    ## 🆘 Ayuda — Cómo funciona Bingo Virtual (versión simple)
@@ -55,7 +55,7 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 
    2) Compartir el juego:
    - El Host pulsa "Compartir" y obtiene un código (2–4 dígitos) o un QR.
-   - Los jugadores ingresan el código en la sección Web3 o escanean el QR.
+   - Los jugadores ingresan el código en la sección Web3 o escanean el QR con la cámara del móvil.
 
    3) Qué pasa después:
    - Cada vez que el Host saca un número, todos los jugadores lo reciben casi al mismo tiempo.
