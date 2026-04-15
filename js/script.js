@@ -2227,7 +2227,7 @@ function setVoice(options) {
 
 // ---- FIN FUNCIONES DE VOZ ----
 
-// ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
+// ---- NUEVAS FUNCIONES PARA CONFIRMAR "MIS CARTONES" ----
 function trackMyCards() {
     console.log("trackMyCards called");
     const nameEl = document.getElementById('playerNameInput');

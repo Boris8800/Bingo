@@ -106,10 +106,10 @@
 </div>
 
 <div id="myCardsTrackerContainer" class="control-box">
-    <h3>Seguir Cartones</h3>
+    <h3>Confirmar Cartones</h3>
     <label for="myCardNumbersInput">Números de cartón (ej: 7, 15, 23):</label>
     <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
-    <button onclick="trackMyCards()">Añadir</button>
+    <button onclick="trackMyCards()">Confirmar</button>
     <span id="trackerMsg" style="margin-left: 10px; font-weight: bold;"></span>
     <h4>Cartones con Bingo:</h4>
     <div id="myTrackedBingosList" class="bingo-list-display">---</div>
@@ -354,7 +354,7 @@
         <div style="max-height:60vh; overflow:auto; padding-right:6px;">
             <section>
                 <h3>Visión general</h3>
-                <p>Este es un juego de Bingo en el que un equipo (Web1 - Host / Máster) controla el sorteo de números, y los jugadores (Web3) pueden conectarse y seguirlo en tiempo real. Puedes jugar desde el PC (Host) o desde móviles/otros dispositivos (Invitados).</p>
+                <p>Este es un juego de Bingo en el que un equipo (Web1 - Host / Máster) controla el sorteo de números, y los jugadores (Web3) pueden conectarse y confirmar su participación en tiempo real. Puedes jugar desde el PC (Host) o desde móviles/otros dispositivos (Invitados).</p>
             </section>
 
             <section>
@@ -389,8 +389,8 @@
             </section>
 
             <section>
-                <h3>Seguir mis cartones</h3>
-                <p>En la sección "Seguir Cartones" puedes indicar los ID de tus cartones (separados por comas). El sistema muestra "pills" con el progreso (aciertos/total) y una vista previa del cartón.</p>
+                <h3>Confirmar mis cartones</h3>
+                <p>En la sección "Confirmar Cartones" puedes indicar los ID de tus cartones (separados por comas). El sistema muestra "pills" con el progreso (aciertos/total) y una vista previa del cartón.</p>
                 <ul>
                     <li>Los "pills" parpadearán en naranja si te faltan 2 números y en rojo si te falta 1 número.</li>
                     <li>Si uno de tus cartones hace Bingo, el sistema reproducirá un sonido y el juego se pausará automáticamente para confirmar.</li>
@@ -400,7 +400,7 @@
 
             <section>
                 <h3>Sincronización (Web3)</h3>
-                <p>El sistema usa PeerJS (WebRTC) para conectar jugadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Seguir".</p>
+                <p>El sistema usa PeerJS (WebRTC) para conectar jugadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Confirmar".</p>
             </section>
 
             <section>
