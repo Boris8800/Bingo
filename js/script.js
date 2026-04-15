@@ -59,7 +59,7 @@ if (typeof window !== 'undefined') {
 let connections = [];         // Solo para Master: lista de conexiones activas
 let connToMaster = null;      // Para Viewer: conexión activa al Master
 const PEER_PREFIX = 'bingo-v6-live'; // Prefijo actualizado para forzar limpieza de sesiones
-// Flag para pausar la sincronización cuando el usuario edita "Confirmar mis Cartones"
+// Flag para pausar la sincronización cuando el usuario edita "Seguir mis cartones"
 let syncPausedByTracking = false;
 let currentPreviewedCardId = null;
 
@@ -2447,7 +2447,7 @@ function actualizarMisCartonesBingoDisplay() {
     myTrackedListDiv.appendChild(container);
 }
 
-// Pausar / Reanudar sincronización cuando el usuario edita "Confirmar mis Cartones"
+// Pausar / Reanudar sincronización cuando el usuario edita "Seguir mis cartones"
 function showTrackedCardPreview(cartonId) {
     currentPreviewedCardId = cartonId;
     const previewDiv = document.getElementById('myTrackedCardPreview');
