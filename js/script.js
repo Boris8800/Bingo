@@ -1686,6 +1686,17 @@ function applySharedState(state) {
         }
     }
 
+    // If the master signaled a paused state, show the paused banner for viewers
+    try {
+        if (!isMaster) {
+            if (state.juegoPausado) {
+                showPausedIndicator();
+            } else {
+                hidePausedIndicator();
+            }
+        }
+    } catch (e) {}
+
     // Después de aplicar UI, si somos jugador y tiene activado sonido, leer nuevos números
     if (!isMaster) {
         const speakPref = (localStorage.getItem('web3Speak') === 'true');
