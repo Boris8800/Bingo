@@ -525,13 +525,14 @@ function renderConnectedPlayers(players) {
             const name = document.createElement('div');
             name.style.fontWeight = '700';
             name.style.marginBottom = '6px';
-            name.textContent = player.playerName ? player.playerName : 'Sin nombre';
+            name.textContent = player.playerName ? `Nombre ${player.playerName}` : 'Sin nombre';
 
             const cards = document.createElement('div');
             cards.style.fontSize = '0.9rem';
             cards.style.color = 'var(--text-secondary)';
             const trackedCards = Array.isArray(player.trackedCards) ? player.trackedCards : [];
-            cards.textContent = trackedCards.length ? `Cartones: ${trackedCards.join(', ')}` : 'Cartones: ---';
+            // Show number of tracked cards as requested
+            cards.textContent = `Cartones numero : ${trackedCards.length}`;
 
             // If player has no name (empty string) AND no tracked cards, skip rendering this card
             const hasName = typeof player.playerName === 'string' && player.playerName.trim().length > 0;
