@@ -31,7 +31,7 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 - **Sincronización Multi-Dispositivo (P2P)**: Gracias a la integración con **PeerJS (WebRTC)**, puedes conectar tu PC (Host) con móviles (Invitados) de forma directa (Peer-to-Peer) sin necesidad de un servidor backend. ¡Ideal para GitHub Pages!
 - **Audio sincronizado (P2P)**: El host envía el timestamp para que el anuncio por voz suene al mismo tiempo en Web3.
 - **Tokens 2–4 Dígitos (progresivo)**: El sistema intentará reservar códigos cortos (2 dígitos) y, si están ocupados, escalará automáticamente a códigos más largos (3 o 4 dígitos) para reducir colisiones globales.
-- **Modo Jugador**: Tus amigos pueden seguir el juego sincronizado desde sus propios dispositivos (`web3.html`).
+- **Modo Jugador**: Tus amigos pueden confirmar el juego sincronizado desde sus propios dispositivos (`web3.html`).
 
 ## 🚀 Guía Rápida
 
@@ -159,10 +159,10 @@ Sortea número 3 → Token: 22+1+2+3   ✅ Detecta +3, marca número 3
 
 ## 🎯 Características de Web3 (Jugador)
 
-### Seguir Cartones
+### Confirmar Cartones
 Los jugadores (Web3) pueden ahora rastrear sus propios cartones:
 - **Ingresa tus números**: Introduce los números de tu cartón separados por comas (ej: 7, 15, 23).
-- **Control de Sincronización Inteligente**: Al hacer click en la caja de texto para editar tus cartones, la sincronización se **pausa automáticamente** para evitar que los números entrantes borren lo que estás escribiendo. Se reanuda al pulsar "Seguir".
+- **Control de Sincronización Inteligente**: Al hacer click en la caja de texto para editar tus cartones, la sincronización se **pausa automáticamente** para evitar que los números entrantes borren lo que estás escribiendo. Se reanuda al pulsar "Confirmar".
 - **Seguimiento automático**: El sistema marca automáticamente tus números conforme el host los sorteó.
 - **Alertas de Bingo**: Se notifica cuando tienes un BINGO en tus cartones rastreados.
 - **Persistencia**: Los cartones rastreados se guardan y recuperan al recargar.
@@ -277,7 +277,7 @@ Si quieres, puedo: añadir pruebas Playwright para verificación real de WebRTC,
 
 ## 📋 Registro Completo de Cartones (IDs 1-248)
 
-A continuación se detalla la base de datos completa de cartones integrados en el sistema. Puedes usar estos IDs para verificar premios o seguir cartones específicos.
+A continuación se detalla la base de datos completa de cartones integrados en el sistema. Puedes usar estos IDs para verificar premios o confirmar cartones específicos.
 
 | ID | Números del Cartón |
 |:---|:---|

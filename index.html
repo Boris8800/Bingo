@@ -114,10 +114,10 @@
 <div id="cartonDisplayContainer"></div>
 
 <div id="myCardsTrackerContainer" class="control-box">
-    <h3>Seguir mis Cartones</h3>
+    <h3>Confirmar mis Cartones</h3>
     <div style="display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 12px;">
         <input id="myCardNumbersInput" placeholder="Ej: 5, 23, 41" type="text" />
-        <button onclick="trackMyCards()" class="btn">Seguir</button>
+        <button onclick="trackMyCards()" class="btn">Confirmar</button>
     </div>
     <div id="myTrackedBingosList">---</div>
     <div id="myTrackedCardPreview" style="margin-top: 15px;"></div>
@@ -371,7 +371,7 @@
         <div style="max-height:60vh; overflow:auto; padding-right:6px;">
             <section>
                 <h3>Visión general</h3>
-                <p>Este es un juego de Bingo en el que un equipo (Web1 - Host / Máster) controla el sorteo de números, y los jugadores (Web3) pueden conectarse y seguirlo en tiempo real. Puedes jugar desde el PC (Host) o desde móviles/otros dispositivos (Invitados).</p>
+                <p>Este es un juego de Bingo en el que un equipo (Web1 - Host / Máster) controla el sorteo de números, y los jugadores (Web3) pueden conectarse y confirmarlo en tiempo real. Puedes jugar desde el PC (Host) o desde móviles/otros dispositivos (Invitados).</p>
             </section>
 
             <section>
@@ -381,7 +381,7 @@
                     <li>Genera números automáticamente (1–90) con control de velocidad y opciones de pausa/reinicio.</li>
                     <li>Sintetizador de voz (se intenta usar voces premium como Google Premium) y desbloqueo de audio en iOS.</li>
                     <li>Sincronización multi-dispositivo: BroadcastChannel, LocalStorage fallback y PeerJS (WebRTC) para jugadores.</li>
-                    <li>Seguir cartones, alertas de Bingo, estadísticas sincronizadas y exportación a PDF.</li>
+                    <li>Confirmar cartones, alertas de Bingo, estadísticas sincronizadas y exportación a PDF.</li>
                 </ul>
                 <p><a href="README.md" target="_blank" rel="noopener">Ver README completo</a></p>
             </section>
@@ -406,8 +406,8 @@
             </section>
 
             <section>
-                <h3>Seguir mis cartones</h3>
-                <p>En la sección "Seguir mis Cartones" puedes indicar los ID de tus cartones (separados por comas). El sistema muestra "pills" con el progreso (aciertos/total) y una vista previa del cartón.</p>
+                <h3>Confirmar mis cartones</h3>
+                <p>En la sección "Confirmar mis Cartones" puedes indicar los ID de tus cartones (separados por comas). El sistema muestra "pills" con el progreso (aciertos/total) y una vista previa del cartón.</p>
                 <ul>
                     <li>Los "pills" parpadearán en naranja si te faltan 2 números y en rojo si te falta 1 número.</li>
                     <li>Si uno de tus cartones hace Bingo, el sistema reproducirá un sonido y el juego se pausará automáticamente para confirmar.</li>
@@ -422,7 +422,7 @@
 
             <section>
                 <h3>Sincronización (Web3)</h3>
-                <p>El sistema usa PeerJS (WebRTC) para conectar jugadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Seguir".</p>
+                <p>El sistema usa PeerJS (WebRTC) para conectar jugadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Confirmar".</p>
             </section>
 
             <section>
