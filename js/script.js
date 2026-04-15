@@ -533,6 +533,12 @@ function renderConnectedPlayers(players) {
             const trackedCards = Array.isArray(player.trackedCards) ? player.trackedCards : [];
             cards.textContent = trackedCards.length ? `Cartones: ${trackedCards.join(', ')}` : 'Cartones: ---';
 
+            // If player has no name (empty string) AND no tracked cards, skip rendering this card
+            const hasName = typeof player.playerName === 'string' && player.playerName.trim().length > 0;
+            if (!hasName && trackedCards.length === 0) {
+                return; // don't append an empty placeholder for anonymous/empty players
+            }
+
             const status = document.createElement('div');
             status.style.fontSize = '0.82rem';
             status.style.color = 'var(--text-secondary)';
