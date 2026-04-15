@@ -86,7 +86,7 @@ function updateP2PStatus(status, color = "inherit") {
 function showPausedIndicator() {
     try {
         let el = document.getElementById('pausedBanner');
-        if (!el) {
+            if (!el) {
             el = document.createElement('div');
             el.id = 'pausedBanner';
             el.style.position = 'fixed';
@@ -98,10 +98,35 @@ function showPausedIndicator() {
             el.style.borderRadius = '8px';
             el.style.zIndex = 9999;
             el.style.fontWeight = '700';
-            el.textContent = 'Juego pausado';
+            el.style.display = 'flex';
+            el.style.alignItems = 'center';
+            el.style.gap = '10px';
+
+            const text = document.createElement('div');
+            text.id = 'pausedBannerText';
+            text.textContent = 'Juego pausado';
+            el.appendChild(text);
+
+            const resumeBtn = document.createElement('button');
+            resumeBtn.id = 'pausedResumeBtn';
+            resumeBtn.textContent = 'Reanudar';
+            resumeBtn.style.background = '#28a745';
+            resumeBtn.style.border = 'none';
+            resumeBtn.style.color = 'white';
+            resumeBtn.style.padding = '6px 10px';
+            resumeBtn.style.borderRadius = '6px';
+            resumeBtn.style.cursor = 'pointer';
+            resumeBtn.addEventListener('click', () => {
+                try {
+                    // Use existing startStop to resume
+                    startStop();
+                } catch (e) { console.warn('resume failed', e); }
+            });
+            el.appendChild(resumeBtn);
+
             document.body.appendChild(el);
         } else {
-            el.style.display = 'block';
+            el.style.display = 'flex';
         }
     } catch (e) {}
 }
