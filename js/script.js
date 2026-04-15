@@ -83,6 +83,55 @@ function updateP2PStatus(status, color = "inherit") {
     } catch (e) {}
 }
 
+// Pause game when the page/tab is hidden and resume when visible again
+(function setupVisibilityHandlers(){
+    if (typeof document === 'undefined') return;
+
+    let wasRunningBeforeHidden = false;
+
+    document.addEventListener('visibilitychange', () => {
+        try {
+            if (document.hidden) {
+                // If the game is running, pause it and remember state
+                if (enEjecucion) {
+                    wasRunningBeforeHidden = true;
+                    juegoPausado = true;
+                    clearInterval(intervalo);
+                    intervalo = null;
+                    enEjecucion = false;
+                    const startStopBtn = document.getElementById('startStopBtn');
+                    if (startStopBtn) startStopBtn.textContent = 'Empezar';
+                    showToast('Juego en pausa (pestaña oculta)');
+                    saveGameState();
+                } else {
+                    wasRunningBeforeHidden = false;
+                }
+            } else {
+                // Page became visible again — resume only if it was running before
+                if (wasRunningBeforeHidden) {
+                    // resume execution loop if allowed
+                    if (!enEjecucion) {
+                        try {
+                            // restore state and restart interval loop
+                            enEjecucion = true;
+                            juegoPausado = false;
+                            // Start the draw interval only if drawIntervalMs exists
+                            const ms = (typeof drawIntervalMs === 'number' && drawIntervalMs > 0) ? drawIntervalMs : 3500;
+                            intervalo = setInterval(() => {
+                                try { drawNextNumberTick(); } catch (e) {}
+                            }, ms);
+                            const startStopBtn = document.getElementById('startStopBtn');
+                            if (startStopBtn) startStopBtn.textContent = 'Pausar';
+                            showToast('Juego reanudado');
+                        } catch (e) { console.warn('No se pudo reanudar juego automáticamente:', e); }
+                    }
+                }
+                wasRunningBeforeHidden = false;
+            }
+        } catch (e) {}
+    });
+})();
+
 /**
  * Actualiza el contador de jugadores en el Master
  */
@@ -559,7 +608,7 @@ function renderConnectedPlayers(players) {
             // Auto-clear transient 'Conectando...' or empty default status after 1 second
             (function(s, c, nameEl) {
                 const txt = s.textContent || '';
-                if (txt.includes('Conectando') || txt === 'Sin estado adicional' || txt.includes('Guardado') || txt.startsWith('✓')) {
+                if (txt.includes('Conectando') || txt === 'Sin estado adicional') {
                     setTimeout(() => {
                         try {
                             // Only clear if still the same transient text
