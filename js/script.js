@@ -559,7 +559,7 @@ function renderConnectedPlayers(players) {
             // Auto-clear transient 'Conectando...' or empty default status after 1 second
             (function(s, c, nameEl) {
                 const txt = s.textContent || '';
-                if (txt.includes('Conectando') || txt === 'Sin estado adicional') {
+                if (txt.includes('Conectando') || txt === 'Sin estado adicional' || txt.includes('Guardado') || txt.startsWith('✓')) {
                     setTimeout(() => {
                         try {
                             // Only clear if still the same transient text
