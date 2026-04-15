@@ -83,6 +83,36 @@ function updateP2PStatus(status, color = "inherit") {
     } catch (e) {}
 }
 
+function showPausedIndicator() {
+    try {
+        let el = document.getElementById('pausedBanner');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'pausedBanner';
+            el.style.position = 'fixed';
+            el.style.left = '12px';
+            el.style.bottom = '12px';
+            el.style.padding = '10px 14px';
+            el.style.background = 'rgba(0,0,0,0.8)';
+            el.style.color = 'white';
+            el.style.borderRadius = '8px';
+            el.style.zIndex = 9999;
+            el.style.fontWeight = '700';
+            el.textContent = 'Juego pausado';
+            document.body.appendChild(el);
+        } else {
+            el.style.display = 'block';
+        }
+    } catch (e) {}
+}
+
+function hidePausedIndicator() {
+    try {
+        const el = document.getElementById('pausedBanner');
+        if (el) el.style.display = 'none';
+    } catch (e) {}
+}
+
 // Pause game when the page/tab is hidden and resume when visible again
 (function setupVisibilityHandlers(){
     if (typeof document === 'undefined') return;
@@ -2731,6 +2761,8 @@ function startStop() {
         clearInterval(intervalo);
         startStopBtn.textContent = 'Empezar';
         enEjecucion = false;
+        juegoPausado = true;
+        showPausedIndicator();
         actualizarEstadoJuego("pausado");
         broadcastState();
     } else {
@@ -2742,6 +2774,12 @@ function startStop() {
         speakText("Empezamos");
 
         enEjecucion = true;
+        // If resuming from a paused state, hide the paused indicator and show a toast
+        if (juegoPausado) {
+            hidePausedIndicator();
+            showToast('Juego reanudado');
+        }
+        juegoPausado = false;
         startStopBtn.textContent = 'Detener';
         actualizarEstadoJuego("enMarcha");
         limpiarMensajeVerificacion();
