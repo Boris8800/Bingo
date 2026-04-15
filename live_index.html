@@ -106,7 +106,7 @@
 </div>
 
 <div id="myCardsTrackerContainer" class="control-box">
-    <h3>Seguir Cartones</h3>
+    <h3>Confirmar Cartones</h3>
     <label for="myCardNumbersInput">Números de cartón (ej: 7, 15, 23):</label>
     <input type="text" id="myCardNumbersInput" placeholder="Números separados por coma">
     <button onclick="trackMyCards()">Añadir</button>
@@ -364,7 +364,7 @@
                     <li>Genera números automáticamente (1–90) con control de velocidad y opciones de pausa/reinicio.</li>
                     <li>Sintetizador de voz (se intenta usar voces premium como Google Premium) y desbloqueo de audio en iOS.</li>
                     <li>Sincronización multi-dispositivo: BroadcastChannel, LocalStorage fallback y PeerJS (WebRTC) para jugadores.</li>
-                    <li>Seguir cartones, alertas de Bingo, estadísticas sincronizadas y exportación a PDF.</li>
+                    <li>Confirmar cartones, alertas de Bingo, estadísticas sincronizadas y exportación a PDF.</li>
                 </ul>
                 <p><a href="README.md" target="_blank" rel="noopener">Ver README completo</a></p>
             </section>
@@ -389,8 +389,8 @@
             </section>
 
             <section>
-                <h3>Seguir mis cartones</h3>
-                <p>En la sección "Seguir Cartones" puedes indicar los ID de tus cartones (separados por comas). El sistema muestra "pills" con el progreso (aciertos/total) y una vista previa del cartón.</p>
+                <h3>Confirmar mis cartones</h3>
+                <p>En la sección "Confirmar Cartones" puedes indicar los ID de tus cartones (separados por comas). El sistema muestra "pills" con el progreso (aciertos/total) y una vista previa del cartón.</p>
                 <ul>
                     <li>Los "pills" parpadearán en naranja si te faltan 2 números y en rojo si te falta 1 número.</li>
                     <li>Si uno de tus cartones hace Bingo, el sistema reproducirá un sonido y el juego se pausará automáticamente para confirmar.</li>
@@ -400,7 +400,7 @@
 
             <section>
                 <h3>Sincronización (Web3)</h3>
-                <p>El sistema usa PeerJS (WebRTC) para conectar jugadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Seguir".</p>
+                <p>El sistema usa PeerJS (WebRTC) para conectar jugadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Confirmar".</p>
             </section>
 
             <section>
