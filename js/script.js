@@ -531,7 +531,7 @@ function renderConnectedPlayers(players) {
             cards.style.fontSize = '0.9rem';
             cards.style.color = 'var(--text-secondary)';
             const trackedCards = Array.isArray(player.trackedCards) ? player.trackedCards : [];
-            // Show number of tracked cards as requested
+            // Show count only (text change requested): "Cartones numero : N"
             cards.textContent = `Cartones numero : ${trackedCards.length}`;
 
             // If player has no name (empty string) AND no tracked cards, skip rendering this card
