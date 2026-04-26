@@ -2339,19 +2339,27 @@ function processSpeechQueue() {
             // Google Premium TTS fallback
             const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=es&client=tw-ob`;
             const audio = new Audio(url);
-            
-            audio.onended = () => {
+            let speechHandled = false;
+
+            const finishSpeech = () => {
+                if (speechHandled) return;
+                speechHandled = true;
                 isSpeaking = false;
                 processSpeechQueue();
             };
-            audio.onerror = () => {
-                isSpeaking = false;
-                speakWithWebSpeechInternal(text, true); // retry with regular TTS
-            };
-            audio.play().catch(e => {
-                console.warn("Google Premium failed, trying regular voice:", e);
+
+            const fallbackToWebSpeech = () => {
+                if (speechHandled) return;
+                speechHandled = true;
                 isSpeaking = false;
                 speakWithWebSpeechInternal(text, true);
+            };
+
+            audio.onended = finishSpeech;
+            audio.onerror = fallbackToWebSpeech;
+            audio.play().catch(e => {
+                console.warn("Google Premium failed, trying regular voice:", e);
+                fallbackToWebSpeech();
             });
         } else {
             speakWithWebSpeechInternal(text, true);
