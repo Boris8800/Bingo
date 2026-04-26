@@ -2255,6 +2255,20 @@ function scheduleSpeakAt(text, whenMs) {
 let speechQueue = [];
 let isSpeaking = false;
 
+function startDrawInterval() {
+    if (intervalo) {
+        clearInterval(intervalo);
+    }
+    intervalo = setInterval(siguienteNumero, drawIntervalMs);
+}
+
+function stopDrawInterval() {
+    if (intervalo) {
+        clearInterval(intervalo);
+        intervalo = null;
+    }
+}
+
 function speakText(text) {
     if (!text || typeof text !== 'string') return;
 
@@ -2395,9 +2409,9 @@ function trackMyCards() {
 
     const playerName = nameEl ? nameEl.value.trim() : getTrackedPlayerName();
     
-    // If name is missing, ask for it (especially important for Web3)
+    // If name is missing, ask for it ONLY on Web3 (player page), not on main page (master)
     let finalPlayerName = playerName;
-    if (!finalPlayerName) {
+    if (!finalPlayerName && !isMaster) {
         const promptName = window.prompt("Escribe tu nombre para participar:");
         if (promptName && promptName.trim()) {
             finalPlayerName = promptName.trim();
@@ -2407,6 +2421,11 @@ function trackMyCards() {
             if (nameEl) nameEl.focus();
             return;
         }
+    }
+    
+    // On main page (master), use a default name if none is provided
+    if (!finalPlayerName && isMaster) {
+        finalPlayerName = 'Anfitrión';
     }
 
     const inputText = inputEl ? inputEl.value : (myTrackedCardNumbers.join(', '));
@@ -2752,7 +2771,7 @@ async function reiniciarJuego(options = {}) {
     const circulos = document.querySelectorAll('#numerosContainer .numeroCirculo');
     circulos.forEach(circulo => circulo.classList.remove('marcado'));
 
-    if (intervalo) clearInterval(intervalo);
+    stopDrawInterval();
     const startStopBtn = document.getElementById('startStopBtn');
     if (startStopBtn) startStopBtn.textContent = 'Empezar';
 
@@ -2814,7 +2833,7 @@ function startStop() {
     if (!startStopBtn) return;
 
     if (enEjecucion) {
-        clearInterval(intervalo);
+        stopDrawInterval();
         startStopBtn.textContent = 'Empezar';
         enEjecucion = false;
         juegoPausado = true;
@@ -2842,7 +2861,7 @@ function startStop() {
 
         setTimeout(() => {
             if (enEjecucion) {
-                intervalo = setInterval(siguienteNumero, drawIntervalMs);
+                startDrawInterval();
                 broadcastState();
             }
         }, 100);
@@ -2854,7 +2873,7 @@ function siguienteNumero() {
     
     if (numerosDisponibles.length === 0) {
         alert("¡Todos los números han sido llamados!");
-        clearInterval(intervalo);
+        stopDrawInterval();
         const startStopBtn = document.getElementById('startStopBtn');
         if (startStopBtn) startStopBtn.textContent = 'Empezar';
         enEjecucion = false;
@@ -3055,7 +3074,7 @@ const startStopBtnEl = document.getElementById('startStopBtn');
 if (cartonVerificarInputEl) {
     cartonVerificarInputEl.addEventListener('blur', () => {
         if (juegoPausado && startStopBtnEl) {
-            intervalo = setInterval(siguienteNumero, drawIntervalMs);
+            startDrawInterval();
             enEjecucion = true;
             juegoPausado = false;
             startStopBtnEl.textContent = 'Detener';
@@ -3068,7 +3087,7 @@ if (cartonVerificarInputEl) {
     });
     cartonVerificarInputEl.addEventListener('focus', () => {
         if (enEjecucion && startStopBtnEl) {
-            clearInterval(intervalo);
+            stopDrawInterval();
             juegoPausado = true;
             startStopBtnEl.textContent = 'Empezar';
             enEjecucion = false;
@@ -3079,7 +3098,7 @@ if (cartonVerificarInputEl) {
 if (numeroVerificarInputEl) {
     numeroVerificarInputEl.addEventListener('focus', () => {
         if (enEjecucion && startStopBtnEl) {
-            clearInterval(intervalo);
+            stopDrawInterval();
             juegoPausado = true;
             startStopBtnEl.textContent = 'Empezar';
             enEjecucion = false;
@@ -3089,7 +3108,7 @@ if (numeroVerificarInputEl) {
     numeroVerificarInputEl.addEventListener('blur', function () {
         limpiarMensajeVerificacion();
         if (juegoPausado && startStopBtnEl) {
-            intervalo = setInterval(siguienteNumero, drawIntervalMs);
+            startDrawInterval();
             enEjecucion = true;
             juegoPausado = false;
             startStopBtnEl.textContent = 'Detener';
@@ -3120,8 +3139,7 @@ function setDrawSpeed(ms, { persist = true } = {}) {
 
     // If the game is running, apply immediately
     if (enEjecucion) {
-        if (intervalo) clearInterval(intervalo);
-        intervalo = setInterval(siguienteNumero, drawIntervalMs);
+        startDrawInterval();
     }
 
     if (persist) saveGameState();
