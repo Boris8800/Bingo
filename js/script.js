@@ -2254,6 +2254,9 @@ function scheduleSpeakAt(text, whenMs) {
 
 let speechQueue = [];
 let isSpeaking = false;
+let lastSpokenText = null;
+let lastSpokenTime = 0;
+const SPEECH_DEDUPE_WINDOW_MS = 1000; // Don't speak same text within 1 second
 
 function startDrawInterval() {
     if (intervalo) {
@@ -2272,8 +2275,17 @@ function stopDrawInterval() {
 function speakText(text) {
     if (!text || typeof text !== 'string') return;
 
+    const normalizedText = String(text).trim();
+    const now = Date.now();
+    
+    // Deduplicate: skip if same text was spoken very recently
+    if (normalizedText === lastSpokenText && (now - lastSpokenTime) < SPEECH_DEDUPE_WINDOW_MS) {
+        console.log('Skipping duplicate speech:', normalizedText);
+        return;
+    }
+
     // Use a queue to prevent cutting off announcements
-    speechQueue.push(String(text));
+    speechQueue.push(normalizedText);
     processSpeechQueue();
 }
 
@@ -2282,6 +2294,10 @@ function processSpeechQueue() {
 
     const text = speechQueue.shift();
     isSpeaking = true;
+
+    // Update deduplication tracker
+    lastSpokenText = text;
+    lastSpokenTime = Date.now();
 
     // Determine target play time (mostly for viewers)
     let targetTime = Date.now();
