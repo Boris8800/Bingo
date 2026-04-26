@@ -2243,13 +2243,28 @@ function populateVoiceList() {
 }
 
 let backgroundAudio = null;
+let pendingSpeechTimeouts = new Map();
+
+function normalizeSpeechText(text) {
+    return String(text || '').trim();
+}
 
 function scheduleSpeakAt(text, whenMs) {
-    if (!text) return;
+    const normalizedText = normalizeSpeechText(text);
+    if (!normalizedText) return;
+
+    const existingTimeout = pendingSpeechTimeouts.get(normalizedText);
+    if (existingTimeout) {
+        clearTimeout(existingTimeout);
+    }
+
     const delay = Math.max(0, (whenMs || 0) - Date.now());
-    setTimeout(() => {
-        try { speakText(String(text)); } catch (e) { console.warn('scheduleSpeakAt error:', e); }
+    const timeoutId = setTimeout(() => {
+        pendingSpeechTimeouts.delete(normalizedText);
+        try { speakText(normalizedText); } catch (e) { console.warn('scheduleSpeakAt error:', e); }
     }, delay);
+
+    pendingSpeechTimeouts.set(normalizedText, timeoutId);
 }
 
 let speechQueue = [];
@@ -2275,12 +2290,23 @@ function stopDrawInterval() {
 function speakText(text) {
     if (!text || typeof text !== 'string') return;
 
-    const normalizedText = String(text).trim();
+    const normalizedText = normalizeSpeechText(text);
     const now = Date.now();
+
+    const pendingTimeout = pendingSpeechTimeouts.get(normalizedText);
+    if (pendingTimeout) {
+        clearTimeout(pendingTimeout);
+        pendingSpeechTimeouts.delete(normalizedText);
+    }
     
     // Deduplicate: skip if same text was spoken very recently
     if (normalizedText === lastSpokenText && (now - lastSpokenTime) < SPEECH_DEDUPE_WINDOW_MS) {
         console.log('Skipping duplicate speech:', normalizedText);
+        return;
+    }
+
+    if (speechQueue.includes(normalizedText)) {
+        console.log('Skipping queued duplicate speech:', normalizedText);
         return;
     }
 
