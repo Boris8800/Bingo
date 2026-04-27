@@ -341,17 +341,63 @@ let lastAnnounceNumber = null;
 let lastAnnounceAt = 0;
 let lastAnnounceIdApplied = -1;
 const VISIT_COUNTER_ENDPOINT = 'https://api.countapi.xyz/hit/boris8800.github.io/bingo-global-visits';
-const PRESENCE_WS_URL = (() => {
+const PRESENCE_WS_STORAGE_KEY = 'bingo_presence_ws_url';
+
+function normalizePresenceWsUrl(rawUrl) {
+    if (typeof rawUrl !== 'string') return '';
+    const trimmed = rawUrl.trim();
+    if (!trimmed) return '';
+
     try {
-        if (typeof window !== 'undefined' && window.__BINGO_PRESENCE_WS_URL) {
-            return window.__BINGO_PRESENCE_WS_URL;
+        const parsed = new URL(trimmed, window.location && window.location.href ? window.location.href : undefined);
+        if (parsed.protocol === 'http:') return `ws://${parsed.host}${parsed.pathname}${parsed.search}${parsed.hash}`;
+        if (parsed.protocol === 'https:') return `wss://${parsed.host}${parsed.pathname}${parsed.search}${parsed.hash}`;
+        if (parsed.protocol === 'ws:' || parsed.protocol === 'wss:') return parsed.toString();
+    } catch (e) {
+        if (/^wss?:\/\//i.test(trimmed)) return trimmed;
+    }
+
+    return '';
+}
+
+function resolvePresenceWsUrl() {
+    try {
+        const candidates = [];
+
+        if (typeof window !== 'undefined') {
+            if (window.__BINGO_PRESENCE_WS_URL) candidates.push(window.__BINGO_PRESENCE_WS_URL);
+
+            try {
+                const meta = document.querySelector('meta[name="bingo-presence-ws-url"]');
+                if (meta && meta.content) candidates.push(meta.content);
+            } catch (e) {}
+
+            try {
+                const query = new URLSearchParams(window.location.search || '');
+                const fromQuery = query.get('presenceWs') || query.get('presence-ws');
+                if (fromQuery) candidates.push(fromQuery);
+            } catch (e) {}
+
+            try {
+                const stored = localStorage.getItem(PRESENCE_WS_STORAGE_KEY);
+                if (stored) candidates.push(stored);
+            } catch (e) {}
+
+            if (window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+                candidates.push('ws://localhost:8080');
+            }
         }
-        if (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-            return 'ws://localhost:8080';
+
+        for (const candidate of candidates) {
+            const normalized = normalizePresenceWsUrl(candidate);
+            if (normalized) return normalized;
         }
     } catch (e) {}
+
     return '';
-})();
+}
+
+const PRESENCE_WS_URL = resolvePresenceWsUrl();
 const PRESENCE_HEARTBEAT_MS = 5000;
 const PRESENCE_LOCAL_STORAGE_KEY = 'bingo_presence_registry_v1';
 const PRESENCE_LOCAL_CHANNEL_NAME = 'bingo_presence_v1';
@@ -361,6 +407,7 @@ let presenceHeartbeatTimer = null;
 let presenceSessionId = null;
 let presenceLocalChannel = null;
 let presenceLocalListenersAttached = false;
+let presenceForceLocalFallback = false;
 let connectedPlayers = [];
 let connectedPlayersMode = 'main';
 let relaySyncEnabled = false;
@@ -467,7 +514,13 @@ function clearConnectionPresence(conn) {
 }
 
 function hasWebSocketPresence() {
-    return !!PRESENCE_WS_URL && typeof WebSocket !== 'undefined';
+    return !!PRESENCE_WS_URL && !presenceForceLocalFallback && typeof WebSocket !== 'undefined';
+}
+
+function getPresenceTransportLabel() {
+    if (hasWebSocketPresence()) return 'WS relay';
+    if (typeof BroadcastChannel !== 'undefined') return 'PeerJS/local fallback';
+    return 'Local fallback';
 }
 
 function loadLocalPresenceRegistry() {
@@ -533,6 +586,57 @@ function collectLocalPresencePlayers() {
 function renderLocalPresencePlayers() {
     connectedPlayers = collectLocalPresencePlayers();
     renderConnectedPlayers(connectedPlayers);
+}
+
+function activateLocalPresenceFallback(reason) {
+    presenceForceLocalFallback = true;
+    clearPresenceReconnectTimer();
+
+    if (presenceSocket) {
+        try {
+            presenceSocket.onopen = null;
+            presenceSocket.onmessage = null;
+            presenceSocket.onerror = null;
+            presenceSocket.onclose = null;
+            if (presenceSocket.readyState === WebSocket.OPEN || presenceSocket.readyState === WebSocket.CONNECTING) {
+                presenceSocket.close();
+            }
+        } catch (e) {}
+        presenceSocket = null;
+    }
+
+    if (typeof window !== 'undefined' && window.location && /github\.io$/i.test(window.location.hostname)) {
+        updateP2PStatus(reason ? `GitHub Pages: ${reason}` : 'GitHub Pages: Local fallback', '#6c757d');
+    }
+
+    initLocalPresenceTracking();
+}
+
+function getTrackedCartonProgress(cartonId) {
+    const numericCartonId = Number(cartonId);
+    let hits = 0;
+    let total = 15;
+
+    const cartonElement = document.getElementById(`carton${cartonId}`);
+    if (cartonElement) {
+        const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
+        if (numerosEnCartonAttr) {
+            const nums = numerosEnCartonAttr
+                .split(',')
+                .map((value) => Number(value.trim()))
+                .filter((value) => Number.isInteger(value) && value > 0);
+            total = nums.length || 15;
+            hits = nums.filter((value) => numerosSalidos.includes(value)).length;
+        }
+    }
+
+    return {
+        cartonId: Number.isFinite(numericCartonId) ? numericCartonId : cartonId,
+        hits,
+        total,
+        missing: Math.max(total - hits, 0),
+        isBingo: Array.isArray(cartonesConBingo) && cartonesConBingo.includes(numericCartonId),
+    };
 }
 
 function upsertLocalPresence() {
@@ -652,11 +756,40 @@ function renderConnectedPlayers(players) {
             name.textContent = player.playerName ? `Nombre ${player.playerName}` : 'Sin nombre';
 
             const cards = document.createElement('div');
+            cards.style.display = 'grid';
+            cards.style.gap = '6px';
+            cards.style.marginTop = '8px';
             cards.style.fontSize = '0.9rem';
             cards.style.color = 'var(--text-secondary)';
             const trackedCards = Array.isArray(player.trackedCards) ? player.trackedCards : [];
-            // Show count only (text change requested): "Cartones numero : N"
-            cards.textContent = `Cartones numero : ${trackedCards.length}`;
+            if (trackedCards.length > 0) {
+                trackedCards.forEach((cartonId) => {
+                    const progress = getTrackedCartonProgress(cartonId);
+                    const row = document.createElement('div');
+                    row.style.display = 'grid';
+                    row.style.gap = '2px';
+                    row.style.padding = '8px 10px';
+                    row.style.borderRadius = '10px';
+                    row.style.background = 'rgba(255,255,255,0.04)';
+                    row.style.border = '1px solid rgba(255,255,255,0.08)';
+
+                    const cartonLabel = document.createElement('div');
+                    cartonLabel.style.fontWeight = '700';
+                    cartonLabel.style.color = 'var(--text-primary)';
+                    cartonLabel.textContent = `Nº ${progress.cartonId}`;
+
+                    const progressLabel = document.createElement('div');
+                    progressLabel.style.fontSize = '0.82rem';
+                    progressLabel.style.color = progress.isBingo ? 'var(--bingo-success)' : 'var(--text-secondary)';
+                    progressLabel.textContent = progress.isBingo ? `¡BINGO! (${progress.hits}/${progress.total})` : `${progress.hits}/${progress.total}`;
+
+                    row.appendChild(cartonLabel);
+                    row.appendChild(progressLabel);
+                    cards.appendChild(row);
+                });
+            } else {
+                cards.textContent = 'Sin cartones';
+            }
 
             // If player has no name (empty string) AND no tracked cards, skip rendering this card
             const hasName = typeof player.playerName === 'string' && player.playerName.trim().length > 0;
@@ -811,6 +944,15 @@ function initPresenceTracking() {
     // The master always wants to see the web3 (viewer) connected players
     connectedPlayersMode = (isMaster) ? 'web3' : (isWeb3 ? 'web3' : 'main');
 
+    if (presenceForceLocalFallback) {
+        initLocalPresenceTracking();
+        return;
+    }
+
+    if (!hasWebSocketPresence() && typeof window !== 'undefined' && window.location && /github\.io$/i.test(window.location.hostname)) {
+        updateP2PStatus(`GitHub Pages: ${getPresenceTransportLabel()}`, '#6c757d');
+    }
+
     if (isMaster) {
         syncConnectedPlayersFromConnections();
         if (!hasWebSocketPresence()) {
@@ -838,7 +980,7 @@ function initPresenceTracking() {
         presenceSocket = new WebSocket(PRESENCE_WS_URL);
     } catch (e) {
         console.warn('No se pudo abrir el canal de presencia:', e);
-        schedulePresenceReconnect();
+        activateLocalPresenceFallback('Relay WebSocket no disponible');
         return;
     }
 
@@ -885,12 +1027,12 @@ function initPresenceTracking() {
 
     presenceSocket.addEventListener('close', () => {
         clearPresenceHeartbeat();
-        schedulePresenceReconnect();
+        activateLocalPresenceFallback('Relay WebSocket no disponible');
     });
 
     presenceSocket.addEventListener('error', () => {
         clearPresenceHeartbeat();
-        schedulePresenceReconnect();
+        activateLocalPresenceFallback('Relay WebSocket no disponible');
     });
 }
 
@@ -2576,19 +2718,7 @@ function actualizarMisCartonesBingoDisplay() {
     container.style.marginTop = '10px';
 
     myTrackedCardNumbers.forEach(cartonId => {
-        const cartonElement = document.getElementById(`carton${cartonId}`);
-        let hits = 0;
-        let total = 15;
-        let isBingo = cartonesConBingo.includes(cartonId);
-
-        if (cartonElement) {
-            const numerosEnCartonAttr = cartonElement.getAttribute('data-numeros');
-            if (numerosEnCartonAttr) {
-                const nums = numerosEnCartonAttr.split(',').map(Number);
-                total = nums.length;
-                hits = nums.filter(n => numerosSalidos.includes(n)).length;
-            }
-        }
+        const progress = getTrackedCartonProgress(cartonId);
 
         const pill = document.createElement('div');
         pill.className = 'tracked-card-pill';
@@ -2602,7 +2732,7 @@ function actualizarMisCartonesBingoDisplay() {
         pill.style.minWidth = '60px';
         pill.style.transition = 'all 0.3s ease';
 
-        if (isBingo) {
+        if (progress.isBingo) {
             pill.style.background = 'var(--bingo-success)';
             pill.style.color = 'white';
             pill.style.boxShadow = '0 0 10px rgba(40, 167, 69, 0.5)';
@@ -2612,7 +2742,7 @@ function actualizarMisCartonesBingoDisplay() {
             pill.style.border = '1px solid var(--border-color)';
             
             // Alerta visual si faltan pocos números
-            const faltan = total - hits;
+            const faltan = progress.missing;
             if (faltan === 1) {
                 pill.classList.add('pill-alert-1');
                 pill.title = "¡A FALTA DE 1!";
@@ -2623,12 +2753,12 @@ function actualizarMisCartonesBingoDisplay() {
         }
 
         const idSpan = document.createElement('span');
-        idSpan.textContent = `Nº ${cartonId}`;
+        idSpan.textContent = `Nº ${progress.cartonId}`;
         idSpan.style.fontSize = '0.7rem';
         idSpan.style.opacity = '0.8';
 
         const progressSpan = document.createElement('span');
-        progressSpan.textContent = isBingo ? "¡BINGO!" : `${hits}/${total}`;
+        progressSpan.textContent = progress.isBingo ? `¡BINGO! (${progress.hits}/${progress.total})` : `${progress.hits}/${progress.total}`;
 
         pill.appendChild(idSpan);
         pill.appendChild(progressSpan);

@@ -28,7 +28,7 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 
 ### 📤 Compartir y Exportar
 - **PDF Export**: Genera y descarga tus cartones en PDF listos para imprimir con un solo clic.
-- **Sincronización Multi-Dispositivo (P2P)**: Gracias a la integración con **PeerJS (WebRTC)**, puedes conectar tu PC (Host) con móviles (Invitados) de forma directa (Peer-to-Peer) sin necesidad de un servidor backend. ¡Ideal para GitHub Pages!
+- **Sincronización Multi-Dispositivo (P2P)**: Gracias a la integración con **PeerJS (WebRTC)**, puedes conectar tu PC (Host) con móviles (Invitados) de forma directa (Peer-to-Peer) sin necesidad de un backend propio. En GitHub Pages funciona por defecto con PeerJS/local fallback, y el panel de presencia puede usar un relay WebSocket opcional si defines `window.__BINGO_PRESENCE_WS_URL` o un meta tag `bingo-presence-ws-url`.
 - **Audio sincronizado (P2P)**: El host envía el timestamp para que el anuncio por voz suene al mismo tiempo en Web3.
 - **Tokens 2–4 Dígitos (progresivo)**: El sistema intentará reservar códigos cortos (2 dígitos) y, si están ocupados, escalará automáticamente a códigos más largos (3 o 4 dígitos) para reducir colisiones globales.
 - **Modo Jugador**: Tus amigos pueden confirmar el juego sincronizado desde sus propios dispositivos (`web3.html`).
@@ -80,7 +80,8 @@ Este proyecto utiliza tres capas de sincronización para asegurar que nadie se p
 
 1. **BroadcastChannel API**: Para sincronizar pestañas abiertas en el mismo navegador instantáneamente.
 2. **LocalStorage Events**: Como respaldo (fallback) para navegadores antiguos en el mismo dispositivo.
-3. **PeerJS (WebRTC)**: Para la comunicación directa entre dispositivos a través de internet, permitiendo una experiencia de servidor real en un entorno estático sin registros ni costes.
+3. **PeerJS (WebRTC)**: Para la comunicación directa entre dispositivos a través de internet, permitiendo una experiencia sin servidor propio en un entorno estático.
+4. **Relay WebSocket opcional**: Si quieres un panel de presencia global para jugadores conectados, puedes configurar un servidor WebSocket externo con `window.__BINGO_PRESENCE_WS_URL`.
 
 3. **Descargar Cartones**:
    - Ve a la sección de "Cartones".
