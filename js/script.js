@@ -1430,13 +1430,14 @@ function initCrossDeviceSync() {
         console.error('❌ Error Peer Jugador:', err.type, err);
         if (err.type === 'peer-unavailable') {
             const attemptedId = `${PEER_PREFIX}-${gameCodeFixed}`;
-            updateP2PStatus(`Host no encontrado (${attemptedId})`, "#dc3545");
+            const retrying = viewerMasterConnectRetryAttempts === 0;
+            updateP2PStatus(retrying ? `Buscando Host (${attemptedId})...` : `Host no encontrado (${attemptedId})`, retrying ? "#ffc107" : "#dc3545");
             if (hasWebSocketPresence()) {
                 setRelaySyncEnabled(true, 'Usando sincronización de respaldo');
                 return;
             }
             // Reintentar con backoff sin acumular timers
-            scheduleViewerMasterConnectRetry(`Host no encontrado (${attemptedId})`, "#dc3545");
+            scheduleViewerMasterConnectRetry(retrying ? `Buscando Host (${attemptedId})...` : `Host no encontrado (${attemptedId})`, retrying ? "#ffc107" : "#dc3545");
         } else if (err.type === 'network' || err.type === 'server-error') {
             if (hasWebSocketPresence()) {
                 setRelaySyncEnabled(true, 'Servidor P2P temporalmente no disponible');
@@ -1605,7 +1606,16 @@ function intentarConectarConMaster() {
         if (connToMaster === activeConnection) {
             connToMaster = null;
         }
-        if (err && (err.type === 'network' || err.type === 'server-error' || err.type === 'peer-unavailable')) {
+        if (err && err.type === 'peer-unavailable') {
+            const attemptedId = `${PEER_PREFIX}-${gameCodeFixed}`;
+            if (hasWebSocketPresence()) {
+                setRelaySyncEnabled(true, 'Usando sincronización de respaldo');
+                return;
+            }
+            scheduleViewerMasterConnectRetry(`Buscando Host (${attemptedId})...`, '#ffc107');
+            return;
+        }
+        if (err && (err.type === 'network' || err.type === 'server-error')) {
             setRelaySyncEnabled(true, 'Servidor P2P temporalmente no disponible');
             return;
         }
@@ -1676,6 +1686,10 @@ async function broadcastState() {
     // Sincronización Local (BroadcastChannel)
     if (syncChannel) {
         syncChannel.postMessage(state);
+    }
+
+    if (isMaster) {
+        syncConnectedPlayersFromConnections();
     }
     
     saveGameState();
