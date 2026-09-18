@@ -1,6 +1,16 @@
 const WebSocket = require('ws');
+const express = require('express');
+const cors = require('cors');
 
-const wss = new WebSocket.Server({ port: 8080 });
+const app = express();
+app.use(cors());
+
+const PORT = process.env.PORT || 8080;
+const server = app.listen(PORT, () => {
+    console.log(`HTTP server listening on port ${PORT}`);
+});
+
+const wss = new WebSocket.Server({ server });
 
 const games = {}; // token -> { state: gameState, clients: [ws] }
 const presence = new Map(); // sessionId -> { sessionId, playerName, trackedCards, gameCode, page, updatedAt }
@@ -63,8 +73,16 @@ setInterval(() => {
     if (changed) broadcastPresenceSnapshot();
 }, 5000).unref();
 
+wss.on('error', (error) => {
+    console.error('WebSocket server error:', error);
+});
+
 wss.on('connection', (ws) => {
     console.log('Client connected');
+
+    ws.on('error', (error) => {
+        console.error('WebSocket client error:', error);
+    });
 
     ws.on('message', (message) => {
         try {
@@ -124,4 +142,4 @@ wss.on('connection', (ws) => {
     });
 });
 
-console.log('WebSocket server running on ws://localhost:8080');
+console.log(`WebSocket server running on ws://localhost:${PORT}`);

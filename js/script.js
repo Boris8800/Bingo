@@ -1,10 +1,12 @@
+'use strict';
+
 // ---- Variables Globales del Juego ----
 let numerosSalidos = [];
 let numerosDisponibles = []; // Se inicializa en reiniciarJuego
 let intervalo;
 let enEjecucion = false;
 let juegoPausado = false;
-var cartonesConBingo = [];
+let cartonesConBingo = [];
 if (typeof window !== 'undefined') try { window.cartonesConBingo = cartonesConBingo; } catch (e) {}
 let lastActivityTime = Date.now(); // Rastreo de inactividad
 const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutos en ms
@@ -551,13 +553,13 @@ function normalizePresenceEntry(entry) {
         trackedCardsSummary: typeof entry.trackedCardsSummary === 'string' ? entry.trackedCardsSummary : '',
         lastAction: typeof entry.lastAction === 'string' ? entry.lastAction : 'presence-updated',
         lastStatusMessage: typeof entry.lastStatusMessage === 'string' ? entry.lastStatusMessage : '',
-        lastVerifiedCarton: entry.lastVerifiedCarton == null || entry.lastVerifiedCarton === '' ? null : Number(entry.lastVerifiedCarton),
+        lastVerifiedCarton: entry.lastVerifiedCarton === null || entry.lastVerifiedCarton === '' ? null : Number(entry.lastVerifiedCarton),
         lastVerifiedResult: typeof entry.lastVerifiedResult === 'string' ? entry.lastVerifiedResult : '',
         lastVerifiedMissing: Array.isArray(entry.lastVerifiedMissing)
             ? entry.lastVerifiedMissing.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0)
             : [],
-        lastVerifiedAt: entry.lastVerifiedAt == null || entry.lastVerifiedAt === '' ? null : Number(entry.lastVerifiedAt),
-        gameCode: entry.gameCode == null ? null : String(entry.gameCode),
+        lastVerifiedAt: entry.lastVerifiedAt === null || entry.lastVerifiedAt === '' ? null : Number(entry.lastVerifiedAt),
+        gameCode: entry.gameCode === null ? null : String(entry.gameCode),
         page: typeof entry.page === 'string' ? entry.page : null,
         updatedAt: Number(entry.updatedAt) || Date.now(),
     };
@@ -1737,7 +1739,7 @@ function applySharedState(state) {
     // Control de versión del estado (drawCounter)
     if (typeof state.drawCounter === 'number') {
         // Ignoramos si es un estado antiguo, EXCEPTO si el contador vuelve a 0 (reinicio del Master)
-        const isReset = state.drawCounter === 0 && drawCounter > 0;
+        const isReset = state.drawCounter === 0;
         if (!isReset && state.drawCounter < drawCounter) return;
         // Si es el mismo contador y ya lo procesamos, lo ignoramos (evita loops o doble procesamiento)
         if (state.drawCounter === drawCounter && lastDrawCounterReceived === state.drawCounter) return;
@@ -3327,7 +3329,7 @@ function setDrawSpeed(ms, { persist = true } = {}) {
     const speedSelect = document.getElementById('speedPresetSelect');
     if (speedSelect) {
         // Find if this speed is among the options, otherwise set to 'custom'
-        const optionExists = Array.from(speedSelect.options).some(opt => opt.value == clamped);
+        const optionExists = Array.from(speedSelect.options).some(opt => opt.value === clamped);
         speedSelect.value = optionExists ? clamped : 'custom';
     }
 
@@ -3418,7 +3420,7 @@ function limpiarMensajeVerificacion() {
 function verificarTodosLosCartones(options = {}) {
     const { silent = false } = options;
     const elementosCartones = document.querySelectorAll('#cartonesContainer > div[id^="carton"]');
-    try { console.log('DEBUG: verificarTodos - numerosSalidos length=', Array.isArray(numerosSalidos)?numerosSalidos.length:'(no numerosSalidos)', 'elementosCartones=', elementosCartones.length); } catch (e) {}
+
     let algunBingoTrackeadoNuevo = false;
 
     elementosCartones.forEach(cartonElement => {
@@ -3438,9 +3440,9 @@ function verificarTodosLosCartones(options = {}) {
                     // Ensure we mutate the same array instance observed by tests (window.cartonesConBingo)
                     const targetBingos = (typeof window !== 'undefined' && Array.isArray(window.cartonesConBingo)) ? window.cartonesConBingo : cartonesConBingo;
                     if (!targetBingos.includes(numeroCarton)) {
-                        try { console.log('DEBUG: verificarTodos - bingo detected for', numeroCarton); } catch (e) {}
+
                         targetBingos.push(numeroCarton);
-                        try { console.log('DEBUG: verificarTodos - pushed into targetBingos'); } catch (e) {}
+
                         // keep internal reference in sync
                         try { cartonesConBingo = targetBingos; } catch (e) {}
                         if (typeof window !== 'undefined') try { window.cartonesConBingo = targetBingos; } catch (e) {}
@@ -3564,16 +3566,16 @@ function loadGameState() {
     try {
         if (typeof localStorage === 'undefined') return false;
         const raw = localStorage.getItem(STORAGE_KEY);
-        try { console.log('DEBUG: loadGameState raw present=', !!raw, 'raw_preview=', String(raw).slice(0,200)); } catch (e) {}
+
         if (!raw) return false;
 
         const state = JSON.parse(raw);
-        try { console.log('DEBUG: loadGameState parsed state keys=', state && Object.keys(state)); } catch (e) {}
+
         if (!state || typeof state !== 'object') return false;
 
         const salidos = Array.isArray(state.numerosSalidos) ? state.numerosSalidos : null;
         const disponibles = Array.isArray(state.numerosDisponibles) ? state.numerosDisponibles : null;
-        try { console.log('DEBUG: loadGameState salidos_len=', salidos ? salidos.length : 'null', 'disponibles_len=', disponibles ? disponibles.length : 'null'); } catch (e) {}
+
         if (!salidos || !disponibles) return false;
 
         numerosSalidos = salidos.filter(n => Number.isInteger(n) && n >= 1 && n <= 90);
@@ -3797,7 +3799,7 @@ function activateVoiceOnIOS() {
 
         // Unlock HTML5 Audio pipeline (needed for Google Premium)
         try {
-            const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
+            const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=='); // This line is not a comparison, but was caught by the regex. No change needed.
             silentAudio.play().catch(() => {});
         } catch (e) {}
 
@@ -4089,11 +4091,11 @@ function copyFullToken() {
 // Close modal when clicking outside of it
 window.onclick = function(event) {
     const modal = document.getElementById('shareModal');
-    if (event.target == modal) {
+    if (event.target === modal) {
         modal.style.display = "none";
     }
     const statsModal = document.getElementById('statsModal');
-    if (event.target == statsModal) {
+    if (event.target === statsModal) {
         statsModal.style.display = "none";
     }
 }
@@ -4195,6 +4197,7 @@ function validateSharedToken(encoded) {
     result.state = parsed;
     return result;
 }
+window.validateSharedToken = validateSharedToken;
 
 function loadSharedGame(encoded) {
     try {
@@ -4242,6 +4245,7 @@ function loadSharedGame(encoded) {
     }
     return false;
 }
+window.loadSharedGame = loadSharedGame;
 // --- INICIALIZACIÓN DEL JUEGO ---
 window.onload = () => {
     // Detect page mode
@@ -4612,3 +4616,4 @@ async function downloadCardsAsPDF() {
 //     window.location.hash = '';
 //     console.log('🧹 Token cleared from address bar');
 // });
+window.verificarTodosLosCartones = verificarTodosLosCartones;
