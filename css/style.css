@@ -51,6 +51,19 @@ body.night-mode {
 }
 
 /* Smooth transitions for theme changes */
+ .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
 body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
 #myCardsTrackerContainer, #verificarNumeroContainer, #verificarCartonContainer,
 .numeroCirculo, button, input, select {
@@ -102,10 +115,6 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
     color: #fff;
     box-shadow: var(--shadow-sm);
     font-size: clamp(0.75rem, 2vw, 1rem);
-}
-
-#nightModeToggle {
-    margin-left: auto;
 }
 
 .center {
