@@ -119,6 +119,9 @@
         .topbar { min-height: 48px; height: auto; padding: 6px 10px; align-items: center; }
         .brand-badge { padding: 4px 8px; }
         .brand-badge img { width: 28px; height: 28px; }
+        .header-voice-controls { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+        .header-voice-controls label { font-size: 0.72rem; color: var(--text-secondary); }
+        .header-voice-controls select { max-width: 120px; padding: 4px 5px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); }
         .player-header-title { display: flex; flex-direction: column; gap: 1px; margin-left: 8px; margin-right: auto; line-height: 1; color: var(--text-primary); }
         .player-header-title span { font-size: 0.62rem; letter-spacing: 0.12em; color: var(--text-secondary); }
         .player-header-status { display: inline-flex; align-items: center; gap: 6px; margin-right: 8px; color: var(--text-secondary); font-size: 0.75rem; white-space: nowrap; }
@@ -184,6 +187,10 @@
             .voice-indicator { display: none; }
             .header-actions { gap: 4px; }
             .header-actions .icon-btn { padding: 5px 7px; }
+            .header-voice-controls { margin-left: 4px; max-width: 118px; }
+            .header-voice-controls select { max-width: 62px; }
+            .header-voice-controls label { display: none; }
+            .header-voice-controls .icon-btn { padding: 5px 6px; }
         }
 
         /* Global centered banners/alerts */
@@ -239,6 +246,13 @@
         <a class="brand-badge" href="https://boris8800.github.io/Bingo/">
             <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22grad%22%20cx%3D%2230%25%22%20cy%3D%2230%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b8d4e3%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2245%22%20fill%3D%22url%28%23grad%29%22%20stroke%3D%22%234a90e2%22%20stroke-width%3D%223%22/%3E%0A%20%20%3Ctext%20x%3D%2250%22%20y%3D%2235%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2Csans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22bold%22%20fill%3D%22%232c5282%22%3EBINGO%3C/text%3E%0A%20%20%3Ccircle%20cx%3D%2230%22%20cy%3D%2265%22%20r%3D%223%22%0A%20%20fill%3D%22%234a90e2%22/%3E%0A%20%20%3Ccircle%20cx%3D%2270%22%20cy%3D%2270%22%20r%3D%222%22%20fill%3D%22%234a90e2%22/%3E%0A%3C/svg%3E" width="32" height="32" alt="Logo">
         </a>
+        <div class="header-voice-controls">
+            <label for="voiceSelect">Voz</label>
+            <select id="voiceSelect" aria-label="Seleccionar voz"></select>
+            <button id="spectatorSoundToggle" class="icon-btn" type="button" onclick="toggleSpectatorSound()" aria-pressed="false">🔇</button>
+            <button class="icon-btn" onclick="populateVoiceList(); chooseBestLocalVoice(); updateVoiceIndicator();" aria-label="Actualizar voces">↻</button>
+            <button class="icon-btn" onclick="setVoice(); updateVoiceIndicator(); speakText('Prueba de voz');" aria-label="Probar voz">🔊</button>
+        </div>
         <div class="player-header-title">
             <strong>BINGO</strong>
             <span>PLAYER</span>
@@ -254,19 +268,6 @@
             <button id="nightModeToggle" class="icon-btn" onclick="toggleNightMode()" aria-label="Cambiar modo noche" aria-pressed="false">&#127769;</button>
             <button id="helpBtn" class="icon-btn" onclick="openHelpModal()" aria-label="Abrir ayuda" title="Ayuda">Ayuda</button>
             <div id="voiceIndicator" class="voice-indicator" aria-hidden="true">Voz: —</div>
-            <button id="headerMenuToggle" class="icon-btn" aria-expanded="false" aria-controls="headerMenu" onclick="toggleHeaderMenu()" title="Abrir menú">☰</button>
-
-            <div id="headerMenu" class="header-menu" aria-hidden="true">
-                <div class="header-menu-content">
-                    <label style="font-size:0.9rem; display:block; margin-bottom:6px;">Voz</label>
-                    <select id="voiceSelect" aria-label="Seleccionar voz" style="padding:6px 8px; border-radius:6px; min-width:180px;"></select>
-                    <div style="display:flex; gap:6px; margin-top:8px; justify-content:flex-end;">
-                        <button id="spectatorSoundToggle" class="icon-btn" type="button" onclick="toggleSpectatorSound()" aria-pressed="false">🔇 Voz desactivada</button>
-                        <button class="icon-btn" onclick="populateVoiceList(); chooseBestLocalVoice(); updateVoiceIndicator();">↻</button>
-                        <button class="icon-btn" onclick="setVoice(); updateVoiceIndicator(); speakText('Prueba de voz');">🔊</button>
-                    </div>
-                </div>
-            </div>
         </div>
     </header>
 
