@@ -4080,12 +4080,21 @@ function updateShareButton() {
     }
 }
 
-function shareGame() {
+async function shareGame() {
     try {
-        if (isMaster && (!peer || !peer.open || peer.id !== `${PEER_PREFIX}-${gameCodeFixed}`)) {
-            updateP2PStatus("Host P2P no disponible", "#dc3545");
-            alert('El Host P2P todavía no está conectado. Espera unos segundos y vuelve a intentarlo.');
-            return;
+        if (isMaster) {
+            const expectedPeerId = `${PEER_PREFIX}-${gameCodeFixed}`;
+            const hostReady = peer && !peer.destroyed && peer.id === expectedPeerId && (peer.open || peer._open);
+            if (!hostReady) {
+                if (!gameCodeFixed) await reserveGameCode();
+                updateP2PStatus(`Conectando Host (${gameCodeFixed})...`, '#ffc107');
+                const claimed = await claimToken(gameCodeFixed);
+                if (!claimed || !peer || peer.id !== `${PEER_PREFIX}-${gameCodeFixed}`) {
+                    updateP2PStatus("Host P2P no disponible", "#dc3545");
+                    alert('No se pudo conectar el Host P2P. Comprueba tu conexión y vuelve a intentarlo.');
+                    return;
+                }
+            }
         }
         const token = generateGameToken();
         
