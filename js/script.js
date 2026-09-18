@@ -118,6 +118,11 @@ function updateP2PStatus(status, color = "inherit") {
 
 function showPausedIndicator() {
     try {
+        const pageBanner = document.getElementById('bingoPauseContainer');
+        if (pageBanner) {
+            pageBanner.style.display = 'block';
+            return;
+        }
         let el = document.getElementById('pausedBanner');
             if (!el) {
             el = document.createElement('div');
@@ -166,6 +171,8 @@ function showPausedIndicator() {
 
 function hidePausedIndicator() {
     try {
+        const pageBanner = document.getElementById('bingoPauseContainer');
+        if (pageBanner) pageBanner.style.display = 'none';
         const el = document.getElementById('pausedBanner');
         if (el) el.style.display = 'none';
     } catch (e) {}
@@ -1967,8 +1974,6 @@ function applySharedState(state) {
             startStopBtn.textContent = 'Detener';
             actualizarEstadoJuego("enMarcha");
             // Si el juego está en marcha, ocultar cualquier aviso de pausa por bingo
-            const bpc = document.getElementById('bingoPauseContainer');
-            if (bpc) bpc.style.display = 'none';
         } else {
             startStopBtn.textContent = 'Empezar';
             actualizarEstadoJuego(state.juegoPausado ? "pausado" : "listo");
