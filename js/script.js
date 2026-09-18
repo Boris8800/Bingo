@@ -122,6 +122,7 @@ function showPausedIndicator() {
         const pageBanner = document.getElementById('bingoPauseContainer');
         if (pageBanner) {
             pageBanner.style.display = 'block';
+            updatePauseBannerMessage(pauseReason === 'bingo' ? 'bingo' : 'pause');
             return;
         }
         let el = document.getElementById('pausedBanner');
@@ -195,6 +196,7 @@ function hidePausedIndicator() {
                 enEjecucion = false;
                 const startStopBtn = document.getElementById('startStopBtn');
                 if (startStopBtn) startStopBtn.textContent = 'Empezar';
+                pauseReason = 'pause';
                 showToast('Juego en pausa' + (reasonText ? ` (${reasonText})` : ''));
                 showPausedIndicator();
                 saveGameState();
@@ -835,49 +837,7 @@ function renderConnectedPlayers(players) {
             name.style.marginBottom = '6px';
             name.textContent = player.playerName ? `Nombre ${player.playerName}` : 'Sin nombre';
 
-            const cards = document.createElement('div');
-            cards.style.display = 'grid';
-            cards.style.gap = '6px';
-            cards.style.marginTop = '8px';
-            cards.style.fontSize = '0.9rem';
-            cards.style.color = 'var(--text-secondary)';
             const trackedCards = Array.isArray(player.trackedCards) ? player.trackedCards : [];
-            if (trackedCards.length > 0) {
-                trackedCards.forEach((cartonId) => {
-                    const progress = getTrackedCartonProgress(cartonId);
-                    const row = document.createElement('button');
-                    row.type = 'button';
-                    row.style.display = 'grid';
-                    row.style.gap = '2px';
-                    row.style.padding = '8px 10px';
-                    row.style.width = '100%';
-                    row.style.textAlign = 'left';
-                    row.style.cursor = 'pointer';
-                    row.style.borderRadius = '10px';
-                    row.style.background = 'rgba(255,255,255,0.04)';
-                    row.style.border = '1px solid rgba(255,255,255,0.08)';
-                    row.title = `Ver cartón ${progress.cartonId}`;
-                    row.addEventListener('click', () => {
-                        showCartonPreviewInElement(progress.cartonId, document.getElementById('connectedPlayerCardPreview'), `Cartón de ${player.playerName || 'jugador'}`);
-                    });
-
-                    const cartonLabel = document.createElement('div');
-                    cartonLabel.style.fontWeight = '700';
-                    cartonLabel.style.color = 'var(--text-primary)';
-                    cartonLabel.textContent = `Nº ${progress.cartonId}`;
-
-                    const progressLabel = document.createElement('div');
-                    progressLabel.style.fontSize = '0.82rem';
-                    progressLabel.style.color = progress.isBingo ? 'var(--bingo-success)' : 'var(--text-secondary)';
-                    progressLabel.textContent = progress.isBingo ? `¡BINGO! (${progress.hits}/${progress.total})` : `${progress.hits}/${progress.total}`;
-
-                    row.appendChild(cartonLabel);
-                    row.appendChild(progressLabel);
-                    cards.appendChild(row);
-                });
-            } else {
-                cards.textContent = 'Sin cartones';
-            }
 
             // If player has no name (empty string) AND no tracked cards, skip rendering this card
             const hasName = typeof player.playerName === 'string' && player.playerName.trim().length > 0;
@@ -915,7 +875,6 @@ function renderConnectedPlayers(players) {
             })(status, cards, name);
 
             card.appendChild(name);
-            card.appendChild(cards);
             card.appendChild(status);
             container.appendChild(card);
         });
@@ -2773,6 +2732,13 @@ function setVoice(options) {
     updateVoiceIndicator();
 }
 
+function activateSelectedVoice() {
+    try { initAudioContext(); } catch (e) {}
+    populateVoiceList();
+    setVoice();
+    speakText('Voz activada');
+}
+
 // ---- FIN FUNCIONES DE VOZ ----
 
 // ---- NUEVAS FUNCIONES PARA SEGUIR "MIS CARTONES" ----
@@ -3703,7 +3669,7 @@ function updatePauseBannerMessage(reason, remote = false) {
         if (message) message.textContent = remote ? 'Un jugador ha cantado BINGO. Juego pausado.' : 'Se ha detectado un Bingo en tus cartones.';
     } else {
         if (heading) heading.textContent = '¡JUEGO EN PAUSA!';
-        if (message) message.textContent = 'El Host ha pausado el juego.';
+        if (message) message.textContent = 'El juego se ha pausado.';
     }
 }
 
