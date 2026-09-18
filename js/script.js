@@ -61,11 +61,19 @@ if (typeof window !== 'undefined') {
 let connections = [];         // Solo para Master: lista de conexiones activas
 let connToMaster = null;      // Para Viewer: conexión activa al Master
 const PEER_PREFIX = 'bingo-v6-live'; // Prefijo actualizado para forzar limpieza de sesiones
+const DEFAULT_ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+];
+const PEER_ICE_SERVERS = (typeof window !== 'undefined' && Array.isArray(window.__BINGO_ICE_SERVERS) && window.__BINGO_ICE_SERVERS.length > 0)
+    ? window.__BINGO_ICE_SERVERS
+    : DEFAULT_ICE_SERVERS;
 const PEERJS_OPTIONS = {
     host: '0.peerjs.com',
     port: 443,
     path: '/',
     secure: true,
+    config: { iceServers: PEER_ICE_SERVERS },
 };
 // Flag para pausar la sincronización cuando el usuario edita "Seguir mis cartones"
 let syncPausedByTracking = false;
