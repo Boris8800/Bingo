@@ -26,6 +26,8 @@ let hostPeerReady = false;
 let hostReconnectTimer = null;
 let hostReconnectAttempts = 0;
 const HOST_RECONNECT_MAX_ATTEMPTS = 3;
+let hostClaimPromise = null;
+let hostClaimCode = null;
 let viewerPeerReconnectTimer = null;
 let viewerPeerReconnectAttempts = 0;
 const VIEWER_PEER_RECONNECT_BASE_MS = 2000;
@@ -1223,9 +1225,11 @@ setInterval(checkInactivity, 30000);
  */
 function claimToken(code) {
     if (!code) return Promise.resolve(false);
+    if (hostClaimPromise && hostClaimCode === code) return hostClaimPromise;
     updateP2PStatus("Conectando...", "#ffc107");
-    
-    return new Promise((resolve) => {
+
+    hostClaimCode = code;
+    hostClaimPromise = new Promise((resolve) => {
         if (hostReconnectTimer) {
             clearTimeout(hostReconnectTimer);
             hostReconnectTimer = null;
@@ -1291,7 +1295,13 @@ function claimToken(code) {
                 finish(false);
             }
         });
+    }).finally(() => {
+        if (!hostPeerReady && hostClaimCode === code) {
+            hostClaimPromise = null;
+            hostClaimCode = null;
+        }
     });
+    return hostClaimPromise;
 }
 
 function setupMasterListeners() {
@@ -1431,6 +1441,8 @@ function renderConnectionMetrics() {
 
 function releaseClaim() {
     hostPeerReady = false;
+    hostClaimPromise = null;
+    hostClaimCode = null;
     if (hostReconnectTimer) {
         clearTimeout(hostReconnectTimer);
         hostReconnectTimer = null;
