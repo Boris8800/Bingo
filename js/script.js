@@ -1195,7 +1195,7 @@ function claimToken(code) {
         console.log(`📡 Intentando reclamar ID P2P: ${peerId}`);
         
         peer = new Peer(peerId);
-        
+
         peer.on('open', (id) => {
             console.log('✅ Master Peer activo:', id);
             gameCodeFixed = code;
@@ -1434,18 +1434,12 @@ function initCrossDeviceSync() {
             const attemptedId = `${PEER_PREFIX}-${gameCodeFixed}`;
             const retrying = viewerMasterConnectRetryAttempts === 0;
             updateP2PStatus(retrying ? `Buscando Host (${attemptedId})...` : `Host no encontrado (${attemptedId})`, retrying ? "#ffc107" : "#dc3545");
-            if (hasWebSocketPresence()) {
-                setRelaySyncEnabled(true, 'Usando sincronización de respaldo');
-                return;
-            }
-            // Reintentar con backoff sin acumular timers
-            scheduleViewerMasterConnectRetry(retrying ? `Buscando Host (${attemptedId})...` : `Host no encontrado (${attemptedId})`, retrying ? "#ffc107" : "#dc3545");
+            // Always enable relay sync as fallback so viewers on different networks can still connect
+            setRelaySyncEnabled(true, 'Usando sincronización de respaldo (relay)');
+            return;
         } else if (err.type === 'network' || err.type === 'server-error') {
-            if (hasWebSocketPresence()) {
-                setRelaySyncEnabled(true, 'Servidor P2P temporalmente no disponible');
-                return;
-            }
-            scheduleViewerPeerRestart('Servidor P2P temporalmente no disponible', '#ffc107');
+            setRelaySyncEnabled(true, 'Servidor P2P temporalmente no disponible, usando relay');
+            return;
         } else {
             updateP2PStatus("Error de Conexión", "#dc3545");
         }
@@ -1610,15 +1604,12 @@ function intentarConectarConMaster() {
         }
         if (err && err.type === 'peer-unavailable') {
             const attemptedId = `${PEER_PREFIX}-${gameCodeFixed}`;
-            if (hasWebSocketPresence()) {
-                setRelaySyncEnabled(true, 'Usando sincronización de respaldo');
-                return;
-            }
-            scheduleViewerMasterConnectRetry(`Buscando Host (${attemptedId})...`, '#ffc107');
+            // Always enable relay sync as fallback so viewers on different networks can still connect
+            setRelaySyncEnabled(true, 'Usando sincronización de respaldo (relay)');
             return;
         }
         if (err && (err.type === 'network' || err.type === 'server-error')) {
-            setRelaySyncEnabled(true, 'Servidor P2P temporalmente no disponible');
+            setRelaySyncEnabled(true, 'Servidor P2P temporalmente no disponible, usando relay');
             return;
         }
         scheduleViewerMasterConnectRetry('Error de conexión', '#dc3545');
@@ -3678,6 +3669,14 @@ function applyGameStateToUI(options = {}) {
     if (startStopBtn) startStopBtn.textContent = 'Empezar';
 
     setDrawSpeed(drawIntervalMs, { persist: false });
+
+    // Cross-network P2P relay: if WebSocket presence is available, use it to relay
+    // game state to viewers on different networks (not just same WiFi).
+    if (hasWebSocketPresence() && isMaster && connections.length === 0) {
+        // No direct P2P connections yet; ensure relay sync is active so viewers
+        // on different networks can still receive state updates via the WebSocket server.
+        try { syncRelayChannel(); } catch (e) {}
+    }
 }
 
 // ---- Cartones guardados (mini tableros) ----
