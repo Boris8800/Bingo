@@ -23,6 +23,9 @@ const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastCha
 let isMaster = (typeof window !== 'undefined' && window.__IS_MASTER === false) ? false : true;
 let peer = null;
 let hostPeerReady = false;
+let hostReconnectTimer = null;
+let hostReconnectAttempts = 0;
+const HOST_RECONNECT_MAX_ATTEMPTS = 3;
 let viewerPeerReconnectTimer = null;
 let viewerPeerReconnectAttempts = 0;
 const VIEWER_PEER_RECONNECT_BASE_MS = 2000;
@@ -1223,6 +1226,11 @@ function claimToken(code) {
     updateP2PStatus("Conectando...", "#ffc107");
     
     return new Promise((resolve) => {
+        if (hostReconnectTimer) {
+            clearTimeout(hostReconnectTimer);
+            hostReconnectTimer = null;
+        }
+        hostReconnectAttempts = 0;
         hostPeerReady = false;
         if (peer) { try { peer.destroy(); } catch (e) {} }
         
@@ -1252,9 +1260,19 @@ function claimToken(code) {
         peer.on('disconnected', () => {
             if (peer !== claimingPeer) return;
             hostPeerReady = false;
-            console.warn('Pelado del servidor de señalización. Reconectando...');
-            updateP2PStatus("Reconectando...", "#ffc107");
-            claimingPeer.reconnect();
+            hostReconnectAttempts++;
+            if (hostReconnectAttempts > HOST_RECONNECT_MAX_ATTEMPTS) {
+                updateP2PStatus("Host P2P no disponible", "#dc3545");
+                console.error('PeerJS no pudo reconectar el Host después de varios intentos.');
+                return;
+            }
+            const delay = Math.min(15000, 2000 * hostReconnectAttempts);
+            console.warn(`Servidor PeerJS desconectado. Reintentando en ${delay}ms...`);
+            updateP2PStatus(`Reconectando (${hostReconnectAttempts}/${HOST_RECONNECT_MAX_ATTEMPTS})...`, "#ffc107");
+            hostReconnectTimer = setTimeout(() => {
+                hostReconnectTimer = null;
+                if (peer === claimingPeer && !claimingPeer.destroyed) claimingPeer.reconnect();
+            }, delay);
         });
         
         peer.on('error', (err) => {
@@ -1267,9 +1285,6 @@ function claimToken(code) {
                 finish(false);
             } else if (err.type === 'network' || err.type === 'server-error') {
                 updateP2PStatus("Error de Red", "#dc3545");
-                setTimeout(() => {
-                    if (peer === claimingPeer && !claimingPeer.destroyed) claimingPeer.reconnect();
-                }, 5000);
                 finish(false);
             } else {
                 updateP2PStatus("Error P2P", "#dc3545");
@@ -1416,6 +1431,10 @@ function renderConnectionMetrics() {
 
 function releaseClaim() {
     hostPeerReady = false;
+    if (hostReconnectTimer) {
+        clearTimeout(hostReconnectTimer);
+        hostReconnectTimer = null;
+    }
     if (peer) {
         try { peer.destroy(); } catch (e) {}
         peer = null;
