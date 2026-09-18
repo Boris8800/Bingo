@@ -3087,7 +3087,7 @@ async function reiniciarJuego(options = {}) {
             claimed = await claimToken(gameCodeFixed);
         }
 
-        if (!claimed || !peer || !peer.open || peer.id !== `${PEER_PREFIX}-${gameCodeFixed}`) {
+        if (!claimed || !hostPeerReady || !peer || peer.destroyed || peer.id !== `${PEER_PREFIX}-${gameCodeFixed}`) {
             gameCodeFixed = null;
             updateP2PStatus("No se pudo iniciar el Host P2P", "#dc3545");
             console.error('Host P2P was not established; refusing to publish a dead game code.');
