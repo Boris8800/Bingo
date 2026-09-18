@@ -4525,6 +4525,15 @@ window.onload = () => {
     // Update share button with current token
     updateShareButton();
 
+    if (isMaster) {
+        const initialStatus = peer && peer.open && gameCodeFixed
+            ? `Activa (${gameCodeFixed})`
+            : gameCodeFixed
+                ? `Conectando (${gameCodeFixed})`
+                : 'Esperando Host';
+        updateP2PStatus(initialStatus, peer && peer.open ? '#28a745' : '#ffc107');
+    }
+
     // Mostrar banner de activación de voz en iPhone si hace falta
     try { createIOSActivateBannerIfNeeded(); } catch (e) { console.warn('createIOSActivateBannerIfNeeded call failed', e); }
 };
