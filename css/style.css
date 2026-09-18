@@ -242,6 +242,33 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
     padding-bottom: 10px;
 }
 
+#connectedPlayersContainer h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--text-primary);
+    text-align: center;
+    font-size: 1.2em;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.connected-players-list {
+    display: grid;
+    gap: 12px;
+}
+
+.connected-players-list > div {
+    padding: 13px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.connected-player-card-preview {
+    margin-top: 15px;
+}
+
 #myCardsTrackerContainer label {
     display: block;
     margin-bottom: 6px;
