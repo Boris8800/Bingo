@@ -1283,6 +1283,14 @@ function setupMasterListeners() {
                 clearConnectionPresence(conn);
                 return;
             }
+            if (data && data.type === 'state-request') {
+                try {
+                    if (conn.open) broadcastState();
+                } catch (e) {
+                    console.warn('No se pudo enviar el estado solicitado:', e);
+                }
+                return;
+            }
             // Spectator sound sync request from viewer
             if (data && data.type === 'SPECTATOR_SOUND') {
                 try {
@@ -1547,6 +1555,17 @@ function intentarConectarConMaster() {
         try { window.__viewerConnPeer = activeConnection.peer; } catch(e){}
         updateP2PStatus(`Activa (${gameCodeFixed})`, "#28a745");
         broadcastPresenceState();
+        try {
+            activeConnection.send({ type: 'state-request' });
+        } catch (e) {}
+        setTimeout(() => {
+            try {
+                if (connToMaster === activeConnection && activeConnection.open) {
+                    broadcastPresenceState();
+                    activeConnection.send({ type: 'state-request' });
+                }
+            } catch (e) {}
+        }, 500);
         
         // Notify web3.html if function exists
         if (typeof onConnectionCompleted === 'function') {
