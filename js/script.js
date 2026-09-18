@@ -61,6 +61,12 @@ if (typeof window !== 'undefined') {
 let connections = [];         // Solo para Master: lista de conexiones activas
 let connToMaster = null;      // Para Viewer: conexión activa al Master
 const PEER_PREFIX = 'bingo-v6-live'; // Prefijo actualizado para forzar limpieza de sesiones
+const PEERJS_OPTIONS = {
+    host: '0.peerjs.com',
+    port: 443,
+    path: '/',
+    secure: true,
+};
 // Flag para pausar la sincronización cuando el usuario edita "Seguir mis cartones"
 let syncPausedByTracking = false;
 let currentPreviewedCardId = null;
@@ -1063,7 +1069,7 @@ function checkTokenInUse(code, timeout = 1200) {
     return new Promise((resolve) => {
         if (!code) return resolve(false);
         // Usar un ID temporal aleatorio para no colisionar
-        const tempPeer = new Peer(`check-${Math.floor(Math.random()*100000)}`);
+        const tempPeer = new Peer(`check-${Math.floor(Math.random()*100000)}`, PEERJS_OPTIONS);
         let finished = false;
         
         const cleanup = () => {
@@ -1194,7 +1200,7 @@ function claimToken(code) {
         const peerId = `${PEER_PREFIX}-${code}`;
         console.log(`📡 Intentando reclamar ID P2P: ${peerId}`);
         
-        peer = new Peer(peerId);
+        peer = new Peer(peerId, PEERJS_OPTIONS);
 
         peer.on('open', (id) => {
             console.log('✅ Master Peer activo:', id);
@@ -1414,7 +1420,7 @@ function initCrossDeviceSync() {
     console.log("🚀 Iniciando conexión de jugador...");
     updateP2PStatus("Iniciando P2P...", "#ffc107");
     
-    peer = new Peer();
+    peer = new Peer(undefined, PEERJS_OPTIONS);
     
     peer.on('open', (id) => {
         console.log('📡 Mi ID de Jugador:', id);
@@ -2996,6 +3002,13 @@ async function reiniciarJuego(options = {}) {
             claimed = await claimToken(gameCodeFixed);
         }
 
+        if (!claimed || !peer || !peer.open || peer.id !== `${PEER_PREFIX}-${gameCodeFixed}`) {
+            gameCodeFixed = null;
+            updateP2PStatus("No se pudo iniciar el Host P2P", "#dc3545");
+            console.error('Host P2P was not established; refusing to publish a dead game code.');
+            return;
+        }
+
         const newToken = generateGameToken();
         // Solo actualizamos el hash en la carga inicial cuando se solicita
         window.location.hash = newToken;
@@ -4003,6 +4016,11 @@ function updateShareButton() {
 
 function shareGame() {
     try {
+        if (isMaster && (!peer || !peer.open || peer.id !== `${PEER_PREFIX}-${gameCodeFixed}`)) {
+            updateP2PStatus("Host P2P no disponible", "#dc3545");
+            alert('El Host P2P todavía no está conectado. Espera unos segundos y vuelve a intentarlo.');
+            return;
+        }
         const token = generateGameToken();
         
         // Build the correct share URL based on the current location
