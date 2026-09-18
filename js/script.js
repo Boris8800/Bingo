@@ -86,6 +86,17 @@ function updateP2PStatus(status, color = "inherit") {
         el.textContent = status;
         if (color) el.style.color = color;
     }
+    const statusDot = document.getElementById('hostStatusDot');
+    if (statusDot) {
+        let dotColor = color;
+        if (!dotColor || dotColor === 'inherit') dotColor = '#f0ad4e';
+        if (typeof status === 'string') {
+            if (/activa|conectad|listo|éxito/i.test(status)) dotColor = '#28a745';
+            if (/error|inactivo|expirad|no disponible/i.test(status)) dotColor = '#dc3545';
+        }
+        statusDot.style.backgroundColor = dotColor;
+        statusDot.style.boxShadow = `0 0 0 3px ${dotColor}33`;
+    }
     if (isMaster) {
         syncConnectedPlayersFromConnections();
     } else {

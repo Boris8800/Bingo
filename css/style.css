@@ -93,26 +93,22 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
     display: block;
 }
 
-.host-header-title {
-    display: flex;
-    align-items: baseline;
-    gap: 7px;
-    margin-right: auto;
-    margin-left: 12px;
-    color: var(--text-primary);
-    letter-spacing: 0.04em;
-}
-
-.host-header-title span {
-    color: var(--text-secondary);
-    font-size: 0.68rem;
-    letter-spacing: 0.12em;
+.icon-btn {
+    min-width: auto;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-primary);
+    background: var(--btn-primary);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+    font-size: clamp(0.75rem, 2vw, 1rem);
 }
 
 .host-header-status {
     display: inline-flex;
     align-items: center;
     gap: 7px;
+    margin-left: auto;
     margin-right: 12px;
     color: var(--text-secondary);
     font-size: 0.78rem;
@@ -129,6 +125,7 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
     border-radius: 50%;
     background: #f0ad4e;
     box-shadow: 0 0 0 3px rgba(240, 173, 78, 0.16);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .host-player-count {
@@ -145,22 +142,24 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
 }
 
 @media (max-width: 600px) {
-    .host-header-title { display: none; }
-    .host-header-status { margin-right: 6px; max-width: 145px; overflow: hidden; text-overflow: ellipsis; }
-    .host-player-count { display: none; }
-    .host-header-actions { gap: 4px; }
-    .host-header-actions .icon-btn { padding: 5px 8px; }
-}
+    .host-header-status {
+        margin-right: 6px;
+        max-width: 145px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-.icon-btn {
-    min-width: auto;
-    padding: 4px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--border-primary);
-    background: var(--btn-primary);
-    color: #fff;
-    box-shadow: var(--shadow-sm);
-    font-size: clamp(0.75rem, 2vw, 1rem);
+    .host-player-count {
+        display: none;
+    }
+
+    .host-header-actions {
+        gap: 4px;
+    }
+
+    .host-header-actions .icon-btn {
+        padding: 5px 8px;
+    }
 }
 
 .center {
