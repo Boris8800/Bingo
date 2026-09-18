@@ -781,13 +781,21 @@ function renderConnectedPlayers(players) {
             if (trackedCards.length > 0) {
                 trackedCards.forEach((cartonId) => {
                     const progress = getTrackedCartonProgress(cartonId);
-                    const row = document.createElement('div');
+                    const row = document.createElement('button');
+                    row.type = 'button';
                     row.style.display = 'grid';
                     row.style.gap = '2px';
                     row.style.padding = '8px 10px';
+                    row.style.width = '100%';
+                    row.style.textAlign = 'left';
+                    row.style.cursor = 'pointer';
                     row.style.borderRadius = '10px';
                     row.style.background = 'rgba(255,255,255,0.04)';
                     row.style.border = '1px solid rgba(255,255,255,0.08)';
+                    row.title = `Ver cartón ${progress.cartonId}`;
+                    row.addEventListener('click', () => {
+                        showCartonPreviewInElement(progress.cartonId, document.getElementById('connectedPlayerCardPreview'), `Cartón de ${player.playerName || 'jugador'}`);
+                    });
 
                     const cartonLabel = document.createElement('div');
                     cartonLabel.style.fontWeight = '700';
@@ -2852,9 +2860,8 @@ function actualizarMisCartonesBingoDisplay() {
 }
 
 // Pausar / Reanudar sincronización cuando el usuario edita "Seguir mis cartones"
-function showTrackedCardPreview(cartonId) {
+function showCartonPreviewInElement(cartonId, previewDiv, titlePrefix = 'Viendo Cartón') {
     currentPreviewedCardId = cartonId;
-    const previewDiv = document.getElementById('myTrackedCardPreview');
     if (!previewDiv) return;
     
     previewDiv.innerHTML = '';
@@ -2883,7 +2890,7 @@ function showTrackedCardPreview(cartonId) {
     header.style.marginBottom = '5px';
     
     const title = document.createElement('strong');
-    title.textContent = `Viendo Cartón ${cartonId}`;
+    title.textContent = `${titlePrefix} ${cartonId}`;
     title.style.fontSize = '0.9rem';
     
     const closeBtn = document.createElement('span');
@@ -2902,6 +2909,10 @@ function showTrackedCardPreview(cartonId) {
     
     card.appendChild(generarMiniTableroParaCarton(numerosEnCartonAttr));
     previewDiv.appendChild(card);
+}
+
+function showTrackedCardPreview(cartonId) {
+    showCartonPreviewInElement(cartonId, document.getElementById('myTrackedCardPreview'));
 }
 
 function pauseCrossDeviceSyncForTracking() {
