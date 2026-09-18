@@ -354,6 +354,26 @@ function scheduleViewerPeerRestart(statusMessage, kind = '#ffc107') {
         try { initCrossDeviceSync(); } catch (e) { console.warn('No se pudo reiniciar la conexión P2P del jugador:', e); }
     }, delayMs);
 }
+
+function scheduleViewerPeerReconnect(statusMessage, kind = '#ffc107') {
+    if (isMaster || viewerPeerReconnectTimer) return;
+    viewerPeerReconnectAttempts = Math.min(viewerPeerReconnectAttempts + 1, 5);
+    const delayMs = Math.min(
+        VIEWER_PEER_RECONNECT_BASE_MS * Math.pow(2, viewerPeerReconnectAttempts - 1),
+        VIEWER_PEER_RECONNECT_MAX_MS
+    );
+    updateP2PStatus(statusMessage || 'Reconectando al servidor...', kind);
+    viewerPeerReconnectTimer = setTimeout(() => {
+        viewerPeerReconnectTimer = null;
+        if (peer && !peer.destroyed && peer.disconnected) {
+            try {
+                peer.reconnect();
+                return;
+            } catch (e) {}
+        }
+        scheduleViewerPeerRestart('Reiniciando conexión P2P...', kind);
+    }, delayMs);
+}
 let lastDrawCounterReceived = -1; 
 let drawCounter = 0;
 let gameCodeFixed = null;
@@ -1523,7 +1543,7 @@ function initCrossDeviceSync() {
 
     peer.on('disconnected', () => {
         console.warn('Jugador desconectado del servidor. Reintentando con backoff...');
-        scheduleViewerPeerRestart('Servidor P2P temporalmente no disponible', '#ffc107');
+        scheduleViewerPeerReconnect('Servidor P2P temporalmente no disponible', '#ffc107');
     });
 
     peer.on('error', (err) => {
