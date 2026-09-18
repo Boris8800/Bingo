@@ -2004,7 +2004,7 @@ function applySharedState(state) {
     // If the master signaled a paused state, show the paused banner for viewers
     try {
         if (!isMaster) {
-            if (state.juegoPausado && state.pauseReason === 'bingo') {
+            if (state.juegoPausado) {
                 updatePauseBannerMessage(state.pauseReason);
                 showPausedIndicator();
             } else {
