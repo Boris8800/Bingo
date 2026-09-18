@@ -552,10 +552,31 @@ function syncConnectedPlayersFromConnections() {
     });
 
     // Final list for rendering
-    const finalPlayers = combined.sort((a, b) => String(a.playerName || '').localeCompare(String(b.playerName || ''), 'es'));
+    const finalPlayers = deduplicatePresencePlayers(combined)
+        .sort((a, b) => String(a.playerName || '').localeCompare(String(b.playerName || ''), 'es'));
     
     renderConnectedPlayers(finalPlayers);
     updateSpectatorCount(finalPlayers);
+}
+
+function deduplicatePresencePlayers(players) {
+    const byKey = new Map();
+    const source = Array.isArray(players) ? players : [];
+    const namedSessions = new Set(source
+        .filter((player) => player && player.playerName && player.playerName !== 'Conectando...')
+        .map((player) => player.sessionId)
+        .filter(Boolean));
+    source.forEach((player) => {
+        const entry = normalizePresenceEntry(player || {});
+        if (entry.playerName === 'Conectando...' && namedSessions.has(entry.sessionId)) return;
+        const key = entry.sessionId || (entry.playerName ? `name:${entry.playerName.toLowerCase()}` : '');
+        if (!key) return;
+        const existing = byKey.get(key);
+        if (!existing || entry.updatedAt >= existing.updatedAt || entry.trackedCards.length > existing.trackedCards.length) {
+            byKey.set(key, entry);
+        }
+    });
+    return Array.from(byKey.values());
 }
 
 function storeConnectionPresence(conn, payload) {
@@ -645,7 +666,7 @@ function collectLocalPresencePlayers() {
 
 function renderLocalPresencePlayers() {
     connectedPlayers = collectLocalPresencePlayers();
-    renderConnectedPlayers(connectedPlayers);
+    renderConnectedPlayers(deduplicatePresencePlayers(connectedPlayers));
 }
 
 function activateLocalPresenceFallback(reason) {
@@ -771,8 +792,7 @@ function renderConnectedPlayers(players) {
     list.innerHTML = '';
 
     // Only show players that are on the same page (e.g., 'web3' viewers on the web3 page)
-    const visiblePlayers = Array.isArray(players)
-        ? players.filter((player) => {
+    const visiblePlayers = deduplicatePresencePlayers(players).filter((player) => {
             // Master wants to see everyone who has a game code matching (or if no code yet)
             if (isMaster) {
                 // If master hasn't started/shared a fixed game code, it might be null
@@ -787,8 +807,7 @@ function renderConnectedPlayers(players) {
             const samePage = typeof player.page === 'string' ? player.page === connectedPlayersMode : true;
             const hasCards = Array.isArray(player.trackedCards) && player.trackedCards.length > 0;
             return samePage && hasCards;
-        })
-        : [];
+        });
 
     if (visiblePlayers.length === 0) {
         list.textContent = 'No hay jugadores conectados todavía';
