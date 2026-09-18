@@ -22,6 +22,7 @@ const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastCha
 // 2. Variables de Control de Estado de Red (P2P via PeerJS)
 let isMaster = (typeof window !== 'undefined' && window.__IS_MASTER === false) ? false : true;
 let peer = null;
+let hostPeerReady = false;
 let viewerPeerReconnectTimer = null;
 let viewerPeerReconnectAttempts = 0;
 const VIEWER_PEER_RECONNECT_BASE_MS = 2000;
@@ -1222,40 +1223,57 @@ function claimToken(code) {
     updateP2PStatus("Conectando...", "#ffc107");
     
     return new Promise((resolve) => {
+        hostPeerReady = false;
         if (peer) { try { peer.destroy(); } catch (e) {} }
         
         const peerId = `${PEER_PREFIX}-${code}`;
         console.log(`📡 Intentando reclamar ID P2P: ${peerId}`);
         
         peer = new Peer(peerId, PEERJS_OPTIONS);
+        const claimingPeer = peer;
+        let settled = false;
+        const finish = (result) => {
+            if (settled) return;
+            settled = true;
+            resolve(result);
+        };
 
         peer.on('open', (id) => {
+            if (peer !== claimingPeer) return;
             console.log('✅ Master Peer activo:', id);
+            hostPeerReady = true;
             gameCodeFixed = code;
             setupMasterListeners();
             updateP2PStatus(`Activa (${code})`, "#28a745");
             try { syncRelayChannel(); } catch (e) {}
-            resolve(true);
+            finish(true);
         });
 
         peer.on('disconnected', () => {
+            if (peer !== claimingPeer) return;
+            hostPeerReady = false;
             console.warn('Pelado del servidor de señalización. Reconectando...');
             updateP2PStatus("Reconectando...", "#ffc107");
-            peer.reconnect();
+            claimingPeer.reconnect();
         });
         
         peer.on('error', (err) => {
+            if (peer !== claimingPeer) return;
             console.error('Error Peer Master:', err.type, err);
+            hostPeerReady = false;
+            updateP2PStatus(`Error P2P: ${err.type || 'desconocido'}`, "#dc3545");
             if (err.type === 'unavailable-id') {
                 updateP2PStatus("ID Ocupado", "#dc3545");
-                resolve(false);
+                finish(false);
             } else if (err.type === 'network' || err.type === 'server-error') {
                 updateP2PStatus("Error de Red", "#dc3545");
-                setTimeout(() => peer.reconnect(), 5000);
-                resolve(false);
+                setTimeout(() => {
+                    if (peer === claimingPeer && !claimingPeer.destroyed) claimingPeer.reconnect();
+                }, 5000);
+                finish(false);
             } else {
                 updateP2PStatus("Error P2P", "#dc3545");
-                resolve(false);
+                finish(false);
             }
         });
     });
@@ -1397,6 +1415,7 @@ function renderConnectionMetrics() {
 }
 
 function releaseClaim() {
+    hostPeerReady = false;
     if (peer) {
         try { peer.destroy(); } catch (e) {}
         peer = null;
@@ -4083,13 +4102,13 @@ function updateShareButton() {
 async function shareGame() {
     try {
         if (isMaster) {
-            const expectedPeerId = `${PEER_PREFIX}-${gameCodeFixed}`;
-            const hostReady = peer && !peer.destroyed && peer.id === expectedPeerId && (peer.open || peer._open);
+            const expectedPeerId = gameCodeFixed ? `${PEER_PREFIX}-${gameCodeFixed}` : null;
+            const hostReady = !!(hostPeerReady && peer && !peer.destroyed && peer.id === expectedPeerId);
             if (!hostReady) {
                 if (!gameCodeFixed) await reserveGameCode();
                 updateP2PStatus(`Conectando Host (${gameCodeFixed})...`, '#ffc107');
                 const claimed = await claimToken(gameCodeFixed);
-                if (!claimed || !peer || peer.id !== `${PEER_PREFIX}-${gameCodeFixed}`) {
+                if (!claimed || !hostPeerReady || !peer || peer.id !== `${PEER_PREFIX}-${gameCodeFixed}`) {
                     updateP2PStatus("Host P2P no disponible", "#dc3545");
                     alert('No se pudo conectar el Host P2P. Comprueba tu conexión y vuelve a intentarlo.');
                     return;
@@ -4535,12 +4554,12 @@ window.onload = () => {
     updateShareButton();
 
     if (isMaster) {
-        const initialStatus = peer && peer.open && gameCodeFixed
+        const initialStatus = hostPeerReady && peer && gameCodeFixed
             ? `Activa (${gameCodeFixed})`
             : gameCodeFixed
                 ? `Conectando (${gameCodeFixed})`
                 : 'Esperando Host';
-        updateP2PStatus(initialStatus, peer && peer.open ? '#28a745' : '#ffc107');
+        updateP2PStatus(initialStatus, hostPeerReady ? '#28a745' : '#ffc107');
     }
 
     // Mostrar banner de activación de voz en iPhone si hace falta
