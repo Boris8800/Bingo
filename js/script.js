@@ -1434,11 +1434,10 @@ function initCrossDeviceSync() {
             const attemptedId = `${PEER_PREFIX}-${gameCodeFixed}`;
             const retrying = viewerMasterConnectRetryAttempts === 0;
             updateP2PStatus(retrying ? `Buscando Host (${attemptedId})...` : `Host no encontrado (${attemptedId})`, retrying ? "#ffc107" : "#dc3545");
-            // Always enable relay sync as fallback so viewers on different networks can still connect
-            setRelaySyncEnabled(true, 'Usando sincronización de respaldo (relay)');
             return;
         } else if (err.type === 'network' || err.type === 'server-error') {
-            setRelaySyncEnabled(true, 'Servidor P2P temporalmente no disponible, usando relay');
+            updateP2PStatus("Error de red, reintentando...", "#ffc107");
+            scheduleViewerPeerRestart('Servidor P2P temporalmente no disponible', '#ffc107');
             return;
         } else {
             updateP2PStatus("Error de Conexión", "#dc3545");
@@ -1604,12 +1603,11 @@ function intentarConectarConMaster() {
         }
         if (err && err.type === 'peer-unavailable') {
             const attemptedId = `${PEER_PREFIX}-${gameCodeFixed}`;
-            // Always enable relay sync as fallback so viewers on different networks can still connect
-            setRelaySyncEnabled(true, 'Usando sincronización de respaldo (relay)');
+            scheduleViewerMasterConnectRetry(`Buscando Host (${attemptedId})...`, '#ffc107');
             return;
         }
         if (err && (err.type === 'network' || err.type === 'server-error')) {
-            setRelaySyncEnabled(true, 'Servidor P2P temporalmente no disponible, usando relay');
+            scheduleViewerPeerRestart('Servidor P2P temporalmente no disponible', '#ffc107');
             return;
         }
         scheduleViewerMasterConnectRetry('Error de conexión', '#dc3545');
