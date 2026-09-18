@@ -78,6 +78,7 @@
                         // Enable spectator sound preference and try to resume audio
                         try { localStorage.setItem('web3Speak', 'true'); } catch (e) {}
                         try { if (typeof window !== 'undefined' && window.spectatorSpeakEnabled !== undefined) window.spectatorSpeakEnabled = true; } catch(e){}
+                        try { if (typeof updateSpectatorSoundButton === 'function') updateSpectatorSoundButton(); } catch(e){}
                         try { if (typeof initAudioContext === 'function') initAudioContext(); } catch(e){}
 
                         // If P2P connection exists, notify master we want synced audio (best-effort)
@@ -221,6 +222,7 @@
                     <label style="font-size:0.9rem; display:block; margin-bottom:6px;">Voz</label>
                     <select id="voiceSelect" aria-label="Seleccionar voz" style="padding:6px 8px; border-radius:6px; min-width:180px;"></select>
                     <div style="display:flex; gap:6px; margin-top:8px; justify-content:flex-end;">
+                        <button id="spectatorSoundToggle" class="icon-btn" type="button" onclick="toggleSpectatorSound()" aria-pressed="false">🔇 Voz desactivada</button>
                         <button class="icon-btn" onclick="populateVoiceList(); chooseBestLocalVoice(); updateVoiceIndicator();">↻</button>
                         <button class="icon-btn" onclick="setVoice(); updateVoiceIndicator(); speakText('Prueba de voz');">🔊</button>
                     </div>

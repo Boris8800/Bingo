@@ -2107,6 +2107,14 @@ let selectedVoice = null;
 // Preferencia de sonido para jugadores (Web3)
 let spectatorSpeakEnabled = (localStorage.getItem('web3Speak') === 'true');
 
+function updateSpectatorSoundButton() {
+    const btn = document.getElementById('spectatorSoundToggle');
+    if (!btn) return;
+    btn.setAttribute('aria-pressed', spectatorSpeakEnabled ? 'true' : 'false');
+    btn.textContent = spectatorSpeakEnabled ? '🔊 Voz activada' : '🔇 Voz desactivada';
+    btn.title = spectatorSpeakEnabled ? 'Desactivar anuncios de voz' : 'Activar anuncios de voz';
+}
+
 function toggleSpectatorSound() {
     spectatorSpeakEnabled = !spectatorSpeakEnabled;
     localStorage.setItem('web3Speak', spectatorSpeakEnabled ? 'true' : 'false');
@@ -2114,10 +2122,15 @@ function toggleSpectatorSound() {
     // Resume audio context on user gesture for iOS support
     try { initAudioContext(); } catch(e) {}
 
-    const btn = document.getElementById('spectatorSoundToggle');
-    if (btn) {
-        btn.setAttribute('aria-pressed', spectatorSpeakEnabled ? 'true' : 'false');
-        btn.textContent = spectatorSpeakEnabled ? 'sonido activado' : 'sonido desactivado';
+    updateSpectatorSoundButton();
+
+    try {
+        const payload = { type: 'SPECTATOR_SOUND', enabled: spectatorSpeakEnabled };
+        if (connToMaster && connToMaster.open) connToMaster.send(payload);
+    } catch (e) {}
+
+    if (spectatorSpeakEnabled) {
+        speakText('Voz activada');
     }
 }
 
@@ -4313,8 +4326,8 @@ window.onload = () => {
             const btn = document.getElementById('spectatorSoundToggle');
             if (btn) {
                 const pref = (localStorage.getItem('web3Speak') === 'true');
-                btn.setAttribute('aria-pressed', pref ? 'true' : 'false');
-                btn.textContent = pref ? 'sonido activado' : 'sonido desactivado';
+                spectatorSpeakEnabled = pref;
+                updateSpectatorSoundButton();
             }
         } catch (e) {}
 
