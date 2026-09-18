@@ -149,10 +149,6 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
         text-overflow: ellipsis;
     }
 
-    .host-player-count {
-        display: none;
-    }
-
     .host-header-actions {
         gap: 4px;
     }
