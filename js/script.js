@@ -6,6 +6,7 @@ let numerosDisponibles = []; // Se inicializa en reiniciarJuego
 let intervalo;
 let enEjecucion = false;
 let juegoPausado = false;
+let pauseReason = '';
 let cartonesConBingo = [];
 if (typeof window !== 'undefined') try { window.cartonesConBingo = cartonesConBingo; } catch (e) {}
 let lastActivityTime = Date.now(); // Rastreo de inactividad
@@ -1806,6 +1807,7 @@ async function broadcastState() {
         drawIntervalMs,
         drawCounter,
         juegoPausado,
+        pauseReason,
         enEjecucion,
         gameCodeFixed,
         myTrackedCardNumbers,
@@ -2003,6 +2005,7 @@ function applySharedState(state) {
     try {
         if (!isMaster) {
             if (state.juegoPausado) {
+                updatePauseBannerMessage(state.pauseReason);
                 showPausedIndicator();
             } else {
                 hidePausedIndicator();
@@ -3211,6 +3214,7 @@ function startStop() {
         startStopBtn.textContent = 'Empezar';
         enEjecucion = false;
         juegoPausado = true;
+        pauseReason = 'manual';
         showPausedIndicator();
         actualizarEstadoJuego("pausado");
         broadcastState();
@@ -3229,6 +3233,7 @@ function startStop() {
             showToast('Juego reanudado');
         }
         juegoPausado = false;
+        pauseReason = '';
         startStopBtn.textContent = 'Detener';
         actualizarEstadoJuego("enMarcha");
         limpiarMensajeVerificacion();
@@ -3664,14 +3669,12 @@ function verificarTodosLosCartones(options = {}) {
 
 // ---- FUNCIONES DE PAUSA POR BINGO ----
 function pausarJuegoPorBingo(remote = false) {
+    pauseReason = 'bingo';
     // Mostrar UI de pausa en todos los casos (aunque no seamos Master, queremos ver el botón "Continuar")
     const container = document.getElementById('bingoPauseContainer');
     if (container) {
         container.style.display = 'block';
-        if (remote) {
-            const p = container.querySelector('p');
-            if (p) p.textContent = "Un jugador ha cantado BINGO. Juego pausado.";
-        }
+        updatePauseBannerMessage('bingo', remote);
     }
 
     // Si somos Master, detenemos el sorteo
@@ -3687,6 +3690,20 @@ function pausarJuegoPorBingo(remote = false) {
         if (connToMaster && connToMaster.open) {
             connToMaster.send({ type: 'PAUSE_REQUEST' });
         }
+    }
+}
+
+function updatePauseBannerMessage(reason, remote = false) {
+    const container = document.getElementById('bingoPauseContainer');
+    if (!container) return;
+    const heading = container.querySelector('h4');
+    const message = container.querySelector('p');
+    if (reason === 'bingo') {
+        if (heading) heading.textContent = '¡BINGO DETECTADO!';
+        if (message) message.textContent = remote ? 'Un jugador ha cantado BINGO. Juego pausado.' : 'Se ha detectado un Bingo en tus cartones.';
+    } else {
+        if (heading) heading.textContent = '¡JUEGO EN PAUSA!';
+        if (message) message.textContent = 'El Host ha pausado el juego.';
     }
 }
 
