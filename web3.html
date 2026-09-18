@@ -124,7 +124,6 @@
         .player-header-status { display: inline-flex; align-items: center; gap: 6px; margin-right: 8px; color: var(--text-secondary); font-size: 0.75rem; white-space: nowrap; }
         .player-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #f0ad4e; box-shadow: 0 0 0 3px rgba(240,173,78,0.15); }
         .player-header-status #p2pStatusMaster { display: inline-flex; align-items: center; gap: 5px; margin: 0 !important; font-size: inherit !important; }
-        .player-header-status #p2pStatusMaster button { margin-left: 3px !important; padding: 3px 7px !important; font-size: 0.68rem !important; }
         .player-header-status #spectatorCountDisplay { display: none; }
         .header-actions { display: flex; align-items: center; gap: 8px; }
         .header-menu { position: absolute; right: 10px; top: 50px; z-index: 1200; display: none; }
@@ -234,7 +233,6 @@
             <span class="player-status-dot" aria-hidden="true"></span>
             <div id="p2pStatusMaster" style="font-size: 0.85em; font-weight: bold; color: var(--text-secondary);">
                 <span id="p2pStatusText">Inactivo</span>
-                <button onclick="initCrossDeviceSync()" class="btn-secondary" title="Reconectar con el host">Reconectar</button>
             </div>
         </div>
         <div class="header-actions">
