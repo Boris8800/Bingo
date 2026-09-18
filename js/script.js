@@ -1225,6 +1225,10 @@ setInterval(checkInactivity, 30000);
  */
 function claimToken(code) {
     if (!code) return Promise.resolve(false);
+    const expectedPeerId = `${PEER_PREFIX}-${code}`;
+    if (hostPeerReady && peer && !peer.destroyed && peer.id === expectedPeerId) {
+        return Promise.resolve(true);
+    }
     if (hostClaimPromise && hostClaimCode === code) return hostClaimPromise;
     updateP2PStatus("Conectando...", "#ffc107");
 
