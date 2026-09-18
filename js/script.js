@@ -1265,6 +1265,7 @@ function setupMasterListeners() {
     peer.on('connection', (conn) => {
         console.log('🤝 Jugador conectado:', conn.peer);
         connections.push(conn);
+        updateP2PStatus(`Jugador conectado (${connections.length})`, '#28a745');
 
         storeConnectionPresence(conn, {
             playerName: 'Conectando...',
@@ -1350,11 +1351,13 @@ function setupMasterListeners() {
             connections = connections.filter(c => c !== conn);
             clearConnectionPresence(conn);
             updateSpectatorCount();
+            updateP2PStatus(connections.length > 0 ? `Jugadores conectados (${connections.length})` : `Activa (${gameCodeFixed})`, '#28a745');
         });
         conn.on('error', () => {
             connections = connections.filter(c => c !== conn);
             clearConnectionPresence(conn);
             updateSpectatorCount();
+            updateP2PStatus(connections.length > 0 ? `Jugadores conectados (${connections.length})` : `Activa (${gameCodeFixed})`, '#28a745');
         });
     });
 
