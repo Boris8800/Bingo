@@ -93,6 +93,55 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
     display: block;
 }
 
+.host-header-title {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    margin-right: auto;
+    margin-left: 12px;
+    color: var(--text-primary);
+    letter-spacing: 0.04em;
+}
+
+.host-header-title span {
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+}
+
+.host-header-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-right: 12px;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.host-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f0ad4e;
+    box-shadow: 0 0 0 3px rgba(240, 173, 78, 0.16);
+}
+
+.host-player-count {
+    padding-left: 8px;
+    border-left: 1px solid var(--border-color);
+}
+
+.host-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.host-share-btn {
+    background: var(--btn-secondary);
+}
+
 .icon-btn {
     min-width: auto;
     padding: 4px 10px;
@@ -102,6 +151,30 @@ body, #numeroContainer, #numerosContainer, #ultimosNumerosContainer,
     color: #fff;
     box-shadow: var(--shadow-sm);
     font-size: clamp(0.75rem, 2vw, 1rem);
+}
+
+@media (max-width: 680px) {
+    .host-header-title {
+        margin-left: 8px;
+    }
+
+    .host-header-status {
+        margin-right: 6px;
+    }
+
+    .host-player-count {
+        display: none;
+    }
+
+    .host-header-actions .host-share-btn {
+        font-size: 0;
+        padding: 6px 9px;
+    }
+
+    .host-header-actions .host-share-btn::before {
+        content: '↗';
+        font-size: 1rem;
+    }
 }
 
 .center {
