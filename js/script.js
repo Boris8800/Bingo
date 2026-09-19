@@ -880,7 +880,9 @@ function renderConnectedPlayers(players) {
             name.textContent = player.playerName ? `Nombre ${player.playerName}` : 'Jugador conectado';
 
             const trackedCards = Array.isArray(player.trackedCards) ? player.trackedCards : [];
-            const trackedCardDetails = Array.isArray(player.trackedCardDetails) ? player.trackedCardDetails : [];
+            const trackedCardDetails = Array.isArray(player.trackedCardDetails) && player.trackedCardDetails.length > 0
+                ? player.trackedCardDetails
+                : trackedCards.map((cartonId) => ({ cartonId, numbers: [], hits: 0, total: 15 }));
 
             const hasName = typeof player.playerName === 'string' && player.playerName.trim().length > 0;
             if (!hasName && trackedCards.length === 0 && !isMaster) return;
