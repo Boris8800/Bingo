@@ -28,51 +28,55 @@ Bienvenido al proyecto **Bingo Virtual**. Una aplicación web moderna, rápida y
 
 ### 📤 Compartir y Exportar
 - **PDF Export**: Genera y descarga tus cartones en PDF listos para imprimir con un solo clic.
-- **Sincronización Multi-Dispositivo (P2P)**: Gracias a la integración con **PeerJS (WebRTC)**, puedes conectar tu PC (Host) con móviles (Invitados) de forma directa (Peer-to-Peer) sin necesidad de un backend propio. En GitHub Pages funciona por defecto con PeerJS/local fallback, y el panel de presencia puede usar un relay WebSocket opcional si defines `window.__BINGO_PRESENCE_WS_URL` o un meta tag `bingo-presence-ws-url`.
+- **Sincronización Multi-Dispositivo (P2P)**: Gracias a la integración con **PeerJS (WebRTC)**, puedes conectar el Web 2 (Host) con móviles (Invitados) de forma directa. Para la configuración recomendada, todos los dispositivos deben estar conectados a la misma red Wi-Fi/LAN. En GitHub Pages funciona por defecto con PeerJS/local fallback, y el panel de presencia puede usar un relay WebSocket opcional si defines `window.__BINGO_PRESENCE_WS_URL` o un meta tag `bingo-presence-ws-url`.
 - **Audio sincronizado (P2P)**: El host envía el timestamp para que el anuncio por voz suene al mismo tiempo en Web3.
 - **Tokens 2–4 Dígitos (progresivo)**: El sistema intentará reservar códigos cortos (2 dígitos) y, si están ocupados, escalará automáticamente a códigos más largos (3 o 4 dígitos) para reducir colisiones globales.
 - **Modo Jugador**: Tus amigos pueden confirmar el juego sincronizado desde sus propios dispositivos (`web3.html`).
 
 ## 🚀 Guía Rápida
 
-1. **Jugar como Host (Máster)**:
-   - Abre [https://boris8800.github.io/Bingo//](https://boris8800.github.io/Bingo//).
+1. **Jugar como Host (Web 2 / Máster)**:
+   - Conecta el PC Host y todos los dispositivos de los jugadores a la misma red Wi-Fi/LAN.
+   - Abre [https://boris8800.github.io/Bingo/live_index.html](https://boris8800.github.io/Bingo/live_index.html).
    - El sistema detectará automáticamente que eres el administrador.
    - Configura tus preferencias (voz, velocidad).
    - Pulsa **"Comenzar"** para iniciar el sorteo.
    - Usa **"Compartir"** para generar el código de juego (2–4 dígitos según disponibilidad).
 
-2. **Jugar como Invitado (Móvil/Tablet)**:
+2. **Jugar como Invitado (Web 3, móvil/tablet)**:
+   - Mantén el dispositivo en la misma red Wi-Fi/LAN que el Web 2.
    - Abre la web y ve a la sección **Web 3** o escanea el QR generado por el Host con la cámara del móvil.
    - Ingresa el código de 2–4 dígitos o escanea el QR con la cámara del móvil.
    - El dispositivo se conectará al canal del Host y recibirá los números en tiempo real conforme vayan saliendo.
 
-   ## 🆘 Ayuda — Cómo funciona Bingo Virtual (versión simple)
+## 🆘 Ayuda — Cómo funciona Bingo Virtual (versión simple)
 
-   1) Roles:
+
+1. **Roles**:
    - Host (Máster): controla el sorteo desde un PC. Pulsa "Comenzar" para iniciar.
    - Jugadores (Web3): siguen el sorteo desde móviles o tablets usando el código que comparte el Host.
-
-   2) Compartir el juego:
-   - El Host pulsa "Compartir" y obtiene un código (2–4 dígitos) o un QR.
+2. **Compartir el juego**:
+   - El Host (Web 2) pulsa "Compartir" y obtiene un código (2–4 dígitos) o un QR.
    - Los jugadores ingresan el código en la sección Web3 o escanean el QR con la cámara del móvil.
-
-   3) Qué pasa después:
+3. **Requisito de red**:
+   - El Web 2 y todos los jugadores deben estar conectados a la misma red Wi-Fi/LAN antes de abrir la partida.
+   - No uses una red de invitados, una VPN ni datos móviles durante la conexión.
+   - El Host debe esperar a que los jugadores aparezcan como conectados antes de pulsar "Comenzar".
+4. **Qué pasa después**:
    - Cada vez que el Host saca un número, todos los jugadores lo reciben casi al mismo tiempo.
    - Si activas sonido en tu móvil, la voz anunciará los números sincronizados con el Host.
-
-   4) Mi nombre y seguimiento:
+5. **Mi nombre y seguimiento**:
    - En Web3 te pedimos tu nombre al entrar; eso activa el sonido y mejora la sincronía.
    - Puedes introducir tus números para que el sistema te avise si haces ¡BINGO!.
-
-   5) Problemas comunes:
+6. **Problemas comunes**:
    - "Sincronización: Expirado": el Host cerró la sesión; recarga la página y pide un nuevo código.
    - Si no oyes la voz, toca la pantalla para activar el audio (iOS/Android requieren gesto de usuario).
 
-   Si quieres una explicación técnica más completa, sigue leyendo la sección "Detalles Técnicos de Sincronización".
+Si quieres una explicación técnica más completa, sigue leyendo la sección "Detalles Técnicos de Sincronización".
 
-   Contacto / Soporte
-   - Si necesitas ayuda o quieres reportar un problema, escribe a: B80008800@gmail.com
+### Contacto / Soporte
+
+- Si necesitas ayuda o quieres reportar un problema, escribe a [B80008800@gmail.com](mailto:B80008800@gmail.com).
 
 ## 🛠️ Detalles Técnicos de Sincronización
 
@@ -83,10 +87,11 @@ Este proyecto utiliza tres capas de sincronización para asegurar que nadie se p
 3. **PeerJS (WebRTC)**: Para la comunicación directa entre dispositivos a través de internet, permitiendo una experiencia sin servidor propio en un entorno estático.
 4. **Relay WebSocket opcional**: Si quieres un panel de presencia global para jugadores conectados, puedes configurar un servidor WebSocket externo con `window.__BINGO_PRESENCE_WS_URL`.
 
-3. **Descargar Cartones**:
-   - Ve a la sección de "Cartones".
-   - Pulsa **"Descargar Cartones (PDF)"**.
-   - Imprímelos y repártelos a los jugadores.
+## 📥 Descargar Cartones
+
+- Ve a la sección de "Cartones".
+- Pulsa **"Descargar Cartones (PDF)"**.
+- Imprímelos y repártelos a los jugadores.
 
 ## 🛠️ Instalación Local
 
@@ -106,9 +111,23 @@ python3 -m http.server 8000
 # http://localhost:8000
 ```
 
+## ✅ Plan para activar partidas en la misma red
+
+1. **Preparar la red**: conectar el PC del Host y todos los móviles/tablets a la misma Wi-Fi o LAN. Desactivar temporalmente VPN, datos móviles y redes de invitados.
+2. **Activar Web 2**: abrir `live_index.html` en el PC Host y esperar a que el estado P2P indique que está activo.
+3. **Compartir la partida**: pulsar **Compartir** y enviar el código o QR a los jugadores.
+4. **Activar Web 3**: cada jugador abrirá `web3.html`, escribirá su nombre e introducirá el código o escaneará el QR.
+5. **Confirmar conexiones**: el Host comprobará que todos aparecen en **Jugadores Conectados**.
+6. **Iniciar el sorteo**: pulsar **Comenzar** únicamente después de confirmar las conexiones.
+7. **Verificar y diagnosticar**: si alguien no conecta, comprobar primero que está en la misma red, que no usa una red de invitados y que el navegador permite WebRTC; después recargar Web 3 y volver a introducir el código.
+8. **Prueba de aceptación**: validar una partida con un PC Host y al menos dos dispositivos móviles en la misma Wi-Fi, incluyendo conexión, recepción de números, pausa por Bingo y reconexión.
+
+El soporte para jugadores en redes diferentes queda como una fase posterior. Requeriría probar un relay/señalización accesible desde Internet y definir cómo resolver firewall, NAT y seguridad.
+
 ## 📂 Estructura del Proyecto
 
 - `index.html`: **Core del Juego**. Lógica principal, tablero y controles de host.
+- `live_index.html`: **Web 2**. Vista recomendada del Host y panel de jugadores conectados.
 - `web3.html`: **Vista de Cliente**. Interfaz simplificada para jugadores remotos.
 - `js/script.js`: **Cerebro**. Contiene toda la lógica de estado, sorteo, PDF y sincronización.
 - `css/style.css`: **Estilos**. Variables CSS modernas para temas y diseño responsive.
@@ -116,10 +135,12 @@ python3 -m http.server 8000
 ## 🔄 Sistema de Sincronización en Tiempo Real (Web3)
 
 ### Token Inteligente
+
 El juego utiliza un sistema de token automático para sincronizar el estado entre el host (Web1) y los jugadores (Web3):
 
 **Formato del Token (hash URL):**
-```
+
+```text
 [Código de juego (2-4 dígitos)], [lista de números separados por comas]
 
 Ejemplo: 22,1,2,3,4
@@ -129,6 +150,7 @@ Ejemplo: 22,1,2,3,4
 - **Lista de Números**: Los números sorteados se anexan al token en orden (separados por comas) y Web3 los procesa para marcar cartones.
 
 ### Cómo Funciona la Sincronización
+
 1. El host (Web1) **genera un token** que contiene el código de juego + el contador actual.
 2. El token se comparte mediante:
    - **Código QR**: Escaneado para acceso rápido
@@ -142,6 +164,7 @@ Ejemplo: 22,1,2,3,4
 5. Los cartones se **sincronizan automáticamente** mostrando los números en tiempo real.
 
 ### Ventajas
+
 - ✅ **Sin necesidad de servidor**: Funciona con sincronización basada en URL
 - ✅ **Sincronización rápida**: Verificación cada 1 segundo
 - ✅ **Código simple**: Fácil de recordar y compartir (ej: "22")
@@ -149,7 +172,8 @@ Ejemplo: 22,1,2,3,4
 - ✅ **Múltiples partidas**: Cada "Nueva Partida" genera un nuevo código (10-99)
 
 ### Ejemplo de Flujo
-```
+
+```text
 Host (Web1) inicio:        Cliente (Web3):
 Código: 22                 Espera "22+1"
 Sortea número 1 → Token: 22+1   ✅ Detecta +1, marca número 1
@@ -161,6 +185,7 @@ Sortea número 3 → Token: 22+1+2+3   ✅ Detecta +3, marca número 3
 ## 🎯 Características de Web3 (Jugador)
 
 ### Confirmar Cartones
+
 Los jugadores (Web3) pueden ahora rastrear sus propios cartones:
 - **Ingresa tus números**: Introduce los números de tu cartón separados por comas (ej: 7, 15, 23).
 - **Control de Sincronización Inteligente**: Al hacer click en la caja de texto para editar tus cartones, la sincronización se **pausa automáticamente** para evitar que los números entrantes borren lo que estás escribiendo. Se reanuda al pulsar "Confirmar".
@@ -169,13 +194,15 @@ Los jugadores (Web3) pueden ahora rastrear sus propios cartones:
 - **Persistencia**: Los cartones rastreados se guardan y recuperan al recargar.
 
 ### Visualización en Tiempo Real
+
 - Panel de últimos 10 números sorteados
 - Estado de sincronización con el host
 - Lista de cartones ganadores
 - Interfaz limpia y responsiva optimizada para móviles
 - Menú compacto en el header con selección de voz
 
-### Cómo Funciona la Lógica +1+2+3+4+5...
+### Cómo Funciona la Lógica +1+2+3+4+5
+
 
 **Backend (Web1 - Host):**
 1. Al compartir, genera código de 2 dígitos: `22`
@@ -196,11 +223,13 @@ Los jugadores (Web3) pueden ahora rastrear sus propios cartones:
 6. Muestra estado: `✅ Detectado | Código: 22 | Números: 3`
 
 ### Persistencia del Token
+
 - Al recargar Web1: Código y contador se restauran desde `localStorage`
 - URL hash se mantiene actualizado
 - Si desactivas compartir y reinicias: Nuevo código (10-99) y contador reset a 0
 
 ### Debugging
+
 Para ver el progreso de sincronización:
 1. Abre DevTools: `F12`
 2. Ve a la pestaña "Console"
@@ -213,6 +242,7 @@ Para ver el progreso de sincronización:
 ## 🎯 Características Avanzadas
 
 ### Persistencia de Estado
+
 - El juego guarda automáticamente:
   - Cartones seleccionados
   - Números sorteados
