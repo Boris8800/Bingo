@@ -4,6 +4,8 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
+app.use(express.static(__dirname));
+app.use('/Bingo', express.static(__dirname));
 
 const PORT = process.env.PORT || 8080;
 const server = app.listen(PORT, () => {
