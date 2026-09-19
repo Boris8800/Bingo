@@ -520,11 +520,31 @@ function getTrackedPlayerCards() {
     return Array.isArray(myTrackedCardNumbers) ? myTrackedCardNumbers.slice() : [];
 }
 
+function getTrackedPlayerCardDetails() {
+    let savedCards = [];
+    try {
+        const raw = localStorage.getItem('bingo_savedCardsV1');
+        savedCards = raw ? JSON.parse(raw) : [];
+    } catch (e) {}
+
+    return getTrackedPlayerCards().map((cartonId) => {
+        const element = document.getElementById(`carton${cartonId}`);
+        const savedCard = Array.isArray(savedCards)
+            ? savedCards.find((card) => Number(card.id) === cartonId || String(card.id) === `carton${cartonId}`)
+            : null;
+        const rawNumbers = element?.getAttribute('data-numeros') || savedCard?.numeros || '';
+        const numbers = String(rawNumbers).split(',').map(Number).filter((value) => Number.isInteger(value) && value > 0);
+        const hits = numbers.filter((value) => numerosSalidos.includes(value)).length;
+        return { cartonId, numbers, hits, total: numbers.length || 15 };
+    });
+}
+
 function getPresencePayload() {
     return {
         sessionId: getPresenceSessionId(),
         playerName: getTrackedPlayerName(),
         trackedCards: getTrackedPlayerCards(),
+        trackedCardDetails: getTrackedPlayerCardDetails(),
         trackedCardsSummary: Array.isArray(myTrackedCardNumbers) && myTrackedCardNumbers.length > 0
             ? myTrackedCardNumbers.join(', ')
             : '',
@@ -644,6 +664,16 @@ function normalizePresenceEntry(entry) {
         trackedCards: Array.isArray(entry.trackedCards)
             ? entry.trackedCards.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0)
             : [],
+        trackedCardDetails: Array.isArray(entry.trackedCardDetails)
+            ? entry.trackedCardDetails.map((card) => ({
+                cartonId: Number(card.cartonId),
+                numbers: Array.isArray(card.numbers) ? card.numbers.map(Number).filter((value) => Number.isInteger(value) && value > 0) : [],
+                hits: Number(card.hits) || 0,
+                total: Number(card.total) || 15,
+            })).filter((card) => Number.isInteger(card.cartonId))
+            : (Array.isArray(entry.trackedCards) ? entry.trackedCards.map((cartonId) => ({
+                cartonId: Number(cartonId), numbers: [], hits: 0, total: 15,
+            })) : []),
         trackedCardsSummary: typeof entry.trackedCardsSummary === 'string' ? entry.trackedCardsSummary : '',
         lastAction: typeof entry.lastAction === 'string' ? entry.lastAction : 'presence-updated',
         lastStatusMessage: typeof entry.lastStatusMessage === 'string' ? entry.lastStatusMessage : '',
@@ -850,6 +880,7 @@ function renderConnectedPlayers(players) {
             name.textContent = player.playerName ? `Nombre ${player.playerName}` : 'Jugador conectado';
 
             const trackedCards = Array.isArray(player.trackedCards) ? player.trackedCards : [];
+            const trackedCardDetails = Array.isArray(player.trackedCardDetails) ? player.trackedCardDetails : [];
 
             const hasName = typeof player.playerName === 'string' && player.playerName.trim().length > 0;
             if (!hasName && trackedCards.length === 0 && !isMaster) return;
@@ -885,6 +916,47 @@ function renderConnectedPlayers(players) {
 
             card.appendChild(name);
             card.appendChild(status);
+
+            if (isMaster && trackedCardDetails.length > 0) {
+                const cardsList = document.createElement('div');
+                cardsList.style.display = 'grid';
+                cardsList.style.gap = '6px';
+                cardsList.style.marginTop = '10px';
+                trackedCardDetails.forEach((trackedCard) => {
+                    const row = document.createElement('button');
+                    row.type = 'button';
+                    row.setAttribute('aria-expanded', 'false');
+                    row.style.display = 'block';
+                    row.style.width = '100%';
+                    row.style.textAlign = 'left';
+                    row.style.cursor = 'pointer';
+                    row.style.padding = '6px 8px';
+                    row.style.background = 'var(--bg-secondary)';
+                    row.style.borderRadius = '8px';
+
+                    const summary = document.createElement('strong');
+                    summary.textContent = `Nº ${trackedCard.cartonId} - ${trackedCard.hits}/${trackedCard.total}`;
+                    row.appendChild(summary);
+
+                    const details = document.createElement('div');
+                    details.hidden = true;
+                    details.style.marginTop = '8px';
+                    details.style.paddingTop = '8px';
+                    details.style.borderTop = '1px solid var(--border-color)';
+                    if (trackedCard.numbers.length > 0) {
+                        details.appendChild(generarMiniTableroElement(trackedCard.numbers.join(',')));
+                    } else {
+                        details.textContent = 'Números del cartón no disponibles todavía';
+                    }
+                    row.appendChild(details);
+                    row.addEventListener('click', () => {
+                        details.hidden = !details.hidden;
+                        row.setAttribute('aria-expanded', String(!details.hidden));
+                    });
+                    cardsList.appendChild(row);
+                });
+                card.appendChild(cardsList);
+            }
             container.appendChild(card);
         });
 
@@ -3806,10 +3878,12 @@ function loadGameState() {
             drawCounter = state.drawCounter;
         }
 
-        // Nunca reanudamos automáticamente en modo "en ejecución" al recargar.
+        // Nunca reanudamos automáticamente el sorteo al recargar, pero sí
+        // conservamos la pausa anunciada por el Host para los jugadores.
         if (intervalo) clearInterval(intervalo);
         enEjecucion = false;
-        juegoPausado = false;
+        juegoPausado = state.juegoPausado === true;
+        pauseReason = typeof state.pauseReason === 'string' ? state.pauseReason : '';
 
         return true;
     } catch (e) {
@@ -3864,7 +3938,14 @@ function applyGameStateToUI(options = {}) {
     limpiarMensajeVerificacion();
     const msgCarton = document.getElementById('mensajeVerificacionCarton');
     if (msgCarton) msgCarton.textContent = '';
-    actualizarEstadoJuego('listo');
+    actualizarEstadoJuego(juegoPausado ? 'pausado' : 'listo');
+
+    if (!isMaster && juegoPausado) {
+        updatePauseBannerMessage(pauseReason === 'bingo' ? 'bingo' : 'pause');
+        showPausedIndicator();
+    } else if (!juegoPausado) {
+        hidePausedIndicator();
+    }
 
     // Update saved cards if visible
     const savedCardsContainer = document.getElementById('cartonesGuardadosContainer');

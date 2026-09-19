@@ -115,6 +115,8 @@ const { JSDOM } = require('jsdom');
 
     // Force viewer to attempt connection after the replacement peer has opened.
     try { viewer.eval(`__connectToMasterForTests();`); } catch (e) {}
+    viewer.eval(`window.lastPlayerStatusMessage = 'Guardado y sincronizado: 2 cartones'; window.myTrackedCardNumbers = [11, 33]; window.__testPresenceCardDetails = [{cartonId: 11, numbers: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], hits: 6, total: 15}, {cartonId: 33, numbers: [16,17,18,19,20,21,22,23,24,25,26,27,28,29,30], hits: 2, total: 15}];`);
+    viewer.eval(`if (typeof broadcastPresenceState === 'function') broadcastPresenceState();`);
     // Wait for viewer to receive
     await new Promise(res => setTimeout(res, 100));
 
@@ -124,10 +126,17 @@ const { JSDOM } = require('jsdom');
       console.log('DEBUG: master connections =', masterConns);
       console.log('DEBUG: registry keys =', Object.keys(registry));
       if (masterConns < 1) throw new Error('Viewer did not register on the master');
-      await new Promise(res => setTimeout(res, 50));
-      const visiblePlayers = master.eval('document.getElementById("connectedPlayersList").textContent');
+      let visiblePlayers = '';
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        await new Promise(res => setTimeout(res, 50));
+        visiblePlayers = master.eval('document.getElementById("connectedPlayersList").textContent');
+        if (visiblePlayers.includes('Nº 11')) break;
+      }
       if (!visiblePlayers || visiblePlayers.includes('No hay jugadores')) {
         throw new Error('Connected player list was not updated');
+      }
+      if (!visiblePlayers.includes('Nº 11') || !visiblePlayers.includes('6/15') || !visiblePlayers.includes('1, 2, 3, 4, 5')) {
+        throw new Error('Connected player card details were not rendered');
       }
 
 
