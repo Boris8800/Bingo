@@ -4,7 +4,7 @@ const { JSDOM } = require('jsdom');
 
 (async () => {
   try {
-    const minimalHtml = `<!doctype html><html><head><meta charset="utf-8"></head><body data-page="test"><div id="numerosContainer"></div><div id="p2pStatusText"></div><div id="syncStatus"></div></body></html>`;
+    const minimalHtml = `<!doctype html><html><head><meta charset="utf-8"></head><body data-page="test"><div id="numerosContainer"></div><div id="p2pStatusText"></div><div id="syncStatus"></div><div id="connectedPlayersList"></div><div id="spectatorCountDisplay"></div></body></html>`;
 
     // Shared Peer registry and stub implementation so two windows can talk
     const registry = {};
@@ -124,6 +124,11 @@ const { JSDOM } = require('jsdom');
       console.log('DEBUG: master connections =', masterConns);
       console.log('DEBUG: registry keys =', Object.keys(registry));
       if (masterConns < 1) throw new Error('Viewer did not register on the master');
+      await new Promise(res => setTimeout(res, 50));
+      const visiblePlayers = master.eval('document.getElementById("connectedPlayersList").textContent');
+      if (!visiblePlayers || visiblePlayers.includes('No hay jugadores')) {
+        throw new Error('Connected player list was not updated');
+      }
 
 
         // Broadcast a known state only after the real connection is established.

@@ -847,15 +847,12 @@ function renderConnectedPlayers(players) {
             const name = document.createElement('div');
             name.style.fontWeight = '700';
             name.style.marginBottom = '6px';
-            name.textContent = player.playerName ? `Nombre ${player.playerName}` : 'Sin nombre';
+            name.textContent = player.playerName ? `Nombre ${player.playerName}` : 'Jugador conectado';
 
             const trackedCards = Array.isArray(player.trackedCards) ? player.trackedCards : [];
 
-            // If player has no name (empty string) AND no tracked cards, skip rendering this card
             const hasName = typeof player.playerName === 'string' && player.playerName.trim().length > 0;
-            if (!hasName && trackedCards.length === 0) {
-                return; // don't append an empty placeholder for anonymous/empty players
-            }
+            if (!hasName && trackedCards.length === 0 && !isMaster) return;
 
             const status = document.createElement('div');
             status.style.fontSize = '0.82rem';
@@ -884,7 +881,7 @@ function renderConnectedPlayers(players) {
                         } catch (e) {}
                     }, 1000);
                 }
-            })(status, cards, name);
+            })(status, trackedCards, name);
 
             card.appendChild(name);
             card.appendChild(status);
@@ -1333,7 +1330,8 @@ function setupMasterListeners() {
         updateP2PStatus(`Jugador conectado (${connections.length})`, '#28a745');
 
         storeConnectionPresence(conn, {
-            playerName: 'Conectando...',
+            sessionId: `connection:${conn.peer}`,
+            playerName: `Jugador ${conn.peer}`,
             trackedCards: [],
             gameCode: gameCodeFixed || null,
             page: 'web3',
@@ -1362,6 +1360,8 @@ function setupMasterListeners() {
             console.log('Master received data from', conn.peer, 'type=', data && data.type);
             if (data && data.type === 'presence-upsert') {
                 storeConnectionPresence(conn, data);
+                syncConnectedPlayersFromConnections();
+                updateSpectatorCount();
                 return;
             }
             if (data && data.type === 'presence-remove') {
