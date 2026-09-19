@@ -983,6 +983,8 @@ function renderConnectedPlayers(players) {
                             expandedConnectedPlayerCards.add(cardKey);
                         }
                     });
+                    row.addEventListener('pointerdown', (event) => event.stopPropagation());
+                    row.addEventListener('click', (event) => event.stopPropagation(), true);
                     cardsList.appendChild(row);
                 });
                 card.appendChild(cardsList);
