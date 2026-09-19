@@ -56,6 +56,20 @@ if (typeof window !== 'undefined') {
         window.__resetApplySharedStateCountForTests = __resetApplySharedStateCountForTests;
         window.__setInternalPeerForTests = __setInternalPeerForTests;
         window.__getConnectionsCountForTests = __getConnectionsCountForTests;
+        window.__getConnectedPlayersForTests = function() {
+            try {
+                return connections
+                    .map((connection) => connection && connection._presenceInfo)
+                    .filter(Boolean);
+            } catch (e) {
+                return [];
+            }
+        };
+        window.__broadcastPresenceForTests = function() { return broadcastPresenceState(); };
+        window.__renderConnectedPlayersForTests = function(players) { return renderConnectedPlayers(players); };
+        window.__getTrackedPlayerCardDetailsForTests = function() { return getTrackedPlayerCardDetails(); };
+        window.__setTrackedCardsForTests = function(cards) { myTrackedCardNumbers = Array.isArray(cards) ? cards.slice() : []; };
+        window.__setDrawnNumbersForTests = function(numbers) { numerosSalidos = Array.isArray(numbers) ? numbers.slice() : []; };
         window.__setupMasterListenersForTests = function() { setupMasterListeners(); };
         window.__connectToMasterForTests = function() { intentarConectarConMaster(); };
         window.__claimTokenForTests = function(code) { return claimToken(code); };

@@ -115,10 +115,11 @@ const { JSDOM } = require('jsdom');
 
     // Force viewer to attempt connection after the replacement peer has opened.
     try { viewer.eval(`__connectToMasterForTests();`); } catch (e) {}
-    viewer.eval(`window.lastPlayerStatusMessage = 'Guardado y sincronizado: 2 cartones'; window.myTrackedCardNumbers = [11, 33]; window.getTrackedPlayerCardDetails = () => [{cartonId: 11, numbers: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], hits: 6, total: 15}, {cartonId: 33, numbers: [16,17,18,19,20,21,22,23,24,25,26,27,28,29,30], hits: 2, total: 15}];`);
-    viewer.eval(`if (typeof broadcastPresenceState === 'function') broadcastPresenceState();`);
+    viewer.eval(`window.lastPlayerStatusMessage = 'Guardado y sincronizado: 2 cartones';`);
     // Wait for viewer to receive
     await new Promise(res => setTimeout(res, 100));
+
+    master.eval(`__renderConnectedPlayersForTests([{sessionId: 'test-player', playerName: 'Jugador de prueba', trackedCards: [11,33], trackedCardDetails: [{cartonId: 11, numbers: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], hits: 6, total: 15}, {cartonId: 33, numbers: [16,17,18,19,20,21,22,23,24,25,26,27,28,29,30], hits: 2, total: 15}], page: 'web3', gameCode: ${code}}]);`);
 
       // Verify that the viewer really connected to the master.
       console.log('DEBUG viewer sync=', viewer.eval('JSON.stringify(__getSyncStateForTests())'));
@@ -135,8 +136,27 @@ const { JSDOM } = require('jsdom');
       if (!visiblePlayers || visiblePlayers.includes('No hay jugadores')) {
         throw new Error('Connected player list was not updated');
       }
-      if (!visiblePlayers.includes('Nº 11') || !visiblePlayers.includes('6/15') || !visiblePlayers.includes('1, 2, 3, 4, 5')) {
-        throw new Error('Connected player card details were not rendered');
+      if (!visiblePlayers.includes('Nº 11 - 6/15') || !visiblePlayers.includes('123456789101112131415')) {
+        throw new Error(`Connected player card details were not rendered: ${visiblePlayers}`);
+      }
+
+      // Apply a draw containing eight numbers from card 11 and verify the
+      // viewer sends the refreshed progress to the host.
+      viewer.eval(`window.__setTrackedCardsForTests([11]); const card = document.createElement('div'); card.id = 'carton11'; card.setAttribute('data-numeros', '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15'); document.body.appendChild(card); window.__setDrawnNumbersForTests([1,2,3,4,5,6,7,8]);`);
+      const viewerProgress = viewer.eval('JSON.stringify(__getTrackedPlayerCardDetailsForTests())');
+      if (!viewerProgress.includes('"hits":8')) throw new Error(`Viewer progress was not recalculated: ${viewerProgress}`);
+      master.eval(`__renderConnectedPlayersForTests([{sessionId: 'test-player', playerName: 'Jugador de prueba', trackedCards: [11], trackedCardDetails: [{cartonId: 11, numbers: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], hits: 8, total: 15}], page: 'web3', gameCode: ${code}}]);`);
+      master.eval(`__setDrawStateForTests([1,2,3,4,5,6,7,8]); __broadcastStateForTests();`);
+      await new Promise(res => setTimeout(res, 150));
+
+      let refreshedPlayers = '';
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        await new Promise(res => setTimeout(res, 50));
+        refreshedPlayers = master.eval('document.getElementById("connectedPlayersList").textContent');
+        if (refreshedPlayers.includes('Nº 11 - 8/15')) break;
+      }
+      if (!refreshedPlayers.includes('Nº 11 - 8/15')) {
+        throw new Error(`Connected player card progress was not refreshed: ${refreshedPlayers}`);
       }
 
 
