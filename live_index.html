@@ -357,103 +357,37 @@
         <h2>Ayuda - Cómo funciona Bingo Virtual</h2>
         <div style="max-height:60vh; overflow:auto; padding-right:6px;">
             <section>
-                <h3>Visión general</h3>
-                <p>Este es un juego de Bingo en el que un equipo (Web1 - Host / Máster) controla el sorteo de números, y los jugadores (Web3) pueden conectarse y seguirlo en tiempo real. Puedes jugar desde el PC (Host) o desde móviles/otros dispositivos (Invitados).</p>
-            </section>
-
-            <section>
-                <h3>Resumen del README</h3>
-                <p>Este proyecto, <strong>Bingo Virtual</strong>, es una aplicación web ligera para jugar Bingo con soporte P2P, exportación de cartones y síntesis de voz.</p>
+                <h3>Cómo empezar</h3>
                 <ul>
-                    <li>Genera números automáticamente (1–90) con control de velocidad y opciones de pausa/reinicio.</li>
-                    <li>Sintetizador de voz (se intenta usar voces premium como Google Premium) y desbloqueo de audio en iOS.</li>
-                    <li>Sincronización multi-dispositivo: BroadcastChannel, LocalStorage fallback y PeerJS (WebRTC) para jugadores.</li>
-                    <li>Confirmar cartones, alertas de Bingo, estadísticas sincronizadas y exportación a PDF.</li>
-                </ul>
-                <p><a href="README.md" target="_blank" rel="noopener">Ver README completo</a></p>
-            </section>
-
-            <section>
-                <h3>Controles principales (Web1 - Host)</h3>
-                <ul>
-                    <li><strong>Comenzar / Detener:</strong> Inicia o detiene el sorteo automático de números.</li>
-                    <li><strong>Reiniciar:</strong> Limpia la partida y restablece los números disponibles (1–90).</li>
-                    <li><strong>Compartir:</strong> Genera el código/QR que los jugadores usarán para conectarse via WebRTC (PeerJS).</li>
-                    <li><strong>Velocidad:</strong> Ajusta la velocidad del sorteo mediante el control deslizante.</li>
+                    <li>Abre Web 2 en el PC Host y pulsa <strong>Compartir</strong>.</li>
+                    <li>Envía el código o QR a los jugadores.</li>
+                    <li>Espera a que aparezcan en <strong>Jugadores Conectados</strong>.</li>
+                    <li>Pulsa <strong>Comenzar</strong> para iniciar el sorteo.</li>
                 </ul>
             </section>
 
             <section>
-                <h3>Voz y audio</h3>
+                <h3>Importante: misma red</h3>
+                <p><strong>El Host y todos los jugadores deben usar la misma red Wi-Fi o LAN.</strong> Las redes de invitados, los datos móviles y las VPN pueden impedir la conexión.</p>
                 <ul>
-                    <li>Selecciona la voz en el control de voz. Se intentará usar la voz preferida (por ejemplo, Google Premium) cuando esté disponible.</li>
-                    <li>En dispositivos iOS Safari, el audio puede estar bloqueado hasta que realices una interacción: toca la pantalla para desbloquear audio.</li>
-                    <li>El host envía un timestamp para que la reproducción de voz en los invitados esté sincronizada.</li>
+                    <li>Conecta primero todos los dispositivos a la misma red.</li>
+                    <li>Abre Web 3, introduce el código y escribe tu nombre.</li>
+                    <li>Comprueba que el Host te muestra como conectado.</li>
                 </ul>
             </section>
 
             <section>
-                <h3>Seguir mis cartones</h3>
-                <p>En la sección "Confirmar Cartones" puedes indicar los ID de tus cartones (separados por comas). El sistema muestra "pills" con el progreso (aciertos/total) y una vista previa del cartón.</p>
+                <h3>Cartones y Bingo</h3>
                 <ul>
-                    <li>Los "pills" parpadearán en naranja si te faltan 2 números y en rojo si te falta 1 número.</li>
-                    <li>Si uno de tus cartones hace Bingo, el sistema reproducirá un sonido y el juego se pausará automáticamente para confirmar.</li>
-                    <li>Puedes pulsar "Continuar" para reanudar el sorteo.</li>
+                    <li>En Web 3, escribe tus números de cartón y pulsa <strong>Confirmar</strong>.</li>
+                    <li>El progreso se muestra como aciertos/total.</li>
+                    <li>Si hay Bingo, el juego se pausa. Pulsa <strong>Continuar</strong> para seguir.</li>
                 </ul>
             </section>
 
             <section>
-                <h3>Sincronización (Web3)</h3>
-                <p>El sistema usa PeerJS (WebRTC) para conectar jugadores con el Host. Cuando estás editando la lista de cartones (escribiendo en la caja), la sincronización se pausa temporalmente para que no se sobrescriba lo que escribes. La conexión se reanuda al pulsar "Confirmar".</p>
-            </section>
-
-            <section>
-                <h3>Web 2 y red local</h3>
-                <p>Web 2 es la pantalla del Host. Para activar una partida correctamente, el PC del Host y todos los jugadores deben estar conectados a la misma red Wi-Fi o LAN.</p>
-                <ol>
-                    <li>Abre Web 2 en el PC Host y espera a que esté activo.</li>
-                    <li>Pulsa "Compartir" y envía el código o QR a los jugadores.</li>
-                    <li>Los jugadores abren Web 3 desde la misma red, introducen el código y escriben su nombre.</li>
-                    <li>Comprueba que aparecen en "Jugadores Conectados" antes de pulsar "Comenzar".</li>
-                </ol>
-                <p>Las redes de invitados, VPN, datos móviles o firewalls pueden impedir la conexión aunque el código sea correcto.</p>
-            </section>
-
-            <section>
-                <h3>Estadísticas</h3>
-                <p>El juego mantiene un contador de bingos por cartón. Las estadísticas están sincronizadas entre el host y los jugadores y pueden resetearse desde el modal de estadísticas con el botón "Resetear Estadísticas".</p>
-            </section>
-
-            <section>
-                <h3>Exportar / Imprimir</h3>
-                <p>Puedes generar un PDF con los cartones para imprimirlos usando la función de exportación integrada.</p>
-            </section>
-
-            <section>
-                <h3>Modo jugador</h3>
-                <p>Los jugadores pueden conectarse con el código que genera el Host o mediante el QR. La vista del jugador recibe el estado del juego y muestra los números en tiempo real. Si se detecta un Bingo en un cartón seguido, la vista puede notificar y pedir la pausa al Host.</p>
-            </section>
-
-            <section>
-                <h3>Buenas prácticas</h3>
-                <ul>
-                    <li>Como Host, asegúrate de compartir el código con tiempo y confirmar que los jugadores están conectados antes de empezar.</li>
-                    <li>Si hay muchos jugadores, la conectividad puede tardar unos segundos; espera a que el contador de jugadores suba.</li>
-                    <li>Usa el botón de activar sonido en iOS si no escuchas anuncios por voz.</li>
-                </ul>
-            </section>
-
-            <section>
-                <h3>Problemas comunes</h3>
-                <ul>
-                    <li>Si un jugador no recibe números: comprobar código, conexión de red y que la página tenga permiso para WebRTC.</li>
-                    <li>Si el audio no suena en móvil iOS: toca la pantalla o pulsa el botón de sonido para desbloquear el AudioContext.</li>
-                </ul>
-            </section>
-
-            <section>
-                <h3>Contacto / Repositorio</h3>
-                <p>Para más información o para ver el código fuente, visita el perfil de GitHub: <a href="https://github.com/Boris8800" target="_blank" rel="noopener">Boris8800</a></p>
+                <h3>Si algo no funciona</h3>
+                <p>Revisa la misma red, el código y el firewall. El jugador debe aparecer en <strong>Jugadores Conectados</strong> antes de comenzar.</p>
             </section>
         </div>
     </div>
