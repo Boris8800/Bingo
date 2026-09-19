@@ -203,6 +203,11 @@ function syncViewerPauseUI() {
     if (juegoPausado) {
         updatePauseBannerMessage(pauseReason === 'bingo' ? 'bingo' : 'pause');
         showPausedIndicator();
+        if (typeof setTimeout === 'function') {
+            setTimeout(() => {
+                if (!isMaster && juegoPausado) showPausedIndicator();
+            }, 0);
+        }
     } else {
         hidePausedIndicator();
     }
@@ -3974,9 +3979,10 @@ function applyGameStateToUI(options = {}) {
     const startStopBtn = document.getElementById('startStopBtn');
     if (startStopBtn) startStopBtn.textContent = 'Empezar';
 
-    syncViewerPauseUI();
-
     setDrawSpeed(drawIntervalMs, { persist: false });
+
+    // Apply this last because other UI refreshes can change the status area.
+    syncViewerPauseUI();
 
     // Cross-network P2P relay: if WebSocket presence is available, use it to relay
     // game state to viewers on different networks (not just same WiFi).
