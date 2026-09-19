@@ -3252,6 +3252,10 @@ async function reiniciarJuego(options = {}) {
 
     enEjecucion = false;
     juegoPausado = false;
+    pauseReason = null;
+
+    const bingoPauseContainer = document.getElementById('bingoPauseContainer');
+    if (bingoPauseContainer) bingoPauseContainer.style.display = 'none';
 
     actualizarUltimosNumeros();
     limpiarMensajeVerificacion();
@@ -3384,6 +3388,7 @@ function siguienteNumero() {
     anunciarNumero(numero, announceAt);
     verificarTodosLosCartones(); // This will now handle sound for tracked bingos
     saveGameState();
+    broadcastPresenceState();
     broadcastState();
 }
 
