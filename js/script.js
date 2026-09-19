@@ -56,6 +56,18 @@ if (typeof window !== 'undefined') {
         window.__resetApplySharedStateCountForTests = __resetApplySharedStateCountForTests;
         window.__setInternalPeerForTests = __setInternalPeerForTests;
         window.__getConnectionsCountForTests = __getConnectionsCountForTests;
+        window.__setupMasterListenersForTests = function() { setupMasterListeners(); };
+        window.__connectToMasterForTests = function() { intentarConectarConMaster(); };
+        window.__claimTokenForTests = function(code) { return claimToken(code); };
+        window.__initCrossDeviceSyncForTests = function() { return initCrossDeviceSync(); };
+        window.__initViewerForTests = function(code) {
+            gameCodeFixed = code;
+            if (!peer || peer.destroyed) peer = new Peer(undefined, PEERJS_OPTIONS);
+            return gameCodeFixed;
+        };
+        window.__getSyncStateForTests = function() {
+            return { isMaster, gameCodeFixed, peerId: peer && peer.id, hasConnection: !!connToMaster };
+        };
         // Test hook: allow harness to inject a P2P-like state directly into this window
         window.__test_receiveP2PState = function(state) {
             try { console.log('TESTHOOK viewer __test_receiveP2PState called', state && (state.numerosSalidos ? state.numerosSalidos.length : 'no-numeros')); } catch (e) {}
@@ -1433,6 +1445,11 @@ function setupMasterListeners() {
     } catch (e) {}
 }
 
+if (typeof window !== 'undefined') {
+    window.__setupMasterListenersForTests = setupMasterListeners;
+    window.__connectToMasterForTests = intentarConectarConMaster;
+}
+
 function renderConnectionMetrics() {
     try {
         const el = document.getElementById('connectionMetrics') || document.getElementById('webFooterMetrics');
@@ -1715,6 +1732,9 @@ function intentarConectarConMaster() {
             }
         } catch (e) {}
         applySharedState(data);
+        if (typeof window !== 'undefined' && window.__BINGO_TEST_MODE) {
+            try { window.__lastAppliedState = data; } catch (e) {}
+        }
     });
     
     activeConnection.on('error', (err) => {
@@ -1753,6 +1773,13 @@ function intentarConectarConMaster() {
         }
         scheduleViewerMasterConnectRetry('Reconectando...', '#ffc107');
     });
+}
+
+if (typeof window !== 'undefined') {
+    window.__connectViewerForTests = function(code) {
+        if (typeof code === 'number') gameCodeFixed = code;
+        intentarConectarConMaster();
+    };
 }
 
 /**
@@ -1813,6 +1840,16 @@ async function broadcastState() {
     }
     
     saveGameState();
+}
+
+if (typeof window !== 'undefined') {
+    window.__broadcastStateForTests = broadcastState;
+    window.__setDrawStateForTests = (numbers) => {
+        numerosSalidos = numbers.slice();
+        numerosDisponibles = Array.from({ length: 90 }, (_, i) => i + 1).filter(n => !numerosSalidos.includes(n));
+        cartonesConBingo = [];
+        drawCounter = numerosSalidos.length;
+    };
 }
 
 /**
@@ -4431,6 +4468,7 @@ function loadSharedGame(encoded) {
 window.loadSharedGame = loadSharedGame;
 // --- INICIALIZACIÓN DEL JUEGO ---
 window.onload = () => {
+    if (window.__BINGO_TEST_MODE) return;
     // Detect page mode
     const page = document.body.getAttribute('data-page');
     const isExplicitWeb3 = (typeof window !== 'undefined' && window.__IS_MASTER === false);
