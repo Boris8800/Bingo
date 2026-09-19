@@ -946,22 +946,27 @@ function renderConnectedPlayers(players) {
                 cardsList.style.gap = '6px';
                 cardsList.style.marginTop = '10px';
                 trackedCardDetails.forEach((trackedCard) => {
-                    const row = document.createElement('button');
-                    row.type = 'button';
+                    const row = document.createElement('div');
                     const cardKey = `${player.sessionId || player.playerName}:${trackedCard.cartonId}`;
                     const isExpanded = expandedConnectedPlayerCards.has(cardKey);
-                    row.setAttribute('aria-expanded', String(isExpanded));
-                    row.style.display = 'block';
-                    row.style.width = '100%';
-                    row.style.textAlign = 'left';
-                    row.style.cursor = 'pointer';
+                    row.style.display = 'grid';
+                    row.style.gap = '8px';
                     row.style.padding = '6px 8px';
                     row.style.background = 'var(--bg-secondary)';
                     row.style.borderRadius = '8px';
 
+                    const toggle = document.createElement('button');
+                    toggle.type = 'button';
+                    toggle.setAttribute('aria-expanded', String(isExpanded));
+                    toggle.style.display = 'block';
+                    toggle.style.width = '100%';
+                    toggle.style.textAlign = 'left';
+                    toggle.style.cursor = 'pointer';
+
                     const summary = document.createElement('strong');
                     summary.textContent = `Nº ${trackedCard.cartonId} - ${trackedCard.hits}/${trackedCard.total}`;
-                    row.appendChild(summary);
+                    toggle.appendChild(summary);
+                    row.appendChild(toggle);
 
                     const details = document.createElement('div');
                     details.hidden = !isExpanded;
@@ -974,16 +979,17 @@ function renderConnectedPlayers(players) {
                         details.textContent = 'Números del cartón no disponibles todavía';
                     }
                     row.appendChild(details);
-                    row.addEventListener('click', () => {
+                    toggle.addEventListener('click', (event) => {
+                        event.stopPropagation();
                         details.hidden = !details.hidden;
-                        row.setAttribute('aria-expanded', String(!details.hidden));
+                        toggle.setAttribute('aria-expanded', String(!details.hidden));
                         if (details.hidden) {
                             expandedConnectedPlayerCards.delete(cardKey);
                         } else {
                             expandedConnectedPlayerCards.add(cardKey);
                         }
                     });
-                    row.addEventListener('pointerdown', (event) => event.stopPropagation());
+                    toggle.addEventListener('pointerdown', (event) => event.stopPropagation());
                     cardsList.appendChild(row);
                 });
                 card.appendChild(cardsList);
