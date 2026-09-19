@@ -97,6 +97,7 @@ const PEERJS_OPTIONS = {
 // Flag para pausar la sincronización cuando el usuario edita "Seguir mis cartones"
 let syncPausedByTracking = false;
 let currentPreviewedCardId = null;
+const expandedConnectedPlayerCards = new Set();
 
 // --- Función UI Status Master ---
 function updateP2PStatus(status, color = "inherit") {
@@ -927,7 +928,9 @@ function renderConnectedPlayers(players) {
                 trackedCardDetails.forEach((trackedCard) => {
                     const row = document.createElement('button');
                     row.type = 'button';
-                    row.setAttribute('aria-expanded', 'false');
+                    const cardKey = `${player.sessionId || player.playerName}:${trackedCard.cartonId}`;
+                    const isExpanded = expandedConnectedPlayerCards.has(cardKey);
+                    row.setAttribute('aria-expanded', String(isExpanded));
                     row.style.display = 'block';
                     row.style.width = '100%';
                     row.style.textAlign = 'left';
@@ -941,7 +944,7 @@ function renderConnectedPlayers(players) {
                     row.appendChild(summary);
 
                     const details = document.createElement('div');
-                    details.hidden = true;
+                    details.hidden = !isExpanded;
                     details.style.marginTop = '8px';
                     details.style.paddingTop = '8px';
                     details.style.borderTop = '1px solid var(--border-color)';
@@ -954,6 +957,11 @@ function renderConnectedPlayers(players) {
                     row.addEventListener('click', () => {
                         details.hidden = !details.hidden;
                         row.setAttribute('aria-expanded', String(!details.hidden));
+                        if (details.hidden) {
+                            expandedConnectedPlayerCards.delete(cardKey);
+                        } else {
+                            expandedConnectedPlayerCards.add(cardKey);
+                        }
                     });
                     cardsList.appendChild(row);
                 });
