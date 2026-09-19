@@ -193,6 +193,21 @@ function hidePausedIndicator() {
     } catch (e) {}
 }
 
+function syncViewerPauseUI() {
+    if (isMaster) return;
+    const startStopBtn = document.getElementById('startStopBtn');
+    if (startStopBtn) {
+        startStopBtn.disabled = true;
+        startStopBtn.style.display = 'none';
+    }
+    if (juegoPausado) {
+        updatePauseBannerMessage(pauseReason === 'bingo' ? 'bingo' : 'pause');
+        showPausedIndicator();
+    } else {
+        hidePausedIndicator();
+    }
+}
+
 // Pause game when the page/tab is hidden and resume when visible again
 (function setupVisibilityHandlers(){
     if (typeof document === 'undefined') return;
@@ -2081,14 +2096,7 @@ function applySharedState(state) {
 
     // If the master signaled a paused state, show the paused banner for viewers
     try {
-        if (!isMaster) {
-            if (state.juegoPausado) {
-                updatePauseBannerMessage(state.pauseReason);
-                showPausedIndicator();
-            } else {
-                hidePausedIndicator();
-            }
-        }
+        syncViewerPauseUI();
     } catch (e) {}
 
     // Después de aplicar UI, si somos jugador y tiene activado sonido, leer nuevos números
@@ -3965,6 +3973,8 @@ function applyGameStateToUI(options = {}) {
 
     const startStopBtn = document.getElementById('startStopBtn');
     if (startStopBtn) startStopBtn.textContent = 'Empezar';
+
+    syncViewerPauseUI();
 
     setDrawSpeed(drawIntervalMs, { persist: false });
 
