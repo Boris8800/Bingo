@@ -2031,7 +2031,10 @@ function applySharedState(state) {
         if (trackedBingoGanador) {
             console.log("🔊 ¡BINGO detectado en Web3 para cartón seguido:", trackedBingoGanador);
             playBingoSoundEffect();
-            speakText(`¡Bingo en tu cartón número ${trackedBingoGanador}!`);
+            const playerName = getTrackedPlayerName();
+            speakText(playerName
+                ? `${playerName} tiene bingo, cartón número ${trackedBingoGanador}`
+                : `Bingo, cartón número ${trackedBingoGanador}`);
         }
     }
     
@@ -2063,6 +2066,9 @@ function applySharedState(state) {
     
     // Verificar bingos locales (incluyendo tracked cards)
     verificarTodosLosCartones({ silent: true }); // silent=true para evitar doble sonido si ya lo manejamos arriba
+    if (!isMaster) {
+        try { broadcastPresenceState(); } catch (e) {}
+    }
 
     // If the master provided saved cartones (cards), ensure viewer renders the same
     try {
@@ -2418,15 +2424,19 @@ function playBingoSoundEffect() {
  */
 function announceBingo(cartonId) {
     try {
+        const playerName = getTrackedPlayerName();
+        const announcement = playerName
+            ? `${playerName} tiene bingo, cartón número ${cartonId}`
+            : `Bingo, cartón número ${cartonId}`;
         if (!isMaster) {
             const speakPref = (localStorage.getItem('web3Speak') === 'true');
             if (speakPref) {
                 playBingoSoundEffect();
-                speakText(`¡Bingo en el cartón ${cartonId}!`);
+                speakText(announcement);
             }
         } else {
             playBingoSoundEffect();
-            speakText(`¡Bingo! Cartón ${cartonId}.`);
+            speakText(announcement);
         }
     } catch (e) {
         console.warn('announceBingo failed:', e);
@@ -3761,7 +3771,11 @@ function verificarTodosLosCartones(options = {}) {
     if (algunBingoTrackeadoNuevo) {
         if (!silent) {
             playBingoSoundEffect();
-            speakText("¡Bingo detectado en uno de tus cartones!");
+            const playerName = getTrackedPlayerName();
+            const bingoCarton = myTrackedCardNumbers.find((cartonId) => cartonesConBingo.includes(cartonId));
+            speakText(playerName && bingoCarton
+                ? `${playerName} tiene bingo, cartón número ${bingoCarton}`
+                : 'Bingo detectado en uno de tus cartones');
         }
         // Nueva funcionalidad: pausa automática (siempre intentamos pausar si hay un bingo nuevo detectado)
         pausarJuegoPorBingo();
