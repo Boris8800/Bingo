@@ -70,7 +70,7 @@
 
 <div id="speedControl" class="control-box">
     <div class="speed-control-header">
-        <label>Velocidad: <strong id="speedValue">3.5s</strong></label>
+        <label for="speedPresetSelect">Velocidad: <strong id="speedValue">3.5s</strong></label>
     </div>
     <select id="speedPresetSelect">
         <option value="7000">⏱️ Muy Lento (7.0s)</option>
@@ -96,11 +96,13 @@
 <div id="estadoJuego"></div>
 </div>
 <div id="verificarNumeroContainer" class="control-box">
+<label for="numeroVerificar">Número a verificar</label>
 <input id="numeroVerificar" max="90" min="1" placeholder="Número" type="number"/>
 <button onclick="verificarNumero()">Verificar</button>
 <div id="mensajeVerificacion"></div>
 </div>
 <div id="verificarCartonContainer" class="control-box">
+<label for="cartonVerificar">Cartón a verificar</label>
 <input id="cartonVerificar" min="1" placeholder="Cartón" type="number"/>
 <button onclick="verificarCarton()">Verificar</button>
 <div id="mensajeVerificacionCarton"></div>
