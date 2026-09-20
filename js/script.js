@@ -2147,15 +2147,22 @@ function playBingoSoundEffect() {
  */
 function announceBingo(cartonId) {
     try {
+        const playerName = localStorage.getItem('bingo_player_name') || '';
+        const hasName = playerName.trim().length > 0;
+        const baseMessage = hasName
+            ? `${playerName} tiene bingo carton ${cartonId}.`
+            : isMaster
+                ? `¡Bingo! Cartón ${cartonId}.`
+                : `¡Bingo en el cartón ${cartonId}!`;
         if (!isMaster) {
             const speakPref = (localStorage.getItem('web3Speak') === 'true');
             if (speakPref) {
                 playBingoSoundEffect();
-                speakText(`¡Bingo en el cartón ${cartonId}!`);
+                speakText(baseMessage);
             }
         } else {
             playBingoSoundEffect();
-            speakText(`¡Bingo! Cartón ${cartonId}.`);
+            speakText(baseMessage);
         }
     } catch (e) {
         console.warn('announceBingo failed:', e);
@@ -3317,7 +3324,8 @@ function formatMs(ms) {
 
 function setDrawSpeed(ms, { persist = true } = {}) {
     if (!Number.isFinite(ms)) return;
-    const clamped = Math.min(7000, Math.max(1500, Math.round(ms / 500) * 500));
+    // Allow 3200ms (3.2s) as a special precision speed; otherwise round to nearest 500ms
+    const clamped = ms === 3200 ? 3200 : Math.min(7000, Math.max(1500, Math.round(ms / 500) * 500));
     drawIntervalMs = clamped;
 
     const label = document.getElementById('speedValue');
